@@ -6,6 +6,7 @@ const client = generateClient<Schema>();
 
 function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [query, setQuery] = useState<string>("");
 
   useEffect(() => {
     client.models.Todo.observeQuery().subscribe({
@@ -17,8 +18,17 @@ function App() {
     client.models.Todo.create({ content: window.prompt("Todo content") });
   }
 
+  function createModel()
+  {
+    alert("query submitted to backend");
+  }
+
   return (
-    <main>
+    chat_simple()
+  );
+
+  function main() {
+    return <main>
       <h1>My todos</h1>
       <button onClick={createTodo}>+ new</button>
       <ul>
@@ -33,8 +43,25 @@ function App() {
           Review next step of this tutorial.
         </a>
       </div>
+    </main>;
+  }
+
+  function chat_simple() {
+    return <main>
+      <h1>What are you looking for?</h1>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === "Enter") {
+            createModel();
+          }
+        }}
+      />
+      <button onClick={createModel}>Create</button>
     </main>
-  );
+  }
 }
 
 export default App;

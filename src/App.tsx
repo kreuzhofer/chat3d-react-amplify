@@ -2,7 +2,9 @@ import { useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useAuthenticator } from '@aws-amplify/ui-react';
-import { BrowserRouter } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
+import Layout from "./Pages/Layout";
+import Home from "./Pages/Home";
 
 const client = generateClient<Schema>();
 
@@ -33,7 +35,11 @@ function App() {
 
   return (
     <BrowserRouter>
-      {chat_simple()}
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 

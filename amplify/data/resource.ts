@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
+import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -13,6 +14,15 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+
+  ChatItem: a
+    .model({
+      context: a.id(),
+      itemType: a.string(),
+      role: a.string(),
+      message: a.string(),
+      attachment: a.string(),
+    }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a
     .query()
@@ -21,6 +31,12 @@ const schema = a.schema({
     })
     .returns(a.string())
     .handler(a.handler.function(submitQueryFunction))
+    .authorization((allow) => [allow.authenticated()]),
+
+  claimPatreonBenefits: a
+    .query()
+    .returns(a.string())
+    .handler(a.handler.function(claimPatreonBenefitsFunction))
     .authorization((allow) => [allow.authenticated()]),
 });
 

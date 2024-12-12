@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useAuthenticator } from '@aws-amplify/ui-react';
+import { BrowserRouter } from "react-router";
 
 const client = generateClient<Schema>();
 
@@ -9,7 +10,7 @@ function App() {
   //const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [query, setQuery] = useState<string>("");
   const [resultsList, setResultsList] = useState<string>("");
-  const [resultImage, setResultImage] = useState<string>("");
+  const [resultImage] = useState<string>("");
 
   const { signOut } = useAuthenticator();
 
@@ -31,7 +32,9 @@ function App() {
   }
 
   return (
-    chat_simple()
+    <BrowserRouter>
+      {chat_simple()}
+    </BrowserRouter>
   );
 
   // function main() {
@@ -53,6 +56,20 @@ function App() {
   //   </main>;
   // }
 
+  async function claimPatreonBenefits() {
+    // send get request to patreon api, example: GET www.patreon.com/oauth2/authorize
+    // ?response_type=code
+    // &client_id=<your client id>
+    // &redirect_uri=<one of your redirect_uris that you provided in step 1>
+    // &scope=<optional list of requested scopes>
+    // &state=<optional string></optional>
+    // implement this web request in typescript
+    //var result = await client.queries.claimPatreonBenefits();
+    //alert("query submitted to backend: "+JSON.stringify(result));
+  
+    window.location.href="https://www.patreon.com/oauth2/authorize?response_type=code&client_id=MvmE1rACZyeWKOpBhynZjK0m4MWkJOKw_SXfo2CZfBFm7N2q9x7_ROzg8ZpAblZ0&redirect_uri=http://localhost:5173/patreon-connection";
+  }
+
   function chat_simple() {
     return <main>
       <h1>What are you looking for?</h1>
@@ -68,6 +85,8 @@ function App() {
       />
       <button onClick={createModel}>Create</button>
       <button onClick={signOut}>Sign out</button>
+      <button onClick={claimPatreonBenefits}>Claim Your Patreon Benefits</button>
+
       <div>{resultsList}</div>
       <img src={resultImage}></img>
     </main>

@@ -1,12 +1,12 @@
-import { useState } from "react";
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
-import { useAuthenticator } from '@aws-amplify/ui-react';
+//import { useState } from "react";
+//import type { Schema } from "../amplify/data/resource";
+//import { generateClient } from "aws-amplify/data";
+//import { useAuthenticator } from '@aws-amplify/ui-react';
 import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "./Pages/Layout";
 import Home from "./Pages/Home";
 
-const client = generateClient<Schema>();
+//const client = generateClient<Schema>();
 
 function App() {
   //const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);

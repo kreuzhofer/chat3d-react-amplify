@@ -1,11 +1,16 @@
 import type { Schema } from "../../amplify/data/resource";
+import ChatMessageAI from "./ChatMessageAI";
+import ChatMessageUser from "./ChatMessageUser";
 
 function ChatMessage(item: Schema["ChatItem"]["type"])
 {
+    if(item.role === "user")
     return (
-        <div className="message user">
-            <div className="content">{item.message}</div>
-        </div>
+        <ChatMessageUser {...item} />
+    )
+    else if(item.role === "ai")
+    return (
+        <ChatMessageAI {...item} />
     );
 }
 

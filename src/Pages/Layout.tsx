@@ -26,100 +26,100 @@ function Layout() {
     };
 
     return (
-              <div className="App">
-                <Grid padded className="tablet computer only">
-                  <Menu borderless fluid fixed="top" size="huge">
-                    <Container>
-                      <Menu.Item header as="a">
-                        Project Name
-                      </Menu.Item>
-                      <Menu.Item active as="a">
-                        Home
-                      </Menu.Item>
-                      <Menu.Item as="a">About</Menu.Item>
-                      <Menu.Item as="a">Contact</Menu.Item>
-                      <Dropdown item text="Dropdown">
-                        <Dropdown.Menu>
-                          <Dropdown.Item as="a" href="#root">
-                            Action
-                          </Dropdown.Item>
-                          <Dropdown.Item as="a" href="#root">
-                            Another Action
-                          </Dropdown.Item>
-                          <Dropdown.Item as="a" href="#root">
-                            Something else here
-                          </Dropdown.Item>
-                          <Dropdown.Divider />
-                          <Dropdown.Header>Navbar header</Dropdown.Header>
-                          <Dropdown.Item as="a" href="#root">
-                            Separated link
-                          </Dropdown.Item>
-                          <Dropdown.Item as="a" href="#root">
-                            One more separated link
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                      <Menu.Menu position="right">
-                        <Menu.Item as="a">Default</Menu.Item>
-                        <Menu.Item as="a">Static top</Menu.Item>
-                        <Menu.Item active as="a">
-                          Fixed top
-                        </Menu.Item>
-                      </Menu.Menu>
-                    </Container>
-                  </Menu>
-                </Grid>
-                <Grid padded className="mobile only">
-                  <Menu borderless fluid fixed="top" size="huge">
-                    <Menu.Item header as="a">
-                      Project Name
-                    </Menu.Item>
-                    <Menu.Menu position="right">
-                      <Menu.Item>
-                        <Button
-                          icon
-                          basic
-                          toggle
-                          onClick={handleToggleDropdownMenu}
-                        >
-                          <Icon name="content" />
-                        </Button>
-                      </Menu.Item>
-                    </Menu.Menu>
-                    <Menu
-                      vertical
-                      borderless
-                      fluid
-                      style={dropdownMenuStyle}
-                    >
-                      <Menu.Item active as="a">
-                        Home
-                      </Menu.Item>
-                      <Menu.Item as="a">About</Menu.Item>
-                      <Menu.Item as="a">Contact</Menu.Item>
-                      <Dropdown text="Dropdown" className="item">
-                        <Dropdown.Menu>
-                          <Dropdown.Item as="a">Action</Dropdown.Item>
-                          <Dropdown.Item as="a">Another action</Dropdown.Item>
-                          <Dropdown.Item as="a">Something else here</Dropdown.Item>
-                          <Dropdown.Divider />
-                          <Dropdown.Header>Navbar header</Dropdown.Header>
-                          <Dropdown.Item as="a">Seperated link</Dropdown.Item>
-                          <Dropdown.Item as="a">One more seperated link</Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
-                      <Menu.Item as="a">Default</Menu.Item>
-                      <Menu.Item as="a">Static top</Menu.Item>
-                      <Menu.Item active as="a">
-                        Fixed top
-                      </Menu.Item>
-                    </Menu>
-                  </Menu>
-                </Grid>
-                <Container>
-                   <Outlet />
-                </Container>
-              </div>
+      <div className="App">
+        <Grid padded className="tablet computer only">
+          <Menu borderless fluid fixed="top" size="huge">
+            <Container>
+              <Menu.Item header as="a">
+                Chat3D
+              </Menu.Item>
+              <Menu.Item active as="a">
+                Home
+              </Menu.Item>
+              <Menu.Item as="a">About</Menu.Item>
+              <Menu.Item as="a">Contact</Menu.Item>
+              <Dropdown item text="Dropdown">
+                <Dropdown.Menu>
+                  <Dropdown.Item as="a" href="#root">
+                    Action
+                  </Dropdown.Item>
+                  <Dropdown.Item as="a" href="#root">
+                    Another Action
+                  </Dropdown.Item>
+                  <Dropdown.Item as="a" href="#root">
+                    Something else here
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Header>Navbar header</Dropdown.Header>
+                  <Dropdown.Item as="a" href="#root">
+                    Separated link
+                  </Dropdown.Item>
+                  <Dropdown.Item as="a" href="#root">
+                    One more separated link
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+              <Menu.Menu position="right">
+                <Menu.Item as="a">Default</Menu.Item>
+                <Menu.Item as="a">Static top</Menu.Item>
+                <Menu.Item active as="a">
+                  Fixed top
+                </Menu.Item>
+              </Menu.Menu>
+            </Container>
+          </Menu>
+        </Grid>
+        <Grid padded className="mobile only">
+          <Menu borderless fluid fixed="top" size="huge">
+            <Menu.Item header as="a">
+              Chat3D
+            </Menu.Item>
+            <Menu.Menu position="right">
+              <Menu.Item>
+                <Button
+                  icon
+                  basic
+                  toggle
+                  onClick={handleToggleDropdownMenu}
+                >
+                  <Icon name="content" />
+                </Button>
+              </Menu.Item>
+            </Menu.Menu>
+            <Menu
+              vertical
+              borderless
+              fluid
+              style={dropdownMenuStyle}
+            >
+              <Menu.Item active as="a">
+                Home
+              </Menu.Item>
+              <Menu.Item as="a">About</Menu.Item>
+              <Menu.Item as="a">Contact</Menu.Item>
+              <Dropdown text="Dropdown" className="item">
+                <Dropdown.Menu>
+                  <Dropdown.Item as="a">Action</Dropdown.Item>
+                  <Dropdown.Item as="a">Another action</Dropdown.Item>
+                  <Dropdown.Item as="a">Something else here</Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Header>Navbar header</Dropdown.Header>
+                  <Dropdown.Item as="a">Seperated link</Dropdown.Item>
+                  <Dropdown.Item as="a">One more seperated link</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+              <Menu.Item as="a">Default</Menu.Item>
+              <Menu.Item as="a">Static top</Menu.Item>
+              <Menu.Item active as="a">
+                Fixed top
+              </Menu.Item>
+            </Menu>
+          </Menu>
+        </Grid>
+        <Container className="content-body">
+            <Outlet />
+        </Container>
+      </div>
     );
 }
 

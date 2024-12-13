@@ -5,6 +5,7 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "./Pages/Layout";
 import Home from "./Pages/Home";
+import Chat from "./Pages/Chat";
 
 //const client = generateClient<Schema>();
 
@@ -38,6 +39,7 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="chat" element={<Chat />} />
         </Route>
       </Routes>
     </BrowserRouter>

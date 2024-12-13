@@ -17,7 +17,7 @@ const schema = a.schema({
 
   ChatItem: a
     .model({
-      context: a.id(),
+      context: a.string(),
       itemType: a.string(),
       role: a.string(),
       message: a.string(),

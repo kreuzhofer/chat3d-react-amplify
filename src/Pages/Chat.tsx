@@ -1,10 +1,44 @@
+import type { Schema } from "../../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+import ChatMessage from "../Components/ChatMessage";
+import { useEffect, useState } from "react";
+
+const client = generateClient<Schema>();
+
 function Chat()
 {
+    const [chatMessages, setChatMessages] = useState<Array<Schema["ChatItem"]["type"]>>([]);
+
+    useEffect(() => {
+        // client.models.ChatItem.observeQuery().subscribe({
+        //     next: (data) => setChatMessages([...data.items]),
+        // });
+
+        setChatMessages(
+            [
+                 {
+                     id: "0", context: "1", itemType: "message", role: "user", message: "Hello!",
+                     createdAt: "",
+                     updatedAt: ""
+                 },
+                 {
+                     id: "1", context: "1", itemType: "message", role: "ai", message: "Hello, I am your AI 3D designer. What can I create for you today?",
+                     createdAt: "",
+                     updatedAt: ""
+                 },
+            ]);
+    }, []);
+    
+
+
     return (
         <div>
             <div className="ui container">
                 <h2 className="ui header">AI Chat</h2>
                 <div className="chat-container">
+                    {chatMessages.map((item) => (
+                        <ChatMessage {...item} />
+                    ))}
                     <div className="message user">
                         <div className="content">Hello!</div>
                     </div>

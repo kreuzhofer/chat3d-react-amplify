@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { NavLink, Outlet } from "react-router";
 import {
     Button,
     Container,
@@ -11,6 +11,7 @@ import { useState } from "react";
 
 // Examples for layouts https://semantic-ui-forest.com/templates
 // Semantic UI React https://react.semantic-ui.com/
+// UI Links: https://stackoverflow.com/questions/74573972/implementing-links-in-a-semantic-ui-menu
 function Layout() {
     const [dropdownMenuStyle, setDropdownMenuStyle] = useState<any>(
         {
@@ -31,12 +32,14 @@ function Layout() {
           <Menu borderless fluid fixed="top" size="huge">
             <Container>
               <Menu.Item header as="a">
-                Chat3D
+              <img src="images/chat3dlogo.png"/>&nbsp;<p>Chat3D</p>
               </Menu.Item>
-              <Menu.Item active as="a">
-                Home
+              <Menu.Item as="a">
+                <NavLink to="/" end>Home</NavLink>
               </Menu.Item>
-              <Menu.Item as="a">About</Menu.Item>
+              <Menu.Item as="a">
+                <NavLink to="/chat" end>Chat</NavLink>
+              </Menu.Item>
               <Menu.Item as="a">Contact</Menu.Item>
               <Dropdown item text="Dropdown">
                 <Dropdown.Menu>
@@ -72,7 +75,7 @@ function Layout() {
         <Grid padded className="mobile only">
           <Menu borderless fluid fixed="top" size="huge">
             <Menu.Item header as="a">
-              Chat3D
+              <img src="images/chat3dlogo.png"/>&nbsp;<p>Chat3D</p>
             </Menu.Item>
             <Menu.Menu position="right">
               <Menu.Item>

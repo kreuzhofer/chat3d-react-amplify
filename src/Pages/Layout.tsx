@@ -8,6 +8,8 @@ import {
     Menu,
   } from "semantic-ui-react";
 import { useState } from "react";
+import { useAuthenticator } from '@aws-amplify/ui-react';
+
 
 // Examples for layouts https://semantic-ui-forest.com/templates
 // Semantic UI React https://react.semantic-ui.com/
@@ -17,6 +19,9 @@ function Layout() {
         {
             display: "none"
         });
+
+    const { signOut } = useAuthenticator();
+
 
     function handleToggleDropdownMenu() {
         if (dropdownMenuStyle.display === "none") {
@@ -64,10 +69,10 @@ function Layout() {
               </Dropdown>
               <Menu.Menu position="right">
                 <Menu.Item as="a">Default</Menu.Item>
-                <Menu.Item as="a">Static top</Menu.Item>
                 <Menu.Item active as="a">
                   Fixed top
                 </Menu.Item>
+                <Menu.Item onClick={signOut}>Logout</Menu.Item>
               </Menu.Menu>
             </Container>
           </Menu>

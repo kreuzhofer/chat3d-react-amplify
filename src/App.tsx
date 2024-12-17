@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "./Pages/Layout";
 import Home from "./Pages/Home";
 import Chat from "./Pages/Chat";
+import Profile from "./Pages/Profile";
 
 //const client = generateClient<Schema>();
 
@@ -40,6 +41,7 @@ function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>

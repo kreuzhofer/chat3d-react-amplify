@@ -64,6 +64,16 @@ function Layout() {
               </Menu.Menu>
             </Container>
           </Menu>
+          <main>
+          <Container>
+              <Outlet />
+          </Container>
+          </main>
+          <footer>
+          <Container >
+            <p><a href="https://www.crosslink.io/datenschutzerklaerung/" target="_blank">Data protection</a>&nbsp;|&nbsp;<a href="https://www.crosslink.io/impressum-anbieterkennzeichnung/" target="_blank">Imprint</a></p>
+          </Container>
+        </footer>
         </Grid>
         <Grid padded className="mobile only">
           <Menu borderless fluid fixed="top" size="huge">
@@ -107,17 +117,12 @@ function Layout() {
               <Menu.Item onClick={signOut}>Logout</Menu.Item>
             </Menu>
           </Menu>
-        </Grid>
         <main>
           <Container>
               <Outlet />
           </Container>
         </main>
-        <footer>
-          <Container>
-            <p><a href="https://www.crosslink.io/datenschutzerklaerung/" target="_blank">Data protection</a>&nbsp;|&nbsp;<a href="https://www.crosslink.io/impressum-anbieterkennzeichnung/" target="_blank">Imprint</a></p>
-          </Container>
-        </footer>
+        </Grid>
       </div>
     );
 }

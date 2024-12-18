@@ -2,14 +2,12 @@ import { NavLink, Outlet } from "react-router";
 import {
     Button,
     Container,
-    Dropdown,
     Grid,
     Icon,
     Menu,
   } from "semantic-ui-react";
-import { useState } from "react";
+import { SetStateAction, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
-
 
 // Examples for layouts https://semantic-ui-forest.com/templates
 // Semantic UI React https://react.semantic-ui.com/
@@ -31,6 +29,12 @@ function Layout() {
         }
     };
 
+    const [activeItem, setActiveItem] = useState("home");
+    const setActiveItemOnClick = (name: SetStateAction<string>) => {
+  
+        setActiveItem(name);
+    };
+
     return (
       <div className="App">
         <Grid padded className="tablet computer only">
@@ -39,39 +43,23 @@ function Layout() {
               <Menu.Item header as="a">
               <img src="images/chat3dlogo.png"/>&nbsp;<p>Chat3D</p>
               </Menu.Item>
-              <Menu.Item as="a">
-                <NavLink to="/" end>Home</NavLink>
+              <Menu.Item as={NavLink}
+                to="/" 
+                name="home" 
+                active={activeItem === "home"}
+                onClick={()=>setActiveItemOnClick("home")}
+                >
+                Home
               </Menu.Item>
-              <Menu.Item as="a">
-                <NavLink to="/chat" end>Chat</NavLink>
+              <Menu.Item as={NavLink}
+                to="/chat"
+                name="chat"
+                active={activeItem === "chat"}
+                onClick={()=>setActiveItemOnClick("chat")}
+                >
+                Chat
               </Menu.Item>
-              <Menu.Item as="a">Contact</Menu.Item>
-              <Dropdown item text="Dropdown">
-                <Dropdown.Menu>
-                  <Dropdown.Item as="a" href="#root">
-                    Action
-                  </Dropdown.Item>
-                  <Dropdown.Item as="a" href="#root">
-                    Another Action
-                  </Dropdown.Item>
-                  <Dropdown.Item as="a" href="#root">
-                    Something else here
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Header>Navbar header</Dropdown.Header>
-                  <Dropdown.Item as="a" href="#root">
-                    Separated link
-                  </Dropdown.Item>
-                  <Dropdown.Item as="a" href="#root">
-                    One more separated link
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
               <Menu.Menu position="right">
-                <Menu.Item as="a">Default</Menu.Item>
-                <Menu.Item active as="a">
-                  Fixed top
-                </Menu.Item>
                 <Menu.Item onClick={signOut}>Logout</Menu.Item>
               </Menu.Menu>
             </Container>
@@ -100,33 +88,36 @@ function Layout() {
               fluid
               style={dropdownMenuStyle}
             >
-              <Menu.Item active as="a">
+              <Menu.Item as={NavLink}
+                to="/" 
+                name="home" 
+                active={activeItem === "home"}
+                onClick={()=>setActiveItemOnClick("home")}
+                >
                 Home
               </Menu.Item>
-              <Menu.Item as="a">About</Menu.Item>
-              <Menu.Item as="a">Contact</Menu.Item>
-              <Dropdown text="Dropdown" className="item">
-                <Dropdown.Menu>
-                  <Dropdown.Item as="a">Action</Dropdown.Item>
-                  <Dropdown.Item as="a">Another action</Dropdown.Item>
-                  <Dropdown.Item as="a">Something else here</Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Header>Navbar header</Dropdown.Header>
-                  <Dropdown.Item as="a">Seperated link</Dropdown.Item>
-                  <Dropdown.Item as="a">One more seperated link</Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-              <Menu.Item as="a">Default</Menu.Item>
-              <Menu.Item as="a">Static top</Menu.Item>
-              <Menu.Item active as="a">
-                Fixed top
+              <Menu.Item as={NavLink}
+                to="/chat"
+                name="chat"
+                active={activeItem === "chat"}
+                onClick={()=>setActiveItemOnClick("chat")}
+                >
+                Chat
               </Menu.Item>
+              <Menu.Item onClick={signOut}>Logout</Menu.Item>
             </Menu>
           </Menu>
         </Grid>
-        <Container className="content-body">
-            <Outlet />
-        </Container>
+        <main>
+          <Container>
+              <Outlet />
+          </Container>
+        </main>
+        <footer>
+          <Container>
+            <p>Place sticky footer content here.</p>
+          </Container>
+        </footer>
       </div>
     );
 }

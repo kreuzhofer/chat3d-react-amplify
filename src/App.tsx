@@ -7,6 +7,7 @@ import Layout from "./Pages/Layout";
 import Home from "./Pages/Home";
 import Chat from "./Pages/Chat";
 import Profile from "./Pages/Profile";
+import ClaimPatreon from "./Pages/ClaimPatreon";
 
 //const client = generateClient<Schema>();
 
@@ -42,6 +43,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="chat" element={<Chat />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="claim-patreon" element={<ClaimPatreon />} />
         </Route>
       </Routes>
     </BrowserRouter>

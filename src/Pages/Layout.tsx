@@ -115,7 +115,7 @@ function Layout() {
         </main>
         <footer>
           <Container>
-            <p>Place sticky footer content here.</p>
+            <p><a href="https://www.crosslink.io/datenschutzerklaerung/" target="_blank">Data protection</a>&nbsp;|&nbsp;<a href="https://www.crosslink.io/impressum-anbieterkennzeichnung/" target="_blank">Imprint</a></p>
           </Container>
         </footer>
       </div>

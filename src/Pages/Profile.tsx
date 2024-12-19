@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
     function claimPatreonBenefits() {
   //   // send get request to patreon api, example: GET www.patreon.com/oauth2/authorize
   //   // ?response_type=code
@@ -15,13 +13,6 @@ import { useEffect } from "react";
 
 function Profile()
 {
-    useEffect(() => {
-        // list url parameters using react  
-        const urlParams = new URLSearchParams(window.location.search);
-        const myParam = urlParams.get('code');
-        console.log("code: "+myParam);
-    }, []);
-
     return (
         <div>
             <h1>Profile</h1>

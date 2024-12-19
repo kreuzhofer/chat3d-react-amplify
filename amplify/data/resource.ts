@@ -34,7 +34,9 @@ const schema = a.schema({
     .authorization((allow) => [allow.authenticated()]),
 
   claimPatreonBenefits: a
-    .query()
+    .query().arguments({
+      code: a.string(),
+    })
     .returns(a.string())
     .handler(a.handler.function(claimPatreonBenefitsFunction))
     .authorization((allow) => [allow.authenticated()]),

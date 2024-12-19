@@ -41,9 +41,9 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="chat" element={<Chat />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="claim-patreon" element={<ClaimPatreon />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/claim-patreon" element={<ClaimPatreon />} />
         </Route>
       </Routes>
     </BrowserRouter>

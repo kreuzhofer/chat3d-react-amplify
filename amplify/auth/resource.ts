@@ -15,9 +15,9 @@ export const auth = defineAuth({
         scopes: ['email']
       },
       callbackUrls: [
-        'http://localhost:5173/profile',
+        ''+secret('GOOGLE_CALLBACK_URL'),
       ],
-      logoutUrls: ['http://localhost:5173/'],
+      logoutUrls: [''+secret('GOOGLE_LOGOUT_URL')],
     }
   },
   

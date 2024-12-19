@@ -8,7 +8,7 @@ function ChatMessage(item: Schema["ChatItem"]["type"])
     return (
         <ChatMessageUser {...item} />
     )
-    else if(item.role === "ai")
+    else if(item.role === "assistant")
     return (
         <ChatMessageAI {...item} />
     );

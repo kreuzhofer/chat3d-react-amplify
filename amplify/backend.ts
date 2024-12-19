@@ -22,6 +22,8 @@ const statement = new iam.PolicyStatement({
   actions: [
     "lambda:InvokeFunction",
     "sqs:SendMessage",
+    "bedrock:InvokeModel",
+    "bedrock:InvokeModelWithResponseStream"
     ],
   resources: ['*'],
 });

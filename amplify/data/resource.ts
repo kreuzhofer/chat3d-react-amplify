@@ -8,19 +8,27 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-
+  
+  // ChatContext and Chat store any chat conversations and their current state even if incomplete
+  ChatContext: a
+    .model({
+      name: a.string(),
+      chatItems: a.hasMany("ChatItem", "chatContextId"),
+  }).authorization(allow => [allow.owner()]),
   ChatItem: a
     .model({
-      context: a.string(),
+      chatContextId: a.id(),
+      chatContext: a.belongsTo("ChatContext", "chatContextId"),
       itemType: a.string(),
       role: a.string(),
       message: a.string(),
       attachment: a.string(),
-    }).authorization((allow) => [allow.owner()]),
+    }).authorization((allow) => [allow.authenticated()]),
   
   submitQuery: a
     .query()
     .arguments({
+      chatContextId: a.id(),
       query: a.string(),
     })
     .returns(a.string())
@@ -34,7 +42,7 @@ const schema = a.schema({
     .returns(a.string())
     .handler(a.handler.function(claimPatreonBenefitsFunction))
     .authorization((allow) => [allow.authenticated()]),
-});
+}).authorization((allow) => [allow.resource(submitQueryFunction)]);
 
 export type Schema = ClientSchema<typeof schema>;
 

@@ -4,6 +4,7 @@ import {
     Container,
     Grid,
     Icon,
+    Image,
     Menu,
   } from "semantic-ui-react";
 import { SetStateAction, useState } from "react";
@@ -40,8 +41,8 @@ function Layout() {
         <Grid padded className="tablet computer only">
           <Menu borderless fluid fixed="top" size="huge">
             <Container>
-              <Menu.Item header as="a">
-              <img src="images/chat3dlogo.png"/>&nbsp;<p>Chat3D</p>
+              <Menu.Item>
+                <Image src="/images/chat3dlogo.png" />&nbsp;<p>Chat3D</p>
               </Menu.Item>
               <Menu.Item as={NavLink}
                 to="/" 
@@ -67,8 +68,8 @@ function Layout() {
         </Grid>
         <Grid padded className="mobile only">
           <Menu borderless fluid fixed="top" size="huge">
-            <Menu.Item header as="a">
-              <img src="images/chat3dlogo.png"/>&nbsp;<p>Chat3D</p>
+            <Menu.Item>
+              <Image src="/images/chat3dlogo.png" />&nbsp;<p>Chat3D</p>
             </Menu.Item>
             <Menu.Menu position="right">
               <Menu.Item>

@@ -34,6 +34,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
     // https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/javascript_bedrock-runtime_code_examples.html
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/bedrock-runtime/command/ConverseCommand/
+    // https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use-examples.html
     const bedrockClient = new BedrockRuntimeClient({ region: "us-east-1" });
     const dataClient = generateClient<Schema>();
 

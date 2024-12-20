@@ -8,6 +8,7 @@ export const claimPatreonBenefitsFunction = defineFunction({
   timeoutSeconds: 60,
   environment: {
     PATREON_CLIENT_ID: secret('PATREON_CLIENT_ID'),
-    PATREON_CLIENT_SECRET: secret('PATREON_CLIENT_SECRET')
+    PATREON_CLIENT_SECRET: secret('PATREON_CLIENT_SECRET'),
+    PATREON_REDIRECT_URI: process.env.PATREON_REDIRECT_URI || '',
   } 
 });

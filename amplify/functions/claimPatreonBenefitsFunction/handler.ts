@@ -1,6 +1,5 @@
 import type { Schema } from "../../data/resource"
 import { env } from "$amplify/env/claimPatreonBenefitsFunction";
-import { URLEncodingFormat } from "aws-cdk-lib/aws-stepfunctions-tasks";
 
 var patreon = require('patreon');
 var patreonAPI = patreon.patreon;
@@ -36,7 +35,7 @@ async function handleOAuthRedirectRequest(oauthGrantCode: String): Promise<any> 
   const CLIENT_SECRET = env.PATREON_CLIENT_SECRET;
   console.log("CLIENT_SECRET: "+CLIENT_SECRET);
   const patreonOAuthClient = patreonOAuth(CLIENT_ID, CLIENT_SECRET);
-  const redirectURL = 'http://localhost:5173/claim-patreon';
+  const redirectURL = env.PATREON_REDIRECT_URI;
 
   var result = await patreonOAuthClient
     .getTokens(oauthGrantCode, redirectURL)

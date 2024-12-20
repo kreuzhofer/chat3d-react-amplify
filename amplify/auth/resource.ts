@@ -15,9 +15,9 @@ export const auth = defineAuth({
         scopes: ['email']
       },
       callbackUrls: [
-        ''+secret('GOOGLE_CALLBACK_URL'),
+        process.env.GOOGLE_CALLBACK_URL || '',
       ],
-      logoutUrls: [''+secret('GOOGLE_LOGOUT_URL')],
+      logoutUrls: [process.env.GOOGLE_LOGOUT_URL || ''],
     }
   },
   

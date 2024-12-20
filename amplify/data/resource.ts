@@ -3,12 +3,6 @@ import { submitQueryFunction } from "../functions/submitqueryfunction/resources"
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 
 const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-    })
-    .authorization((allow) => [allow.publicApiKey()]),
-  
   // ChatContext and Chat store any chat conversations and their current state even if incomplete
   ChatContext: a
     .model({

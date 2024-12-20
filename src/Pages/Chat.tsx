@@ -13,12 +13,14 @@ function Chat()
     const [chatMessages, setChatMessages] = useState<Array<Schema["ChatItem"]["type"]>>([]);
     const [query, setQuery] = useState<string>("");
     const [chatContext, setChatContext] = useState<any>(null);
+    const [chatId, setChatId] = useState<string>("");
     const navigate = useNavigate();
 
     var params = useParams();
     if(params.chatId !== undefined)
     {
-        var chatId = params.chatId;
+        if(params.chatId !== chatId)
+            setChatId(params.chatId);
     }
 
     // try {
@@ -36,17 +38,27 @@ function Chat()
 
     async function submitChatBackendCall()
     {
-        if(chatContext === null && chatId === undefined)
+        if(chatContext === null && chatId === "")
         {
+            console.log("No context and no chatId");
             const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
             setChatContext(chatContextCreate.data);
             console.log("chat context data: "+JSON.stringify(chatContextCreate.data));
             console.log("chat context created: "+chatContextCreate.data?.id);
             console.log("chat context owner: "+chatContextCreate.data?.owner);
+            // create user message immetiately
+            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "user", message: query, itemType: "message" });
+            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "assistant", message: "", itemType: "message", state: "pending" });
+            setQuery(""); // remove last query
+            var result = await client.queries.submitQuery({chatContextId: chatContextCreate.data?.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
+            console.log("ChatQueryResult: "+JSON.stringify(result));
+
+            // navigate to new context
             navigate("/chat/"+chatContextCreate.data?.id);
         }
-        if(chatContext === null && chatId !== undefined)
+        if(chatContext === null && chatId !== "")
         {
+            console.log("No context but chatId");
             const chatContextGet = await client.models.ChatContext.get({ id: chatId });
             setChatContext(chatContextGet.data);
             console.log("chat context retrieved: "+chatContextGet.data?.id);
@@ -56,79 +68,48 @@ function Chat()
         }
         if(chatContext !== null)
         {
-            var result = await client.queries.submitQuery({chatContextId: chatContext.id, query: query });
-            console.log(JSON.stringify(result));
+            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "user", message: query, itemType: "message" });
+            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "assistant", message: "", itemType: "message", state: "pending" });
+            setQuery(""); // remove last query
+            var result = await client.queries.submitQuery({chatContextId: chatContext.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
+            console.log("ChatQueryResult: "+JSON.stringify(result));
         }
     }
 
     useEffect(() => {
-        client.models.ChatItem.observeQuery({
-            filter: { chatContextId: { eq: chatId } },
-            }).subscribe({
-            next: (data) => {
-                const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
-                setChatMessages([...sortedItems])
-                console.log("data.items: "+data.items);
-            },
-        });
 
+        async function fetchChatContext()
+        {
+            const chatContextGet = await client.models.ChatContext.get({ id: chatId });
+            setChatContext(chatContextGet.data);
+            console.log("Chat context auto loaded")
+        }
 
-/*
-        setChatMessages(
-            [
-                 {
-                     id: "0", context: "1", itemType: "message", role: "user", message: "Hello!",
-                     createdAt: "",
-                     updatedAt: ""
-                 },
-                 {
-                     id: "1", context: "1", itemType: "message", role: "ai", message: "Hello, I am your AI 3D designer. What can I create for you today?",
-                     createdAt: "",
-                     updatedAt: ""
-                 },
-                 {
-                    id: "2", context: "1", itemType: "message", role: "user", message: "Can you create a 3d model of a candle stand?",
-                    createdAt: "",
-                    updatedAt: ""
+        console.log("chatId in useEffect: "+chatId);
+        if(chatId !== "")
+        {
+            fetchChatContext();
+        } else setChatContext(null);
+
+        if(chatId !== "")
+        {
+            const subscription = client.models.ChatItem.observeQuery({
+                filter: { chatContextId: { eq: chatId } },
+                }).subscribe({
+                next: (data) => {
+                    const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    setChatMessages([...sortedItems])
+                    console.log("data.items: "+data.items);
                 },
-                {
-                    id: "3", context: "1", itemType: "message", role: "ai", message: "Sure! let me create the model for you. This may take about one minute...",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-                {
-                    id: "4", context: "1", itemType: "image", role: "ai", message: "This is what I created for you, do you like it?",
-                    attachment: "images/candleStand.png",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-                {
-                    id: "5", context: "1", itemType: "message", role: "user", 
-                    message: "Yes! can I please have an STL file of this?",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-                {
-                    id: "6", context: "1", itemType: "message", role: "ai", 
-                    message: "Sure! let me render the STL for you. This may take between 1 and 5 minutes. You can also close the app and I'll notify you when it's ready.",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-                {
-                    id: "7", context: "1", itemType: "stl", role: "ai", message: "This is what I created for you, do you like it?",
-                    attachment: "images/candleStand.png",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-                {
-                    id: "8", context: "1", itemType: "message", role: "ai", 
-                    message: "Can I do anything else for you?",
-                    createdAt: "",
-                    updatedAt: ""
-                },
-            ]);
-              */
-    }, []);
+            });
+            console.log("ChatItem subscription created");
+            return ()=>{
+                subscription.unsubscribe()
+                console.log("ChatItem subscription removed");
+            };
+        }
+        else return ()=>{};
+    }, [chatId]);
 
     return (
         <div>
@@ -136,7 +117,7 @@ function Chat()
                 <h2 className="ui header">AI Chat</h2>
                 <div className="chat-container">
                     {chatMessages.map((item) => (
-                        <ChatMessage {...item} />
+                        <ChatMessage {...item} key={item.id} />
                     ))}
                 </div>
                 <div className="input-container">

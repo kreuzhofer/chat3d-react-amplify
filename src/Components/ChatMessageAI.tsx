@@ -1,12 +1,15 @@
 import type { Schema } from "../../amplify/data/resource";
-import { Image } from "semantic-ui-react";
+import { Image, Loader } from "semantic-ui-react";
 
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {
     if(item.itemType === "message")
     return (
         <div className="message ai">
-            <div className="content">{item.message}</div>
+            <div className="content">
+                {item.message}
+                <Loader active={item.state==="pending"} inline />
+            </div>
         </div>
     )
     else if(item.itemType === "image")

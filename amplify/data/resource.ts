@@ -23,12 +23,15 @@ const schema = a.schema({
       role: a.string(),
       message: a.string(),
       attachment: a.string(),
-    }).authorization((allow) => [allow.authenticated()]),
+      state: a.string(),
+    }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a
     .query()
     .arguments({
       chatContextId: a.id(),
+      newUserChatItemId: a.id(),
+      newAssistantChatItemId: a.id(),
       query: a.string(),
     })
     .returns(a.string())

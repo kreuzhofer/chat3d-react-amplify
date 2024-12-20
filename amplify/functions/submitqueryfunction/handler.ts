@@ -27,9 +27,9 @@ async function invokeLambdaFunction(query: string) {
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
-    const { chatContextId, query } = event.arguments;
-    if (!query || !chatContextId) {
-        throw new Error("ChatContextId and Query are required");
+    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query } = event.arguments;
+    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId) {
+        throw new Error("Missing query parameter(s)");
     }
 
     // https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/javascript_bedrock-runtime_code_examples.html
@@ -44,37 +44,61 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
 
     var chatItems = await chatContext.data?.chatItems();
-    var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+    //const newAssistantChatItem = chatItems?.data.find((item) => item.id === newAssistantChatItemId);
+
+    var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1).filter((item) => item.id !== newAssistantChatItemId);
     const conversation = sortedItems?.map((item) => {
       return {
         role: item.role,
         content: [{ text: item.message }],
       };
     });
-    conversation?.push({ role: "user", content: [{ text: query }] });
 
-    console.log(JSON.stringify(conversation));
-
-    // add new item to database
-    await dataClient.models.ChatItem.create({ chatContextId: chatContextId, role: "user", message: query, itemType: "message" });
+    console.log("previous conversation: "+JSON.stringify(conversation));
 
     const converseCommandInput = {
       modelId: modelId,
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
+      // tool config for dummy weather tool
+      toolConfig: {
+        tools: [
+          {
+            toolSpec: {
+              name: "get_weather",
+              description: "Get the weather for a location",
+              inputSchema: {
+                json: 
+                  {
+                    "type": "object",
+                    "properties": {
+                      "city": { "type": "string" },
+                    },
+                    "required": ["city"]
+                  }
+              }
+            }
+          }
+        ],
+      },
     }
 
     // Create a command with the model ID, the message, and a basic configuration.
     const command = new ConverseCommand(converseCommandInput);
     const response = await bedrockClient.send(command);
 
-    // add response to database
+    // update response in database
     console.log(response);
-    if (response.output?.message?.content) {
-      response.output?.message?.content.forEach(async element => {
-        await dataClient.models.ChatItem.create({ chatContextId: chatContextId, role: "assistant", message: element.text, itemType: "message" });
-      });
-        
+
+    if(response.stopReason === "tool_use")
+    {
+      console.log("tool use detected");
+    }
+
+    // get first item in response.output?.message?.content
+    var assistantMessage = response.output?.message?.content ? response.output.message.content[0] : null;
+    if (assistantMessage) {
+      await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, message: assistantMessage.text, state: "complete" });
     } else {
         throw new Error("Response content is undefined");
     }

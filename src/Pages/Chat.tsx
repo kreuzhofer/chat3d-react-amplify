@@ -1,59 +1,145 @@
+import type { Schema } from "../../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+import ChatMessage from "../Components/ChatMessage";
+import { useEffect, useState } from "react";
+import { Button, Input } from 'semantic-ui-react'
+import { useParams, useNavigate } from "react-router";
+// import { getCurrentUser } from 'aws-amplify/auth';
+
+const client = generateClient<Schema>();
+
 function Chat()
 {
+    const [chatMessages, setChatMessages] = useState<Array<Schema["ChatItem"]["type"]>>([]);
+    const [query, setQuery] = useState<string>("");
+    const [chatContext, setChatContext] = useState<any>(null);
+    const [chatId, setChatId] = useState<string>("");
+    const navigate = useNavigate();
+
+    var params = useParams();
+    if(params.chatId !== undefined)
+    {
+        if(params.chatId !== chatId)
+            setChatId(params.chatId);
+    }
+
+    // try {
+    //     getCurrentUser().then((user) => {  
+    //         console.log("user", user);
+    //         if(user !== null)
+    //         {
+    //             var username = user.username;
+    //             console.log("username", username);
+    //         }
+    //     });
+    // } catch (error) {
+    //     console.error("error fetching user", error);
+    // }
+
+    async function submitChatBackendCall()
+    {
+        if(chatContext === null && chatId === "")
+        {
+            console.log("No context and no chatId");
+            const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
+            setChatContext(chatContextCreate.data);
+            console.log("chat context data: "+JSON.stringify(chatContextCreate.data));
+            console.log("chat context created: "+chatContextCreate.data?.id);
+            console.log("chat context owner: "+chatContextCreate.data?.owner);
+            // create user message immetiately
+            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "user", message: query, itemType: "message" });
+            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "assistant", message: "", itemType: "message", state: "pending" });
+            setQuery(""); // remove last query
+            var result = await client.queries.submitQuery({chatContextId: chatContextCreate.data?.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
+            console.log("ChatQueryResult: "+JSON.stringify(result));
+
+            // navigate to new context
+            navigate("/chat/"+chatContextCreate.data?.id);
+        }
+        if(chatContext === null && chatId !== "")
+        {
+            console.log("No context but chatId");
+            const chatContextGet = await client.models.ChatContext.get({ id: chatId });
+            setChatContext(chatContextGet.data);
+            console.log("chat context retrieved: "+chatContextGet.data?.id);
+            const fetchChatItems = await chatContextGet.data?.chatItems();
+            const sortedItems = fetchChatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+            setChatMessages(sortedItems ? [...sortedItems] : []);
+        }
+        if(chatContext !== null)
+        {
+            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "user", message: query, itemType: "message" });
+            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "assistant", message: "", itemType: "message", state: "pending" });
+            setQuery(""); // remove last query
+            var result = await client.queries.submitQuery({chatContextId: chatContext.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
+            console.log("ChatQueryResult: "+JSON.stringify(result));
+        }
+    }
+
+    useEffect(() => {
+
+        async function fetchChatContext()
+        {
+            const chatContextGet = await client.models.ChatContext.get({ id: chatId });
+            setChatContext(chatContextGet.data);
+            console.log("Chat context auto loaded")
+        }
+
+        console.log("chatId in useEffect: "+chatId);
+        if(chatId !== "")
+        {
+            fetchChatContext();
+        } else setChatContext(null);
+
+        if(chatId !== "")
+        {
+            const subscription = client.models.ChatItem.observeQuery({
+                filter: { chatContextId: { eq: chatId } },
+                }).subscribe({
+                next: (data) => {
+                    const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    setChatMessages([...sortedItems])
+                    console.log("data.items: "+data.items);
+                },
+            });
+            console.log("ChatItem subscription created");
+            return ()=>{
+                subscription.unsubscribe()
+                console.log("ChatItem subscription removed");
+            };
+        }
+        else return ()=>{};
+    }, [chatId]);
+
     return (
         <div>
             <div className="ui container">
                 <h2 className="ui header">AI Chat</h2>
                 <div className="chat-container">
-                    <div className="message user">
-                        <div className="content">Hello!</div>
-                    </div>
-                    <div className="message ai">
-                        <div className="content">Hello, I am your AI 3D designer. What can I create for you today?
-                        </div>
-                    </div>
-                    <div className="message user">
-                    <div className="content">Can you create a 3d model of a candle stand?</div>
-                    </div>
-                    <div className="message ai">
-                        <div className="content">Sure! let me create the model for you. This may take about one minute...
-                        </div>
-                    </div>
-                    <div className="message ai">
-                        <div className="content">This is what I created for you, do you like it?
-                            <div className="response-3dmodel">
-                                <img className="response-image" src="images/candleStand.png" alt="3d model" />
-                            </div>
-                            <div className="response-actions">
-                                <i className="thumbs up outline icon"></i>
-                                <i className="thumbs down outline icon"></i>
-                                <i className="refresh icon"></i>
-                            </div>  
-                        </div>
-                    </div>
-                    <div className="message user">
-                        <div className="content">Yes! can I please have an STL file of this?</div>
-                    </div>
-                    <div className="message ai">
-                        <div className="content">Sure! let me render the STL for you. This may take between 1 and 5 minutes. You can also close the app and I'll notify you when it's ready.
-                        </div>
-                    </div>
-                    <div className="message ai">
-                        <div className="content">Your download of the candle stand is ready.
-                            <div className="response-actions">
-                                <a href="images/candleStand.stl" download="candleStand.stl" className="ui primary button">Download STL</a>
-                            </div>
-                        </div>
-                    </div>   
-                    <div className="message ai">
-                        <div className="content">Can I do anything else for you?</div>
-                    </div>            
+                    {chatMessages.map((item) => (
+                        <ChatMessage {...item} key={item.id} />
+                    ))}
                 </div>
                 <div className="input-container">
                     <div className="ui input input">
-                        <input type="text" placeholder="Type a message..." />
+                        <Input
+                            type="text" 
+                            placeholder="Type a message..." 
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyPress={(e: { key: string; }) => {
+                                if (e.key === "Enter") {
+                                    submitChatBackendCall();
+                                }
+                            }}
+                            onSend={submitChatBackendCall}
+                            
+                        >
+                            <input />
+                            <Button onClick={submitChatBackendCall}>Send</Button>
+                        </Input>
                     </div>
-                    <button className="ui primary button">Send</button>
+
                 </div>
             </div>
         </div>

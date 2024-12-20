@@ -122,7 +122,7 @@ function Chat()
                 </div>
                 <div className="input-container">
                     <div className="ui input input">
-                        <Input 
+                        <Input
                             type="text" 
                             placeholder="Type a message..." 
                             value={query}
@@ -132,14 +132,14 @@ function Chat()
                                     submitChatBackendCall();
                                 }
                             }}
-                        />
+                            onSend={submitChatBackendCall}
+                            
+                        >
+                            <input />
+                            <Button onClick={submitChatBackendCall}>Send</Button>
+                        </Input>
                     </div>
-                    <Button 
-                        className="ui primary button"
-                        onClick={submitChatBackendCall}
-                    >
-                        Send
-                    </Button>
+
                 </div>
             </div>
         </div>

@@ -99,7 +99,7 @@ function Chat()
                 next: (data) => {
                     const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
                     setChatMessages([...sortedItems])
-                    console.log("data.items: "+data.items);
+                    console.log("data.items: "+JSON.stringify(data.items));
                 },
             });
             console.log("ChatItem subscription created");

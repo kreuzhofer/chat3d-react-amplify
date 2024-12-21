@@ -61,21 +61,27 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
       modelId: modelId,
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
-      // tool config for dummy weather tool
+      system:[{
+        text: "You are a helpful assistant. I am a user. I might ask you to create a 3D model or other things about 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning."+ 
+        "Every time want to use a tool to create a 3D model or any other tool, you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool."+
+        "You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning. Any other discussions you will politely decline."
+      }],
       toolConfig: {
         tools: [
           {
             toolSpec: {
-              name: "get_weather",
-              description: "Get the weather for a location",
+              name: "get_3D_model",
+              description: "Create a 3D model from the user's specification. "+
+                  "Use this tool, when the user asks for something to create or the prompt is just something like an object. "+
+                  "For example, if the prompt is 'a castle', then this is a request for a 3d model. ",
               inputSchema: {
                 json: 
                   {
                     "type": "object",
                     "properties": {
-                      "city": { "type": "string" },
+                      "description": { "type": "string" },
                     },
-                    "required": ["city"]
+                    "required": ["description"]
                   }
               }
             }
@@ -97,11 +103,19 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     }
 
     // get first item in response.output?.message?.content
-    var assistantMessage = response.output?.message?.content ? response.output.message.content[0] : null;
+    var assistantMessages = response.output?.message?.content;
+    console.log("assistantMessages: "+JSON.stringify(assistantMessages));
+    var assistantMessage = assistantMessages?.find((item) => item.text);
     if (assistantMessage) {
       await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, message: assistantMessage.text, state: "complete" });
     } else {
         throw new Error("Response content is undefined");
+    }
+
+    if(response.stopReason === "tool_use")
+    {
+        var toolResponse = response.output?.message?.content?.find((item) => item.toolUse);
+        console.log("tool response: "+JSON.stringify(toolResponse));
     }
 
     return JSON.stringify(response);

@@ -1,5 +1,5 @@
 import type { Schema, ChatMessage } from "../../amplify/data/resource";
-import { Dimmer, Image, Loader, Segment } from "semantic-ui-react";
+import { Image, Loader, Segment } from "semantic-ui-react";
 
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {

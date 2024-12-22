@@ -4,6 +4,8 @@ import ChatMessage from "../Components/ChatMessage";
 import { useEffect, useState } from "react";
 import { Button, Input } from 'semantic-ui-react'
 import { useParams, useNavigate } from "react-router";
+import { v4 as uuidv4 } from 'uuid';
+
 // import { getCurrentUser } from 'aws-amplify/auth';
 
 const client = generateClient<Schema>();
@@ -36,43 +38,86 @@ function Chat()
     //     console.error("error fetching user", error);
     // }
 
-    async function submitChatBackendCall()
-    {
-        if(chatContext === null && chatId === "")
-        {
+    async function submitChatBackendCall() {
+        if (chatContext === null && chatId === "") {
             console.log("No context and no chatId");
             const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
             setChatContext(chatContextCreate.data);
-            console.log("chat context data: "+JSON.stringify(chatContextCreate.data));
-            console.log("chat context created: "+chatContextCreate.data?.id);
-            console.log("chat context owner: "+chatContextCreate.data?.owner);
-            // create user message immetiately
-            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "user", message: query, itemType: "message" });
-            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContextCreate.data?.id, role: "assistant", message: "", itemType: "message", state: "pending" });
-            setQuery(""); // remove last query
-            var result = await client.queries.submitQuery({chatContextId: chatContextCreate.data?.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
-            console.log("ChatQueryResult: "+JSON.stringify(result));
+            console.log("chat context data: " + JSON.stringify(chatContextCreate.data));
+            console.log("chat context created: " + chatContextCreate.data?.id);
+            console.log("chat context owner: " + chatContextCreate.data?.owner);
 
-            // navigate to new context
-            navigate("/chat/"+chatContextCreate.data?.id);
+            if (chatContextCreate.data?.id) {
+                // create user message immediately
+                var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContextCreate.data.id);
+
+                setQuery(""); // remove last query
+                var result = await client.queries.submitQuery({
+                    chatContextId: chatContextCreate.data.id,
+                    query: query,
+                    newUserChatItemId: newUserChatItem.data?.id,
+                    newAssistantChatItemId: newAssistantChatItem.data?.id
+                });
+                console.log("ChatQueryResult: " + JSON.stringify(result));
+
+                // navigate to new context
+                navigate("/chat/" + chatContextCreate.data.id);
+            } else {
+                console.error("Failed to create chat context");
+            }
         }
-        if(chatContext === null && chatId !== "")
-        {
+
+        if (chatContext === null && chatId !== "") {
             console.log("No context but chatId");
             const chatContextGet = await client.models.ChatContext.get({ id: chatId });
             setChatContext(chatContextGet.data);
-            console.log("chat context retrieved: "+chatContextGet.data?.id);
-            const fetchChatItems = await chatContextGet.data?.chatItems();
-            const sortedItems = fetchChatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
-            setChatMessages(sortedItems ? [...sortedItems] : []);
+            console.log("chat context retrieved: " + chatContextGet.data?.id);
+
+            if (chatContextGet.data?.chatItems) {
+                const fetchChatItems = await chatContextGet.data.chatItems();
+                const sortedItems = fetchChatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                setChatMessages(sortedItems ? [...sortedItems] : []);
+            } else {
+                console.error("Failed to retrieve chat items");
+            }
         }
+
         if(chatContext !== null)
         {
-            var newUserChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "user", message: query, itemType: "message" });
-            var newAssistantChatItem = await client.models.ChatItem.create({ chatContextId: chatContext.id, role: "assistant", message: "", itemType: "message", state: "pending" });
+            var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContext.id);
             setQuery(""); // remove last query
             var result = await client.queries.submitQuery({chatContextId: chatContext.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
             console.log("ChatQueryResult: "+JSON.stringify(result));
+        }
+
+        async function createNewChatItems(chatContextId: string) {
+            console.log("creating new chat items for context: " + chatContextId);
+            var newUserChatItem = await client.models.ChatItem.create({
+                chatContextId: chatContextId, role: "user",
+                messages: JSON.stringify([
+                    {
+                        id: uuidv4(),
+                        text: query,
+                        itemType: "message",
+                        state: "completed"
+                    }
+                ])
+            });
+            console.log(newUserChatItem.errors);
+            var newAssistantChatItem = await client.models.ChatItem.create({
+                chatContextId: chatContextId, role: "assistant",
+                messages: JSON.stringify([
+                    {
+                        id: uuidv4(),
+                        text: "",
+                        itemType: "message",
+                        state: "pending"
+                    }
+                ])
+            });
+            console.log(newAssistantChatItem.errors);
+            console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
+            return { newUserChatItem, newAssistantChatItem };
         }
     }
 

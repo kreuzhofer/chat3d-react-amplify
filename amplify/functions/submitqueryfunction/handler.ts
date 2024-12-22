@@ -1,4 +1,4 @@
-import type { Schema } from "../../data/resource"
+import type { Schema, ChatMessage } from "../../data/resource"
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { BedrockRuntimeClient, ConverseCommand, Message  } from "@aws-sdk/client-bedrock-runtime";
 import { generateClient } from "aws-amplify/data";
@@ -6,9 +6,31 @@ import { generateClient } from "aws-amplify/data";
 import { Amplify } from 'aws-amplify';
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime';
 import { env } from '$amplify/env/submitQueryFunction';
+import { v4 as uuidv4 } from 'uuid';
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
+
+interface DocumentSections {
+  plan: string;
+  code: string;
+  comment: string;
+}
+
+function extractSections(text: string): DocumentSections {
+  
+  const extractSection = (section: string): string => {
+    const regex = new RegExp(`<${section}>\\n([\\s\\S]*?)\\n<\/${section}>|<${section}>([\\s\\S]*?)<\/${section}>`);
+    const match = text.match(regex);
+    return (match?.[1] || match?.[2] || '').trim();
+  };
+
+  return {
+    plan: extractSection('plan'),
+    code: extractSection('code'),
+    comment: extractSection('comment')
+  };
+}
 
 async function invokeLambdaFunction(query: string) {
     const lambdaClient = new LambdaClient({});
@@ -45,15 +67,17 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
 
     var chatItems = await chatContext.data?.chatItems();
-    //const newAssistantChatItem = chatItems?.data.find((item) => item.id === newAssistantChatItemId);
 
     var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1).filter((item) => item.id !== newAssistantChatItemId);
     const conversation = sortedItems?.map((item) => {
-      return {
-        role: item.role,
-        content: [{ text: item.message }],
-      };
-    });
+      const messages = JSON.parse(item.messages as string) as ChatMessage[];
+      return messages.map((message) => {
+        return {
+          role: item.role,
+          content: [{ text: message.text }],
+        };
+      });
+    }).flat();
 
     console.log("previous conversation: "+JSON.stringify(conversation));
 
@@ -107,21 +131,111 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     console.log("assistantMessages: "+JSON.stringify(assistantMessages));
     var assistantMessage = assistantMessages?.find((item) => item.text);
     if (assistantMessage) {
-      await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, message: assistantMessage.text, state: "complete" });
+      await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+        messages: JSON.stringify(
+          [
+            { 
+              itemType: "message",
+              text: assistantMessage.text,
+              state: "completed"
+            }
+          ])
+        });
     } else {
         throw new Error("Response content is undefined");
     }
 
-    if(response.stopReason === "tool_use")
-    {
-        var toolResponse = response.output?.message?.content?.find((item) => item.toolUse);
-        console.log("tool response: "+JSON.stringify(toolResponse));
+    if (response.stopReason === "tool_use") {
+        const toolRequest = response.output?.message?.content?.find((item) => item.toolUse);
+        console.log("tool request: " + JSON.stringify(toolRequest));
+
+        if (toolRequest && toolRequest.toolUse?.name === "get_3D_model") {
+            console.log("3d model request detected");
+
+            // Type guard to check if input is an object with a description property
+            const input = toolRequest.toolUse?.input;
+            if (typeof input === 'object' && input !== null && 'description' in input) {
+                const subject = input.description;
+
+                var currentChatItem = await dataClient.models.ChatItem.get({ id: newAssistantChatItemId });
+                var messages = JSON.parse(currentChatItem.data?.messages as string) as ChatMessage[];
+                var messageId = uuidv4();
+
+                messages.push(
+                  {
+                    id: messageId,
+                    itemType: "image",
+                    text: "", 
+                    state: "pending",
+                    attachment: "/images/generating.png"
+                  } as ChatMessage
+                );
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });                
+
+                const generate3dmodelId = "us.anthropic.claude-3-5-sonnet-20241022-v2:0";
+                const generate3dmodelMessages = [
+                    {
+                        role: "user",
+                        content: [{ text: subject }],
+                    },
+                ];
+
+                const system_prompt_3d_generator = "You are a professional OpenScad programmer with the skills to create highly detailed 3d models in OpenScad script language. "+
+                "You will strive for high detail, dimensional accuracy and structural integrity. "+
+                "If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together. "+
+                "Always start with creating functions for specific details of the final model so you are not missing out on them later. "+
+                "Body parts should be connected, avoid parts floating in the air unless intended. "+
+                "Make models parametric to have parameters for modifying dimensions of the object. "+
+                "Always set $fn to 100. Start every answer by creating a plan of how you are going to create the object and how it will ensure to fit the requested object. "+
+                "Elaborate step by step your thoughts and add the Openscad script as your last element to the response. "+
+                "Add decent commenting in your code to support your thoughts how this achieves the result. "+
+                "Do not add any additional characters like triple-hyphens to the beginning or end of the code. "+
+                "Return your results separated in exactly three xml tags. <plan></plan> with your detailed plan for the model creation. "+
+                "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names."
+
+                const converse3DModelCommandInput = {
+                    modelId: generate3dmodelId,
+                    messages: generate3dmodelMessages as Message[],
+                    inferenceConfig: { maxTokens: 4096, temperature: 0.5, topP: 0.9 },
+                    system: [{
+                        text: system_prompt_3d_generator
+                    }],
+                };
+
+                const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
+                const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
+
+                var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
+                console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));
+                var converse3DModelAssistantResponse = converse3DModelAssistantMessages?.find((item) => item.text);
+
+                console.log("converse3DModelAssistantResponse: "+JSON.stringify(converse3DModelAssistantResponse));
+
+                // create model using openscad
+
+                // update message inside of newAssistantChatItem with state completed
+                messages.pop()
+                messages.push(
+                  {
+                    id: messageId,
+                    itemType: "image",
+                    text: "here it is",
+                    state: "completed",
+                    attachment: "/images/candleStand.png"
+                  } as ChatMessage
+                );
+
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });  
+
+            } else {
+                throw new Error("Input does not have a description property");
+            }
+        }
     }
 
     return JSON.stringify(response);
-    // call lambda function to get the result. the lambda is known by its name
-    // var lambdaResult = await invokeLambdaFunction(query);
-    // if(!lambdaResult)
-    //     return "error";
-    // return lambdaResult;
   }

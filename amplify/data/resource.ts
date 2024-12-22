@@ -2,6 +2,14 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  state: string;
+  itemType: string;
+  attachment: string;
+}
+
 const schema = a.schema({
   // ChatContext and Chat store any chat conversations and their current state even if incomplete
   ChatContext: a
@@ -13,11 +21,8 @@ const schema = a.schema({
     .model({
       chatContextId: a.id(),
       chatContext: a.belongsTo("ChatContext", "chatContextId"),
-      itemType: a.string(),
       role: a.string(),
-      message: a.string(),
-      attachment: a.string(),
-      state: a.string(),
+      messages: a.json(),
     }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a

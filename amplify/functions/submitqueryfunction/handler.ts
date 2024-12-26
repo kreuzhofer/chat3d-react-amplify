@@ -8,6 +8,10 @@ import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtim
 import { env } from '$amplify/env/submitQueryFunction';
 import { v4 as uuidv4 } from 'uuid';
 
+import outputs from "../../../amplify_outputs.json";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import * as fs from 'fs';
+
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 
@@ -32,13 +36,15 @@ function extractSections(text: string): DocumentSections {
   };
 }
 
-async function invokeLambdaFunction(query: string) {
-    const lambdaClient = new LambdaClient({});
+async function invokeOpenScadExecutorFunction(fileName: string) {
+
+  const lambdaClient = new LambdaClient({});
     const invokeParams = {
-      FunctionName: 'Chat3DPromptEvaluationCdk-Chat3DPromptEvaluationFu-JMgtnYiwKGwT',
+      FunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
       InvocationType: 'RequestResponse' as const,
       Payload: JSON.stringify({
-        subject: query,
+        fileName: fileName,
+        bucket: outputs.storage.bucket_name
       }),
     };
     
@@ -137,7 +143,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
             { 
               itemType: "message",
               text: assistantMessage.text,
-              state: "completed"
+              state: "completed",
+              stateMessage: ""
             }
           ])
         });
@@ -167,7 +174,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     itemType: "image",
                     text: "", 
                     state: "pending",
-                    attachment: "/images/generating.png"
+                    stateMessage: "creating model sketch...",
+                    attachment: "/modelcreator/generating.png"
                   } as ChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -214,6 +222,52 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 console.log("converse3DModelAssistantResponse: "+JSON.stringify(converse3DModelAssistantResponse));
 
                 // create model using openscad
+                const sections = extractSections(converse3DModelAssistantResponse?.text || "");
+                const code = sections.code;
+                const plan = sections.plan;
+                const comment = sections.comment;
+
+                // write code to file and upload to s3 bucket
+                const nameOfS3Bucket = outputs.storage.bucket_name;
+                console.log("nameOfS3Bucket: "+nameOfS3Bucket);
+                // upload code to s3 bucket and get uri
+                const fileName = messageId+".scad";
+                const key = "modelcreator/"+fileName;
+                const scadFileUri = "s3://"+nameOfS3Bucket+"/"+key;
+                console.log("scadFileUri: "+scadFileUri);
+                // write code to file and upload to s3 bucket
+                fs.writeFileSync("/tmp/code.scad", code);
+                const s3Client = new S3Client({});
+                const s3Params = {
+                    Bucket: nameOfS3Bucket,
+                    Key: key,
+                    Body: fs.createReadStream("/tmp/code.scad")
+                };
+                const s3Response = await s3Client.send(new PutObjectCommand(s3Params));
+                console.log("s3Response: "+JSON.stringify(s3Response));
+
+                // show progress
+                messages.pop();
+                messages.push(
+                  {
+                    id: messageId,
+                    itemType: "image",
+                    text: "", 
+                    state: "pending",
+                    stateMessage: "creating preview image...",
+                    attachment: "/modelcreator/generating.png"
+                  } as ChatMessage
+                );
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });
+
+                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName);
+                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
+                if(scadExecutorResult?.statusCode !== 200)
+                  throw new Error("Failed to create 3d model");
+                const modelImageFileName = messageId+".png";
+                const modelImageKey = "modelcreator/"+modelImageFileName;
 
                 // update message inside of newAssistantChatItem with state completed
                 messages.pop()
@@ -221,9 +275,10 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   {
                     id: messageId,
                     itemType: "image",
-                    text: "here it is",
+                    text: comment,
                     state: "completed",
-                    attachment: "/images/candleStand.png"
+                    stateMessage: "",
+                    attachment: modelImageKey
                   } as ChatMessage
                 );
 

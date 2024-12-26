@@ -99,7 +99,8 @@ function Chat()
                         id: uuidv4(),
                         text: query,
                         itemType: "message",
-                        state: "completed"
+                        state: "completed",
+                        stateMessage: ""
                     }
                 ])
             });
@@ -111,7 +112,8 @@ function Chat()
                         id: uuidv4(),
                         text: "",
                         itemType: "message",
-                        state: "pending"
+                        state: "pending",
+                        stateMessage: "thinking..."
                     }
                 ])
             });

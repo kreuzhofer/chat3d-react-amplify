@@ -6,6 +6,7 @@ export interface ChatMessage {
   id: string;
   text: string;
   state: string;
+  stateMessage: string;
   itemType: string;
   attachment: string;
 }

@@ -5,5 +5,5 @@ export const submitQueryFunction = defineFunction({
   name: 'submitQueryFunction',
   // optionally specify a path to your handler (defaults to "./handler.ts")
   entry: './handler.ts',
-  timeoutSeconds: 300,  // 5 minutes timeout for content creation
+  timeoutSeconds: 420,  // 5 minutes timeout for content creation
 });

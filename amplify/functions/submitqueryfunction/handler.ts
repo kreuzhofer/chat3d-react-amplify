@@ -223,12 +223,13 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 "Do not add any additional characters like triple-hyphens to the beginning or end of the code. "+
                 "Return your results separated in exactly three xml tags. <plan></plan> with your detailed plan for the model creation. "+
                 "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names. "+
-                "You must ensure that all xml tags contain an opening and closing tag in your response. "
+                "You must ensure that all xml tags contain an opening and closing tag in your response. "+
+                "If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front. "
 
                 const converse3DModelCommandInput = {
                     modelId: generate3dmodelId,
                     messages: generate3dmodelMessages as Message[],
-                    inferenceConfig: { maxTokens: 4096, temperature: 0.5, topP: 0.9 },
+                    inferenceConfig: { maxTokens: 4096, temperature: 1.0, topP: 0.9 },
                     system: [{
                         text: system_prompt_3d_generator
                     }],

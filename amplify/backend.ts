@@ -3,13 +3,18 @@ import * as iam from "aws-cdk-lib/aws-iam"
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import { auth } from './auth/resource';
 import { data } from './data/resource';
+import { storage } from './storage/resource';
 import { submitQueryFunction } from './functions/submitqueryfunction/resources';
 import { claimPatreonBenefitsFunction } from './functions/claimPatreonBenefitsFunction/resources';
 import { patreonOauthRequestHandlerFunction } from './functions/handlePatreonOauthRequest/resources';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { Duration } from 'aws-cdk-lib';
 
 const backend = defineBackend({
   auth,
   data,
+  storage,
   submitQueryFunction,
   claimPatreonBenefitsFunction,
   patreonOauthRequestHandlerFunction,
@@ -37,3 +42,47 @@ const endpoint = new apigw.LambdaRestApi(customResourceStack, `ApiGwEndpoint`, {
   handler: patreonOauthLambda,
   restApiName: `PatreonOauthAPI`,
 });
+
+const repository = ecr.Repository.fromRepositoryName(customResourceStack, 'OpenscadExecutorRepository', 'chat3lambdadopenscad');
+
+const role = new iam.Role(customResourceStack, 'LambdaPromptEvaluationRole', {
+  assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+  managedPolicies: [
+    iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+  ],
+  inlinePolicies: {
+    "S3AccessPolicy": new iam.PolicyDocument({
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "s3:GetObject",
+            "s3:PutObject",
+            ],
+          resources: ['*'],
+        }),
+      ]
+    })
+  }
+});
+
+const openscadExecutorFunctionWithImage = new lambda.Function(customResourceStack, 'OpenscadExecutorFunctionWithImage', {
+  code: lambda.Code.fromEcrImage(repository, {
+    tagOrDigest: 'latest',
+  }),
+  handler: lambda.Handler.FROM_IMAGE,
+  runtime: lambda.Runtime.FROM_IMAGE,
+  environment: {
+    // Add any environment variables if needed
+  },
+  timeout: Duration.seconds(300),
+  role: role,
+  memorySize: 1024
+});
+
+backend.addOutput({
+  custom : {
+    openscadExecutorFunctionWithImageName: openscadExecutorFunctionWithImage.functionName,
+  }  
+});
+

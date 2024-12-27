@@ -1,11 +1,17 @@
-import type { Schema } from "../../amplify/data/resource";
+import type { Schema, ChatMessage } from "../../amplify/data/resource";
 
 function ChatMessageUser(item: Schema["ChatItem"]["type"])
 {
+    const messages = item.messages ? JSON.parse(item.messages as string) as ChatMessage[] : [];
+
     return (
-        <div className="message user">
-            <div className="content">{item.message}</div>
-        </div>
+        <>
+            {messages.map((message) => (
+                <div className="message user" key={message.id}>
+                    <div className="content">{message.text}</div>
+                </div>
+            ))}
+        </>
     );
 }
 

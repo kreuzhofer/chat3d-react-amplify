@@ -2,13 +2,16 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  state: string;
+  stateMessage: string;
+  itemType: string;
+  attachment: string;
+}
+
 const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-    })
-    .authorization((allow) => [allow.publicApiKey()]),
-  
   // ChatContext and Chat store any chat conversations and their current state even if incomplete
   ChatContext: a
     .model({
@@ -19,11 +22,8 @@ const schema = a.schema({
     .model({
       chatContextId: a.id(),
       chatContext: a.belongsTo("ChatContext", "chatContextId"),
-      itemType: a.string(),
       role: a.string(),
-      message: a.string(),
-      attachment: a.string(),
-      state: a.string(),
+      messages: a.json(),
     }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a
@@ -33,6 +33,8 @@ const schema = a.schema({
       newUserChatItemId: a.id(),
       newAssistantChatItemId: a.id(),
       query: a.string(),
+      executorFunctionName: a.string(),
+      bucket: a.string(),
     })
     .returns(a.string())
     .handler(a.handler.function(submitQueryFunction))

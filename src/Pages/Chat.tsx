@@ -1,7 +1,7 @@
 import type { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import ChatMessage from "../Components/ChatMessage";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button, Input } from 'semantic-ui-react'
 import { useParams, useNavigate } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +17,12 @@ function Chat()
     const [chatContext, setChatContext] = useState<any>(null);
     const [chatId, setChatId] = useState<string>("");
     const navigate = useNavigate();
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    const handleScrollToBottom = () => {
+        //
+        messagesEndRef.current?.scrollIntoView();
+      };
 
     var params = useParams();
     if(params.chatId !== undefined)
@@ -139,6 +145,7 @@ function Chat()
             const chatContextGet = await client.models.ChatContext.get({ id: chatId });
             setChatContext(chatContextGet.data);
             console.log("Chat context auto loaded")
+            handleScrollToBottom();
         }
 
         console.log("chatId in useEffect: "+chatId);
@@ -156,6 +163,7 @@ function Chat()
                     const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
                     setChatMessages([...sortedItems])
                     console.debug("data.items: "+JSON.stringify(data.items));
+                    handleScrollToBottom();
                 },
             });
             console.log("ChatItem subscription created");
@@ -176,7 +184,7 @@ function Chat()
                         <ChatMessage {...item} key={item.id} />
                     ))}
                 </div>
-                <div className="input-container">
+                <div className="input-container" ref={messagesEndRef}>
                     <div className="ui input input">
                         <Input
                             type="text" 
@@ -195,7 +203,6 @@ function Chat()
                             <Button onClick={submitChatBackendCall}>Send</Button>
                         </Input>
                     </div>
-
                 </div>
             </div>
         </div>

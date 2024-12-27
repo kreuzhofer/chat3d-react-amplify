@@ -77,17 +77,18 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
 
     var chatItems = await chatContext.data?.chatItems();
+    var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1)
+    console.log("sortedItems: "+JSON.stringify(sortedItems));
 
-    var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1).filter((item) => item.id !== newAssistantChatItemId);
-    const conversation = sortedItems?.map((item) => {
-      const messages = JSON.parse(item.messages as string) as ChatMessage[];
-      return messages.map((message) => {
-        return {
+    const filteredItems = sortedItems?.filter((item) => item.id !== newAssistantChatItemId);
+    const conversation = filteredItems?.map((item) => {
+      const messages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages
+        .filter((message) => message.itemType === "message");
+      return {
           role: item.role,
-          content: [{ text: message.text }],
-        };
-      });
-    }).flat();
+          content: messages.map((message) => ({ text: message.text })),
+        } as Message;
+    });
 
     console.log("previous conversation: "+JSON.stringify(conversation));
 
@@ -96,9 +97,9 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
       system:[{
-        text: "You are a helpful assistant. I am a user. I might ask you to create a 3D model or other things about 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning."+ 
-        "Every time want to use a tool to create a 3D model or any other tool, you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool."+
-        "You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning. Any other discussions you will politely decline."
+        text: "You are a helpful 3d modeling assistant. The user can ask you to create a 3D model or other things about 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning."+ 
+        "Every time the user asks you to create a 3d model, you will use a tool to create a 3D model and you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool."+
+        "You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning and you will create 3d models. Any other discussions you will politely decline."
       }],
       toolConfig: {
         tools: [
@@ -188,14 +189,29 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   });                
 
                 const generate3dmodelId = "us.anthropic.claude-3-5-sonnet-20241022-v2:0";
-                const generate3dmodelMessages = [
-                    {
-                        role: "user",
-                        content: [{ text: subject }],
-                    },
-                ];
+                //const generate3dmodelId = "us.amazon.nova-pro-v1:0";
+                //const generate3dmodelId = "us.meta.llama3-3-70b-instruct-v1:0";
+                //const generate3dmodelId = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 
-                const system_prompt_3d_generator = "You are a professional OpenScad programmer with the skills to create highly detailed 3d models in OpenScad script language. "+
+
+                const generate3dmodelMessages = filteredItems?.map((item) => {
+                  let tempMessages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages
+                    .filter((message) => message.itemType === "message" || message.itemType === "meta");
+                  return {
+                      role: item.role,
+                      content: tempMessages.map((message) => ({ text: message.text })),
+                    } as Message;
+                });
+                console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
+
+                // const generate3dmodelMessages = [
+                //     {
+                //         role: "user",
+                //         content: [{ text: subject }],
+                //     },
+                // ];
+
+                const system_prompt_3d_generator = "You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language. "+
                 "You will strive for high detail, dimensional accuracy and structural integrity. "+
                 "If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together. "+
                 "Always start with creating functions for specific details of the final model so you are not missing out on them later. "+
@@ -206,7 +222,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 "Add decent commenting in your code to support your thoughts how this achieves the result. "+
                 "Do not add any additional characters like triple-hyphens to the beginning or end of the code. "+
                 "Return your results separated in exactly three xml tags. <plan></plan> with your detailed plan for the model creation. "+
-                "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names."
+                "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names. "+
+                "You must ensure that all xml tags contain an opening and closing tag in your response. "
 
                 const converse3DModelCommandInput = {
                     modelId: generate3dmodelId,
@@ -284,6 +301,17 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     state: "completed",
                     stateMessage: "",
                     attachment: modelImageKey
+                  } as ChatMessage
+                );
+
+                // add meta information that was created by the tool
+                messages.push(
+                  {
+                    id: uuidv4(),
+                    itemType: "meta",
+                    text: converse3DModelAssistantResponse?.text,
+                    state: "completed",
+                    stateMessage: ""
                   } as ChatMessage
                 );
 

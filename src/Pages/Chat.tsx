@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Input } from 'semantic-ui-react'
 import { useParams, useNavigate } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
-
+import outputs from "../../amplify_outputs.json";
 // import { getCurrentUser } from 'aws-amplify/auth';
 
 const client = generateClient<Schema>();
@@ -56,7 +56,9 @@ function Chat()
                     chatContextId: chatContextCreate.data.id,
                     query: query,
                     newUserChatItemId: newUserChatItem.data?.id,
-                    newAssistantChatItemId: newAssistantChatItem.data?.id
+                    newAssistantChatItemId: newAssistantChatItem.data?.id,
+                    executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
+                    bucket: outputs.storage.bucket_name
                 });
                 console.log("ChatQueryResult: " + JSON.stringify(result));
 
@@ -86,7 +88,14 @@ function Chat()
         {
             var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContext.id);
             setQuery(""); // remove last query
-            var result = await client.queries.submitQuery({chatContextId: chatContext.id, query: query, newUserChatItemId: newUserChatItem.data?.id, newAssistantChatItemId: newAssistantChatItem.data?.id });
+            var result = await client.queries.submitQuery({
+                chatContextId: chatContext.id, 
+                query: query, 
+                newUserChatItemId: newUserChatItem.data?.id, 
+                newAssistantChatItemId: newAssistantChatItem.data?.id,
+                executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
+                bucket: outputs.storage.bucket_name
+             });
             console.log("ChatQueryResult: "+JSON.stringify(result));
         }
 
@@ -146,7 +155,7 @@ function Chat()
                 next: (data) => {
                     const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
                     setChatMessages([...sortedItems])
-                    console.log("data.items: "+JSON.stringify(data.items));
+                    console.debug("data.items: "+JSON.stringify(data.items));
                 },
             });
             console.log("ChatItem subscription created");

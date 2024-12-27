@@ -33,6 +33,8 @@ const schema = a.schema({
       newUserChatItemId: a.id(),
       newAssistantChatItemId: a.id(),
       query: a.string(),
+      executorFunctionName: a.string(),
+      bucket: a.string(),
     })
     .returns(a.string())
     .handler(a.handler.function(submitQueryFunction))

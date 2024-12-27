@@ -8,9 +8,13 @@ import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtim
 import { env } from '$amplify/env/submitQueryFunction';
 import { v4 as uuidv4 } from 'uuid';
 
-import outputs from "../../../amplify_outputs.json";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import * as fs from 'fs';
+
+import * as winston from "winston";
+const logger = winston.createLogger({
+    transports: [new winston.transports.Console()],
+  });
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
@@ -36,15 +40,15 @@ function extractSections(text: string): DocumentSections {
   };
 }
 
-async function invokeOpenScadExecutorFunction(fileName: string) {
+async function invokeOpenScadExecutorFunction(fileName: string, openscadExecutorFunctionName: string, bucketName: string) {
 
   const lambdaClient = new LambdaClient({});
     const invokeParams = {
-      FunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
+      FunctionName: openscadExecutorFunctionName,
       InvocationType: 'RequestResponse' as const,
       Payload: JSON.stringify({
         fileName: fileName,
-        bucket: outputs.storage.bucket_name
+        bucket: bucketName
       }),
     };
     
@@ -55,8 +59,8 @@ async function invokeOpenScadExecutorFunction(fileName: string) {
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
-    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query } = event.arguments;
-    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId) {
+    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, executorFunctionName, bucket } = event.arguments;
+    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !executorFunctionName || !bucket) {
         throw new Error("Missing query parameter(s)");
     }
 
@@ -141,6 +145,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
         messages: JSON.stringify(
           [
             { 
+              id: uuidv4(),
               itemType: "message",
               text: assistantMessage.text,
               state: "completed",
@@ -175,7 +180,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: "", 
                     state: "pending",
                     stateMessage: "creating model sketch...",
-                    attachment: "/modelcreator/generating.png"
+                    attachment: "modelcreator/generating.png"
                   } as ChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -228,7 +233,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 const comment = sections.comment;
 
                 // write code to file and upload to s3 bucket
-                const nameOfS3Bucket = outputs.storage.bucket_name;
+                const nameOfS3Bucket = bucket;
                 console.log("nameOfS3Bucket: "+nameOfS3Bucket);
                 // upload code to s3 bucket and get uri
                 const fileName = messageId+".scad";
@@ -255,14 +260,14 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: "", 
                     state: "pending",
                     stateMessage: "creating preview image...",
-                    attachment: "/modelcreator/generating.png"
+                    attachment: "modelcreator/generating.png"
                   } as ChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
                   messages: JSON.stringify(messages)
                   });
 
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName);
+                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
                 if(scadExecutorResult?.statusCode !== 200)
                   throw new Error("Failed to create 3d model");

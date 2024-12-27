@@ -7,7 +7,6 @@ import { storage } from './storage/resource';
 import { submitQueryFunction } from './functions/submitqueryfunction/resources';
 import { claimPatreonBenefitsFunction } from './functions/claimPatreonBenefitsFunction/resources';
 import { patreonOauthRequestHandlerFunction } from './functions/handlePatreonOauthRequest/resources';
-//import { openscadExecutorHandlerFunction } from './functions/openscadExecutorFunction/resources';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Duration } from 'aws-cdk-lib';

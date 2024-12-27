@@ -1,5 +1,5 @@
 import type { Schema, ChatMessage } from "../../amplify/data/resource";
-import { Image, Loader, Segment } from "semantic-ui-react";
+import { Loader, Segment } from "semantic-ui-react";
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 
 

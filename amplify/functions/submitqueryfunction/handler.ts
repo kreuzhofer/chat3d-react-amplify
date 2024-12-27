@@ -141,22 +141,19 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     var assistantMessages = response.output?.message?.content;
     console.log("assistantMessages: "+JSON.stringify(assistantMessages));
     var assistantMessage = assistantMessages?.find((item) => item.text);
-    if (assistantMessage) {
-      await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-        messages: JSON.stringify(
-          [
-            { 
-              id: uuidv4(),
-              itemType: "message",
-              text: assistantMessage.text,
-              state: "completed",
-              stateMessage: ""
-            }
-          ])
-        });
-    } else {
-        throw new Error("Response content is undefined");
-    }
+    var assistantMessageText = assistantMessage?.text || "Let me think about that for a moment...";
+    await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+      messages: JSON.stringify(
+        [
+          { 
+            id: uuidv4(),
+            itemType: "message",
+            text: assistantMessageText,
+            state: "completed",
+            stateMessage: ""
+          }
+        ])
+      });
 
     if (response.stopReason === "tool_use") {
         const toolRequest = response.output?.message?.content?.find((item) => item.toolUse);

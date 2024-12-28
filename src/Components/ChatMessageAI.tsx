@@ -34,7 +34,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                             <div className="response-3dmodel">
                                 <Segment>
                                     <Loader active={message.state==="pending"}>{message.stateMessage}</Loader>
-                                    <StorageImage alt="cat" path={message.attachment} />
+                                    <StorageImage alt="image" path={message.attachment} />
                                     {/* <Image className="response-image" src={message.attachment}/> */}
                                 </Segment>
                             </div>

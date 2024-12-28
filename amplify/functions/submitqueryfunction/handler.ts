@@ -242,6 +242,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
                 const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
+                console.log(converse3DModelReponse);
 
                 var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
                 console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));

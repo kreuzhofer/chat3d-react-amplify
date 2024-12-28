@@ -1,5 +1,5 @@
 import type { Schema, ChatMessage } from "../../amplify/data/resource";
-import { Loader, Segment } from "semantic-ui-react";
+import { Loader, Segment, Icon } from "semantic-ui-react";
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 
 
@@ -16,6 +16,14 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                         <div className="content">
                             {message.text}
                             <Loader active={message.state==="pending"} inline />
+                        </div>
+                    </div>
+                )
+            else if(message.itemType === "errormessage")
+                return (
+                    <div className="message ai error" key={message.id}>
+                        <div className="content">
+                            <Icon name="lemon"/>{message.text}
                         </div>
                     </div>
                 )

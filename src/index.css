@@ -151,6 +151,9 @@ a {
 .message.ai .content {
   background-color: #e0e1e2;
 }
+.message.ai.error .content {
+  background-color: #ff000036;
+}
 .input-container {
   display: flex;
   padding: 10px;

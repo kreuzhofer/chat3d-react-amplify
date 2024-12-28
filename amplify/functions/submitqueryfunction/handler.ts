@@ -76,7 +76,15 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     // load all conversation items for the chat context
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
 
-    var chatItems = await chatContext.data?.chatItems();
+    var fetchChatItems = await chatContext.data?.chatItems();
+    var chatItems = fetchChatItems;
+    while(fetchChatItems?.nextToken)
+    {
+      fetchChatItems = await chatContext.data?.chatItems({ nextToken: fetchChatItems.nextToken });
+      if(fetchChatItems?.data)
+        chatItems?.data.push(...fetchChatItems.data);
+    }
+
     var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1)
     console.log("sortedItems: "+JSON.stringify(sortedItems));
 
@@ -286,7 +294,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
                 if(scadExecutorResult?.statusCode !== 200)
                   throw new Error("Failed to create 3d model");
-                const modelImageFileName = messageId+".png";
+                const modelImageFileName = messageId+".jpeg";
                 const modelImageKey = "modelcreator/"+modelImageFileName;
 
                 // update message inside of newAssistantChatItem with state completed

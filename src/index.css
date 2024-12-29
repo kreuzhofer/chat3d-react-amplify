@@ -133,6 +133,13 @@ a {
   padding: 20px;
   overflow-y: auto;
 }
+
+.chat-welcome {
+  font-size: large;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 20px;
+}
 .message {
   margin-bottom: 20px;
 }

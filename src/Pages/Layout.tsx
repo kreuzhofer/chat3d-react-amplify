@@ -6,6 +6,7 @@ import {
     Icon,
     Image,
     Menu,
+    Popup,
   } from "semantic-ui-react";
 import { SetStateAction, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
@@ -60,7 +61,14 @@ function Layout() {
                 >
                 Chat
               </Menu.Item>
+
               <Menu.Menu position="right">
+                <Menu.Item as={NavLink}
+                  to="/chat/new"
+                  name="chatnew"
+                  >
+                    <Popup content="New Chat" trigger={<Icon name="edit"/>}/>
+                  </Menu.Item>
                 <Menu.Item onClick={signOut}>Logout</Menu.Item>
               </Menu.Menu>
             </Container>
@@ -72,6 +80,12 @@ function Layout() {
               <Image src="/images/chat3dlogo.png" />&nbsp;<p>Chat3D</p>
             </Menu.Item>
             <Menu.Menu position="right">
+              <Menu.Item as={NavLink}
+                  to="/chat/new"
+                  name="chatnew"
+                  >
+                  <Popup content="New Chat" trigger={<Icon name="edit"/>}/>
+                </Menu.Item>
               <Menu.Item>
                 <Button
                   icon

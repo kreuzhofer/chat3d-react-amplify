@@ -133,6 +133,13 @@ a {
   padding: 20px;
   overflow-y: auto;
 }
+
+.chat-welcome {
+  font-size: large;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 20px;
+}
 .message {
   margin-bottom: 20px;
 }
@@ -173,7 +180,7 @@ a {
 }
 .response-3dmodel {
   display: flex;
-  justify-content: center;
+  justify-content: left;
   margin-top: 10px;
 }
 .response-image {

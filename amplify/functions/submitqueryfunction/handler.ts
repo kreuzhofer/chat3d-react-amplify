@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import * as fs from 'fs';
+import { GetS3FileAsByteArrayAsync } from "./GetS3FileAsByteArrayAsync";
+import { Buffer } from 'buffer';
 
 import * as winston from "winston";
 const logger = winston.createLogger({
@@ -72,23 +74,51 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
     // Set the model ID, e.g., Claude 3 Haiku.
     const modelId = "anthropic.claude-3-haiku-20240307-v1:0";
+    //const modelId = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
 
     // load all conversation items for the chat context
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
 
-    var chatItems = await chatContext.data?.chatItems();
+    var fetchChatItems = await chatContext.data?.chatItems();
+    var chatItems = fetchChatItems;
+    while(fetchChatItems?.nextToken)
+    {
+      fetchChatItems = await chatContext.data?.chatItems({ nextToken: fetchChatItems.nextToken });
+      if(fetchChatItems?.data)
+        chatItems?.data.push(...fetchChatItems.data);
+    }
+
     var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1)
     console.log("sortedItems: "+JSON.stringify(sortedItems));
 
     const filteredItems = sortedItems?.filter((item) => item.id !== newAssistantChatItemId);
-    const conversation = filteredItems?.map((item) => {
-      const messages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages
-        .filter((message) => message.itemType === "message");
-      return {
-          role: item.role,
-          content: messages.map((message) => ({ text: message.text })),
-        } as Message;
-    });
+    const conversation = await Promise.all(filteredItems?.map(async (item) => {
+    
+      const messages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages or images
+      .filter((message) => message.itemType === "message"/*  || message.itemType === "image" */);
+
+    // only keep the last image if there are multiple images in the list
+    const lastImageIndex = messages.map((message, index) => message.itemType === "image" ? index : -1).filter(index => index !== -1).pop();
+    const filteredMessages = messages.filter((message, index) => message.itemType === "message" || index === lastImageIndex);
+    return {
+        role: item.role,
+        content: await Promise.all(filteredMessages.map(async function (message) {
+          if(message.itemType === "message")
+            return { text: message.text }
+          else if(message.itemType === "image")
+          {
+            var imageBytes = await GetS3FileAsByteArrayAsync(bucket, message.attachment);
+            const base64Image = imageBytes ? Buffer.from(imageBytes).toString('base64') : '';
+            return { image: {
+              format: "jpeg",
+              source: {
+                bytes: base64Image
+              }
+            }}
+          }
+        })),
+      } as Message;
+    }) || []);
 
     console.log("previous conversation: "+JSON.stringify(conversation));
 
@@ -234,6 +264,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
                 const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
+                console.log(converse3DModelReponse);
 
                 var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
                 console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));

@@ -171,7 +171,7 @@ function Chat()
                 {chatMessages.length === 0 ? (
                     <Container>
                         <div className="chat-welcome">
-                            What can I create for you today?
+                            What can I create for you?
                         </div>
                     </Container>
                 ) : null}

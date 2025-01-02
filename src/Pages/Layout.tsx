@@ -2,7 +2,7 @@ import { Outlet } from "react-router";
 import {
     Container,
   } from "semantic-ui-react";
-import { SetStateAction, useState } from "react";
+// import { SetStateAction, useState } from "react";
 //import { useAuthenticator } from '@aws-amplify/ui-react';
 
 // Examples for layouts https://semantic-ui-forest.com/templates

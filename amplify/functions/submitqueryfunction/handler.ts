@@ -1,4 +1,4 @@
-import type { Schema, ChatMessage } from "../../data/resource"
+import type { Schema, IChatMessage } from "../../data/resource"
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { BedrockRuntimeClient, ConverseCommand, Message  } from "@aws-sdk/client-bedrock-runtime";
 import { generateClient } from "aws-amplify/data";
@@ -94,7 +94,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const filteredItems = sortedItems?.filter((item) => item.id !== newAssistantChatItemId);
     const conversation = await Promise.all(filteredItems?.map(async (item) => {
     
-      const messages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages or images
+      const messages = (JSON.parse(item.messages as string) as IChatMessage[]) // filter out meta items and only get messages or images
       .filter((message) => message.itemType === "message"/*  || message.itemType === "image" */);
 
     // only keep the last image if there are multiple images in the list
@@ -198,7 +198,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 const subject = input.description;
 
                 var currentChatItem = await dataClient.models.ChatItem.get({ id: newAssistantChatItemId });
-                var messages = JSON.parse(currentChatItem.data?.messages as string) as ChatMessage[];
+                var messages = JSON.parse(currentChatItem.data?.messages as string) as IChatMessage[];
                 var messageId = uuidv4();
 
                 messages.push(
@@ -209,7 +209,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     state: "pending",
                     stateMessage: "creating model sketch...",
                     attachment: "modelcreator/generating.png"
-                  } as ChatMessage
+                  } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
                   messages: JSON.stringify(messages)
@@ -222,7 +222,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
 
                 const generate3dmodelMessages = filteredItems?.map((item) => {
-                  let tempMessages = (JSON.parse(item.messages as string) as ChatMessage[]) // filter out meta items and only get messages
+                  let tempMessages = (JSON.parse(item.messages as string) as IChatMessage[]) // filter out meta items and only get messages
                     .filter((message) => message.itemType === "message" || message.itemType === "meta");
                   return {
                       role: item.role,
@@ -307,7 +307,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     state: "pending",
                     stateMessage: "creating preview image...",
                     attachment: "modelcreator/generating.png"
-                  } as ChatMessage
+                  } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
                   messages: JSON.stringify(messages)
@@ -330,7 +330,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     state: "completed",
                     stateMessage: "",
                     attachment: modelImageKey
-                  } as ChatMessage
+                  } as IChatMessage
                 );
 
                 // add meta information that was created by the tool
@@ -341,7 +341,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: converse3DModelAssistantResponse?.text,
                     state: "completed",
                     stateMessage: ""
-                  } as ChatMessage
+                  } as IChatMessage
                 );
 
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 

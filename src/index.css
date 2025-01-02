@@ -195,8 +195,8 @@ div.ui.left.sidebar {
 .footer-menubar {
   height: 40px;
   padding: 5px;
-  display: flex;
   background-color: #d6d6d6;
+  display: flex;
   align-items: center;
 }
 
@@ -208,6 +208,16 @@ div.ui.left.sidebar {
 
 .chat-buttons-left {
   flex: 1;
-  display: flex;
-  justify-content: flex-start;
+}
+
+.footer-menubar .settings {
+  flex: 1;
+}
+
+.footer-menubar .spacer {
+  flex: 8;
+}
+
+.footer-menubar .user {
+  flex: 1;
 }

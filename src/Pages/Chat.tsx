@@ -6,7 +6,8 @@ import { Button, Icon, Input, Menu, MenuItem, Popup, Sidebar, SidebarPushable, S
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
-// import { getCurrentUser } from 'aws-amplify/auth';
+//import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+//import { useAuthenticator } from '@aws-amplify/ui-react';
 
 const client = generateClient<Schema>();
 
@@ -21,6 +22,7 @@ function Chat()
     const [subScriptions] = useState<any[]>([]);
     const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
     const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
+    //const { user } = useAuthenticator((context) => [context.user]);
 
     const handleScrollToBottom = () => {
         //
@@ -34,18 +36,7 @@ function Chat()
             chatIdRef.current = (params.chatId);
     }
 
-    // try {
-    //     getCurrentUser().then((user) => {  
-    //         console.log("user", user);
-    //         if(user !== null)
-    //         {
-    //             var username = user.username;
-    //             console.log("username", username);
-    //         }
-    //     });
-    // } catch (error) {
-    //     console.error("error fetching user", error);
-    // }
+
 
     async function submitChatBackendCall() {
         console.log("submitChatBackendCall");
@@ -119,6 +110,24 @@ function Chat()
     }
 
     useEffect(() => {
+
+        // try {
+        //     console.log("user from useAuthenticator", user);
+        //     // getCurrentUser().then((user) => {  
+        //     //     console.log("user", user);
+        //     //     if(user !== null)
+        //     //     {
+        //     //         var username = user.username;
+        //     //         console.log("username", username);
+    
+        //     //         fetchUserAttributes().then((attributes) => {
+        //     //             console.log("attributes", attributes);
+        //     //         });
+        //     //     }
+        //     // });
+        // } catch (error) {
+        //     console.error("error fetching user", error);
+        // }
 
         async function fetchChatContext()
         {
@@ -233,7 +242,13 @@ function Chat()
                 </Menu>
 
                 <div className="footer-menubar">
-
+                    <div className="settings">
+                        <Popup trigger={<Icon bordered link name="setting"/>}>Settings</Popup>
+                    </div>
+                    <div className="spacer"></div>
+                    <div className="user">
+                        <Popup trigger={<Icon bordered link name="user circle"/>}>User menu tbd.</Popup>
+                    </div>
                 </div>
 
                 </Sidebar>

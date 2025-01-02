@@ -2,12 +2,11 @@ import type { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import ChatMessage from "../Components/ChatMessage";
 import { useEffect, useState, useRef } from "react";
-import { Button, Icon, Input, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
+import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
-//import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
-//import { useAuthenticator } from '@aws-amplify/ui-react';
+import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 
 const client = generateClient<Schema>();
 
@@ -22,7 +21,9 @@ function Chat()
     const [subScriptions] = useState<any[]>([]);
     const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
     const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
-    //const { user } = useAuthenticator((context) => [context.user]);
+    const chatAreaRef = useRef<HTMLDivElement | null>(null);
+    const [user, setUser] = useState<any>(null);
+    const [userAttributes, setUserAttributes] = useState<any>(null);
 
     const handleScrollToBottom = () => {
         //
@@ -109,25 +110,40 @@ function Chat()
         }
     }
 
+    const getUser = async () => {
+        const user = await getCurrentUser();
+        if (user) setUser(user);
+        console.log(user);
+        const attributes = await fetchUserAttributes();
+        if(attributes) {
+            console.log(attributes);
+            setUserAttributes(attributes);
+        }
+    };
+
     useEffect(() => {
 
         // try {
         //     console.log("user from useAuthenticator", user);
-        //     // getCurrentUser().then((user) => {  
-        //     //     console.log("user", user);
-        //     //     if(user !== null)
-        //     //     {
-        //     //         var username = user.username;
-        //     //         console.log("username", username);
+        //     console.log("user attributes: "+JSON.stringify(user?.attributes));
+        //     getCurrentUser().then((user) => {  
+        //         console.log("user", user);
+        //         if(user !== null)
+        //         {
+        //             var username = user.username;
+        //             console.log("username", username);
     
-        //     //         fetchUserAttributes().then((attributes) => {
-        //     //             console.log("attributes", attributes);
-        //     //         });
-        //     //     }
-        //     // });
+        //             fetchUserAttributes().then((attributes) => {
+        //                 console.log("attributes", attributes);
+        //             });
+        //         }
+        //         const user = await Auth.currentUserInfo();
+
+        //     });
         // } catch (error) {
         //     console.error("error fetching user", error);
         // }
+        getUser();
 
         async function fetchChatContext()
         {
@@ -192,6 +208,7 @@ function Chat()
                     visible={sideOverlayVisible}
                     onHide={() => setSideOverlayVisible(false)}
                     className="chat-sidebar"
+                    target={chatAreaRef.current || undefined}
                 >
 
                 <div className="top-menubar">
@@ -247,14 +264,23 @@ function Chat()
                     </div>
                     <div className="spacer"></div>
                     <div className="user">
-                        <Popup trigger={<Icon bordered link name="user circle"/>}>User menu tbd.</Popup>
+                        <Popup on={"click"} trigger={
+                            <Image avatar src={userAttributes?.picture} />
+                            } hideOnScroll>
+                            <Menu vertical borderless fluid>
+                                <MenuItem onClick={() => signOut()}>
+                                    <Icon name="sign-out"/>
+                                    Sign out
+                                </MenuItem>
+                            </Menu>
+                        </Popup>
                     </div>
                 </div>
 
                 </Sidebar>
                 <SidebarPusher>
 
-            <div className={sideOverlayVisible ? "chat-grid" : "chat-grid full-width"}>
+            <div className={sideOverlayVisible ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
                 <div className="top-menubar">
                     <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
                         <Popup trigger={

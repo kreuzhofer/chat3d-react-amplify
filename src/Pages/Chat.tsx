@@ -265,7 +265,8 @@ function Chat()
                     <div className="spacer"></div>
                     <div className="user">
                         <Popup on={"click"} trigger={
-                            <Image avatar src={userAttributes?.picture} />
+                            /* https://www.perplexity.ai/search/i-like-to-create-avatar-images-c4mY118TRlexy9NxCk2Fyw */
+                            <Image avatar src={userAttributes && userAttributes.picture ? userAttributes.picture : "https://api.dicebear.com/9.x/avataaars/svg?seed="+(user ? user.userId : "") } />
                             } hideOnScroll>
                             <Menu vertical borderless fluid>
                                 <MenuItem onClick={() => signOut()}>

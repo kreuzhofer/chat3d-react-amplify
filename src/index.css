@@ -6,7 +6,7 @@ body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   height: 100vh;
   width: 100vh;
-  /*justify-content: left;*/
+  /*justify-content: center;*/
   /*align-items: center;*/
   /*min-height: 2000px;*/
   /*padding-top: 100px;*/
@@ -31,6 +31,10 @@ body {
 div.ui.container {
   margin-left: 0px !important;
   width: 100vw !important;
+}
+
+div.ui.left.sidebar {
+  width: 200px;
 }
 
 .ui.mobile.only.grid .ui.menu .ui.vertical.menu {
@@ -72,10 +76,11 @@ div.ui.container {
   height: 100vh;
   width: 200px;
   float: left;
+  background-color: #f8f8f8;
 }
 
 .chat-contexts {
-  height: calc(100vh - 110px);
+  height: calc(100vh - 165px);
   overflow: auto;
 }
 
@@ -85,6 +90,11 @@ div.ui.container {
   align-items: stretch;
   height: 100vh;
   width: auto;
+  margin-left: 200px;
+}
+
+.chat-grid.full-width {
+  margin-left: 0px;
 }
 
 .chat-container {
@@ -101,7 +111,7 @@ div.ui.container {
   font-weight: bold;
   text-align: center;
   padding-bottom: 20px;
-  padding-top: calc(30vh);
+  padding-top: calc(35vh);
 }
 .message {
   margin-bottom: 20px;
@@ -172,4 +182,32 @@ div.ui.container {
 
 .ui.menu .item:hover .default-content {
   display: none;
+}
+
+.top-menubar {
+  height: 40px;
+  padding: 5px;
+  display: flex;
+  background-color: #d6d6d6;
+  align-items: center;
+}
+
+.footer-menubar {
+  height: 40px;
+  padding: 5px;
+  display: flex;
+  background-color: #d6d6d6;
+  align-items: center;
+}
+
+.chat-title {
+  padding-left: 10px;
+  font-size: 1.2rem;
+  flex: 1;
+}
+
+.chat-buttons-left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
 }

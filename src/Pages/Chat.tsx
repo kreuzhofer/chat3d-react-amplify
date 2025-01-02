@@ -2,7 +2,7 @@ import type { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import ChatMessage from "../Components/ChatMessage";
 import { useEffect, useState, useRef } from "react";
-import { Button, Image, Icon, Input, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
+import { Button, Icon, Input, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
@@ -18,7 +18,6 @@ function Chat()
     const chatIdRef = useRef<string>("");
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const [sideBarVisible, setSideBarVisible] = useState<boolean>(false);
     const [subScriptions] = useState<any[]>([]);
     const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
     const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
@@ -178,52 +177,6 @@ function Chat()
 
     return (
             <>
-            {/* Desktop Version, Grid with two colums for side bar menu, can be hidden */}
-            <div className="chat-sidebar" style={{display: sideBarVisible ? "block" : "none"}}>
-                <Button onClick={() => setSideBarVisible(!sideBarVisible)} icon="columns">
-                </Button>
-                <Menu vertical borderless fluid>
-                    <MenuItem as={NavLink}
-                        to="/chat/new">
-                        <Icon name="edit"/>
-                        New Chat
-                    </MenuItem>
-                </Menu>
-                <Menu vertical borderless fluid className="chat-contexts">
-                    {chatContexts.map((item) => (
-                        <MenuItem as={NavLink}
-                            to={"/chat/"+item.id}
-                            key={item.id}>
-                            <div className="hover-content">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span>{item.name}</span>
-                                    <Popup
-                                        contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
-                                        trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
-                                        on='click'
-                                        position='right center'
-                                        hideOnScroll
-                                    >
-                                        <Menu>
-                                            <MenuItem onClick={(e) => e.preventDefault()}>
-                                                <Icon name="edit"/>
-                                                Rename
-                                            </MenuItem>
-                                            <MenuItem onClick={(e) => e.preventDefault()}>
-                                                <Icon name="trash"/>
-                                                Delete
-                                            </MenuItem>
-                                        </Menu>
-                                    </Popup>
-                                </div>
-                            </div>   
-                            <div className="default-content">
-                                {item.name}
-                            </div> 
-                        </MenuItem>
-                    ))}
-                </Menu>
-            </div>
             <SidebarPushable>
                 <Sidebar
                     animation="overlay"

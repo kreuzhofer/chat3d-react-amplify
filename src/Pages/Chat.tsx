@@ -266,6 +266,7 @@ function Chat()
                     <div className="user">
                         <Popup on={"click"} trigger={
                             /* https://www.perplexity.ai/search/i-like-to-create-avatar-images-c4mY118TRlexy9NxCk2Fyw */
+                            /* https://www.stefanjudis.com/blog/apis-to-generate-random-user-avatars/ */
                             <Image avatar src={userAttributes && userAttributes.picture ? userAttributes.picture : "https://api.dicebear.com/9.x/avataaars/svg?seed="+(user ? user.userId : "") } />
                             } hideOnScroll>
                             <Menu vertical borderless fluid>

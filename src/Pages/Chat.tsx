@@ -2,8 +2,8 @@ import type { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import ChatMessage from "../Components/ChatMessage";
 import { useEffect, useState, useRef } from "react";
-import { Button, Container, Input } from 'semantic-ui-react'
-import { useParams, useNavigate } from "react-router";
+import { Button, Icon, Input, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
+import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
 // import { getCurrentUser } from 'aws-amplify/auth';
@@ -18,6 +18,9 @@ function Chat()
     const chatIdRef = useRef<string>("");
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const [subScriptions] = useState<any[]>([]);
+    const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
+    const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
 
     const handleScrollToBottom = () => {
         //
@@ -152,51 +155,140 @@ function Chat()
                 },
             });
             console.log("ChatItem subscription created");
-            return ()=>{
-                subscription.unsubscribe()
-                console.log("ChatItem subscription removed");
-            };
+            subScriptions.push(subscription);
         }
-        else return ()=>{};
+
+        const chatContextSubscription = client.models.ChatContext.observeQuery().subscribe({
+            next: (data) => {
+                const sortedItems = data.items.sort((a, b) => (a.createdAt < b.createdAt) ? 1 : -1);
+                setChatContexts([...sortedItems]);
+            },
+        });
+        subScriptions.push(chatContextSubscription);
+
+        return ()=>{
+            subScriptions.forEach((subscription) => {
+                subscription.unsubscribe()
+                console.log("subscription removed");
+            });
+            subScriptions.length = 0;
+        };
     }, [chatIdRef.current]);
 
     return (
-        <div>
-            <div className="ui container">
-                <div className="chat-container">
+            <>
+            <SidebarPushable>
+                <Sidebar
+                    animation="overlay"
+                    visible={sideOverlayVisible}
+                    onHide={() => setSideOverlayVisible(false)}
+                    className="chat-sidebar"
+                >
+
+                <div className="top-menubar">
+                    <Popup trigger={
+                        <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                    }>Close sidebar</Popup>
+                </div>
+                <Menu vertical borderless fluid>
+                    <MenuItem as={NavLink}
+                        to="/chat/new">
+                        <Icon name="edit"/>
+                        New Chat
+                    </MenuItem>
+                </Menu>
+                <Menu vertical borderless fluid className="chat-contexts">
+                    {chatContexts.map((item) => (
+                        <MenuItem as={NavLink}
+                            to={"/chat/"+item.id}
+                            key={item.id}>
+                            <div className="hover-content">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <span>{item.name}</span>
+                                    <Popup
+                                        contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
+                                        trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
+                                        on='click'
+                                        position='right center'
+                                        hideOnScroll
+                                    >
+                                        <Menu>
+                                            <MenuItem onClick={(e) => e.preventDefault()}>
+                                                <Icon name="edit"/>
+                                                Rename
+                                            </MenuItem>
+                                            <MenuItem onClick={(e) => e.preventDefault()}>
+                                                <Icon name="trash"/>
+                                                Delete
+                                            </MenuItem>
+                                        </Menu>
+                                    </Popup>
+                                </div>
+                            </div>   
+                            <div className="default-content">
+                                {item.name}
+                            </div> 
+                        </MenuItem>
+                    ))}
+                </Menu>
+
+                <div className="footer-menubar">
+
+                </div>
+
+                </Sidebar>
+                <SidebarPusher>
+
+            <div className={sideOverlayVisible ? "chat-grid" : "chat-grid full-width"}>
+                <div className="top-menubar">
+                    <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
+                        <Popup trigger={
+                            <Icon bordered link name="columns" 
+                                onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        }>Open sidebar</Popup>
+                        <Popup trigger={
+                            <Icon bordered link name="edit" 
+                                onClick={() => navigate("/chat/new")} />
+                        }>New chat</Popup>
+                    </div>
+                    <img src="/images/chat3dlogo.png" height={30} width={30}/>
+                    <div className="chat-title">
+                        Chat3D
+                    </div>
+                </div>
+                <div className="chat-container" style={{display: chatIdRef.current === "" ? "none" : "block"}}>
                     {chatMessages.map((item) => (
                         <ChatMessage {...item} key={item.id} />
                     ))}
+                    <div ref={messagesEndRef}></div>
                 </div>
                 {chatMessages.length === 0 ? (
-                    <Container>
-                        <div className="chat-welcome">
-                            What can I create for you today?
-                        </div>
-                    </Container>
-                ) : null}
-                <div className="input-container" ref={messagesEndRef}>
-                    <div className="ui input input">
-                        <Input
-                            type="text" 
-                            placeholder="Type a message..." 
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyPress={(e: { key: string; }) => {
-                                if (e.key === "Enter") {
-                                    submitChatBackendCall();
-                                }
-                            }}
-                            onSend={submitChatBackendCall}
-                            
-                        >
-                            <input />
-                            <Button onClick={submitChatBackendCall}>Send</Button>
-                        </Input>
+                    <div className="chat-welcome">
+                        What can I create for you?
                     </div>
+                ) : null}
+                <div className="input-container">
+                    <Input
+                        type="text" 
+                        placeholder="Type a message..." 
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyPress={(e: { key: string; }) => {
+                            if (e.key === "Enter") {
+                                submitChatBackendCall();
+                            }
+                        }}
+                        onSend={submitChatBackendCall}
+                    >
+                        <input />
+                        <Button onClick={submitChatBackendCall}>Send</Button>
+                    </Input>
                 </div>
             </div>
-        </div>
+                                
+            </SidebarPusher>
+            </SidebarPushable>
+        </>
     );
 }
 

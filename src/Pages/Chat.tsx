@@ -28,6 +28,8 @@ function Chat()
     const [user, setUser] = useState<any>(null);
     const [userAttributes, setUserAttributes] = useState<any>(null);
     const { isMax, currentInterval } = useResponsiveness()
+    const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
+    const [lastScreenSize, setLastScreenSize] = useState<string>("");
 
     const handleScrollToBottom = () => {
         //
@@ -218,10 +220,24 @@ function Chat()
     }, [chatIdRef.current]);
 
     useEffect(() => {
-        // check if we need to close the sidebar
-        // if(!isMax("sm") && sideOverlayVisible)
-        //     setSideOverlayVisible(false);
-    });
+        if(currentInterval !== currentScreenSize)
+        {
+            setLastScreenSize(currentScreenSize);
+            setCurrentScreenSize(currentInterval);
+        }
+    }, [currentInterval]);
+
+    useEffect(() => {
+        if(currentScreenSize === "xs" && lastScreenSize !== "xs")
+        {
+            setSideOverlayVisible(false);
+        }
+        if(lastScreenSize === "xs" && currentScreenSize !== "xs")
+        {
+            setSideOverlayVisible(true);
+        }
+
+    }, [currentScreenSize]);
 
     return (
             <>

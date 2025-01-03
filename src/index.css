@@ -226,3 +226,17 @@ div.ui.left.sidebar {
 .footer-menubar .user {
   flex: 1;
 }
+
+/* https://css-tricks.com/almanac/properties/t/text-overflow/ */
+.overflow {
+  width: 10em;
+  /*outline: 1px solid #000;*/
+  /*margin: 0 0 2em 0;*/
+
+/**
+ * Required properties to achieve text-overflow
+ */
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ellipsis { text-overflow: ellipsis; }

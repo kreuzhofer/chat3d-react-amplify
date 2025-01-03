@@ -47,6 +47,22 @@ const schema = a.schema({
     .returns(a.string())
     .handler(a.handler.function(claimPatreonBenefitsFunction))
     .authorization((allow) => [allow.authenticated()]),
+
+  chatNamer: a
+  .generation({
+    aiModel: a.ai.model("Claude 3 Haiku"),
+    systemPrompt: `You are a helpful assistant that writes descriptive names for conversations. Names should be 2-10 words long`,
+  })
+  .arguments({
+    content: a.string(),
+  })
+  .returns(
+    a.customType({
+      name: a.string(),
+    })
+  )
+  .authorization((allow) => [allow.authenticated()]),
+
 }).authorization((allow) => [allow.resource(submitQueryFunction)]);
 
 export type Schema = ClientSchema<typeof schema>;

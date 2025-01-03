@@ -2,6 +2,7 @@ import type { Schema, IChatMessage } from "../../data/resource"
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { BedrockRuntimeClient, ConverseCommand, Message  } from "@aws-sdk/client-bedrock-runtime";
 import { generateClient } from "aws-amplify/data";
+//import { list } from 'aws-amplify/storage';
 
 import { Amplify } from 'aws-amplify';
 import { getAmplifyDataClientConfig } from '@aws-amplify/backend/function/runtime';
@@ -317,7 +318,20 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
                 if(scadExecutorResult?.statusCode !== 200)
-                  throw new Error("Failed to create 3d model");
+                {
+                  messages.pop()
+                  messages.push(
+                    {
+                      id: messageId,
+                      itemType: "image",
+                      text: scadExecutorResult?.body,
+                      state: "error",
+                      stateMessage: "",
+                      attachment: ""
+                    } as IChatMessage
+                  );
+                  return scadExecutorResult?.body;
+                }
                 const modelImageFileName = messageId+".png";
                 const modelImageKey = "modelcreator/"+modelImageFileName;
 
@@ -333,6 +347,19 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     attachment: modelImageKey
                   } as IChatMessage
                 );
+                // var filesForKey = await list({path: "modelcreator/"+messageId});
+                // filesForKey.items.forEach((file) => {
+                //   messages.push(
+                //   {
+                //     id: messageId,
+                //     itemType: "image",
+                //     text: comment,
+                //     state: "completed",
+                //     stateMessage: "",
+                //     attachment: file.path
+                //   } as IChatMessage
+                // );
+                // });
 
                 // add meta information that was created by the tool
                 messages.push(

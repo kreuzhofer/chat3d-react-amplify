@@ -38,7 +38,40 @@ function Chat()
             chatIdRef.current = (params.chatId);
     }
 
+    async function createNewChatItems(chatContextId: string) {
+        console.log("creating new chat items for context: " + chatContextId);
+        var newUserChatItem = await client.models.ChatItem.create({
+            chatContextId: chatContextId, role: "user",
+            messages: JSON.stringify([
+                {
+                    id: uuidv4(),
+                    text: query,
+                    itemType: "message",
+                    state: "completed",
+                    stateMessage: ""
+                }
+            ])
+        });
+        if(newUserChatItem.errors)
+            console.log(newUserChatItem.errors);
+        var newAssistantChatItem = await client.models.ChatItem.create({
+            chatContextId: chatContextId, role: "assistant",
+            messages: JSON.stringify([
+                {
+                    id: uuidv4(),
+                    text: "",
+                    itemType: "message",
+                    state: "pending",
+                    stateMessage: "thinking..."
+                }
+            ])
+        });
+        if(newAssistantChatItem.errors)
+            console.log(newAssistantChatItem.errors);
 
+        console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
+        return { newUserChatItem, newAssistantChatItem };
+    }
 
     async function submitChatBackendCall() {
         console.log("submitChatBackendCall");
@@ -64,7 +97,22 @@ function Chat()
         {
             setQuery(""); // remove last query
             var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContextRef.current.id);
-            var result = await client.queries.submitQuery({
+
+            if(!chatContextRef.current.name || chatContextRef.current.name === "unnamed chat")
+            {
+                // create name with ai
+                client.generations
+                .chatNamer({
+                  content: query,
+                })
+                .then(async (res) => {
+                    var chatContextUpdate = await client.models.ChatContext.update({ id: chatContextRef.current.id, name: res.data?.name ?? "unnamed chat" });
+                    if(chatContextUpdate.errors)
+                        console.error(chatContextUpdate.errors);
+                });
+            }
+
+            client.queries.submitQuery({ // we are not waiting for this to return as any backend query in amplify is limited to 30s by the api gw
                 chatContextId: chatContextRef.current.id, 
                 query: query, 
                 newUserChatItemId: newUserChatItem.data?.id, 
@@ -72,42 +120,6 @@ function Chat()
                 executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
                 bucket: outputs.storage.bucket_name
              });
-            console.log("ChatQueryResult: "+JSON.stringify(result));
-        }
-
-        async function createNewChatItems(chatContextId: string) {
-            console.log("creating new chat items for context: " + chatContextId);
-            var newUserChatItem = await client.models.ChatItem.create({
-                chatContextId: chatContextId, role: "user",
-                messages: JSON.stringify([
-                    {
-                        id: uuidv4(),
-                        text: query,
-                        itemType: "message",
-                        state: "completed",
-                        stateMessage: ""
-                    }
-                ])
-            });
-            if(newUserChatItem.errors)
-                console.log(newUserChatItem.errors);
-            var newAssistantChatItem = await client.models.ChatItem.create({
-                chatContextId: chatContextId, role: "assistant",
-                messages: JSON.stringify([
-                    {
-                        id: uuidv4(),
-                        text: "",
-                        itemType: "message",
-                        state: "pending",
-                        stateMessage: "thinking..."
-                    }
-                ])
-            });
-            if(newAssistantChatItem.errors)
-                console.log(newAssistantChatItem.errors);
-
-            console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
-            return { newUserChatItem, newAssistantChatItem };
         }
     }
 
@@ -231,7 +243,7 @@ function Chat()
                             key={item.id}>
                             <div className="hover-content">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span>{item.name}</span>
+                                    <span className="overflow ellipsis">{item.name}</span>
                                     <Popup
                                         contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
                                         trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
@@ -292,7 +304,7 @@ function Chat()
                                 </div>
                             </div>   
                             <div className="default-content">
-                                {item.name}
+                                <span className="overflow ellipsis">{item.name}</span>
                             </div> 
                         </MenuItem>
                     ))}

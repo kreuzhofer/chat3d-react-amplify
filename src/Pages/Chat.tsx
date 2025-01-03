@@ -10,7 +10,6 @@ import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
 
-
 const client = generateClient<Schema>();
 
 function Chat()
@@ -28,7 +27,7 @@ function Chat()
     const minimizeButtonRef = useRef<HTMLDivElement | null>(null);
     const [user, setUser] = useState<any>(null);
     const [userAttributes, setUserAttributes] = useState<any>(null);
-    const { isMin, isMax, isOnly, currentInterval } = useResponsiveness()
+    const { isMax, currentInterval } = useResponsiveness()
 
     const handleScrollToBottom = () => {
         //

@@ -8,6 +8,8 @@ import outputs from "../../amplify_outputs.json";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
+import { useResponsiveness } from "react-responsiveness";
+
 
 const client = generateClient<Schema>();
 
@@ -21,10 +23,12 @@ function Chat()
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [subScriptions] = useState<any[]>([]);
     const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
-    const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
+    const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(false);
     const chatAreaRef = useRef<HTMLDivElement | null>(null);
+    const minimizeButtonRef = useRef<HTMLDivElement | null>(null);
     const [user, setUser] = useState<any>(null);
     const [userAttributes, setUserAttributes] = useState<any>(null);
+    const { isMin, isMax, isOnly, currentInterval } = useResponsiveness()
 
     const handleScrollToBottom = () => {
         //
@@ -211,7 +215,14 @@ function Chat()
             });
             subScriptions.length = 0;
         };
+
     }, [chatIdRef.current]);
+
+    useEffect(() => {
+        // check if we need to close the sidebar
+        // if(!isMax("sm") && sideOverlayVisible)
+        //     setSideOverlayVisible(false);
+    });
 
     return (
             <>
@@ -219,15 +230,18 @@ function Chat()
                 <Sidebar
                     animation="overlay"
                     visible={sideOverlayVisible}
-                    onHide={() => setSideOverlayVisible(false)}
+                    onHide={() => sideOverlayVisible ? setSideOverlayVisible(false) : null }
                     className="chat-sidebar"
-                    target={chatAreaRef.current || undefined}
+                    target={isMax("sm") ? minimizeButtonRef.current || undefined : chatAreaRef.current || undefined }
                 >
 
                 <div className="top-menubar">
                     <Popup trigger={
-                        <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        <div ref={minimizeButtonRef}>
+                            <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        </div>
                     }>Close sidebar</Popup>
+                    <div>{currentInterval}, {isMax('xs') ? "true" : "false"},{isMax('sm') ? "true" : "false"},{isMax('md') ? "true" : "false"}</div>
                 </div>
                 <Menu vertical borderless fluid>
                     <MenuItem as={NavLink}

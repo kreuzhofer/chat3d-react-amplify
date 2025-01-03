@@ -39,7 +39,7 @@ div.ui.container {
 }
 
 div.ui.left.sidebar {
-  width: 200px;
+  width: 260px;
 }
 
 .ui.mobile.only.grid .ui.menu .ui.vertical.menu {
@@ -79,7 +79,7 @@ div.ui.left.sidebar {
 
 .chat-sidebar {
   height: 100vh;
-  width: 200px;
+  width: 260px;
   float: left;
   background-color: #f8f8f8;
 }
@@ -95,7 +95,7 @@ div.ui.left.sidebar {
   align-items: stretch;
   height: 100vh;
   width: auto;
-  margin-left: 200px;
+  margin-left: 260px;
 }
 
 .chat-grid.full-width {

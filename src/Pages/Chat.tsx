@@ -243,7 +243,7 @@ function Chat()
             <>
             <SidebarPushable>
                 <Sidebar
-                    animation="overlay"
+                    animation={currentScreenSize !== "xs" ? "overlay" : "push"}
                     visible={sideOverlayVisible}
                     onHide={() => sideOverlayVisible ? setSideOverlayVisible(false) : null }
                     className="chat-sidebar"
@@ -256,7 +256,6 @@ function Chat()
                             <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
                         </div>
                     }>Close sidebar</Popup>
-                    <div>{currentInterval}, {isMax('xs') ? "true" : "false"},{isMax('sm') ? "true" : "false"},{isMax('md') ? "true" : "false"}</div>
                 </div>
                 <Menu vertical borderless fluid>
                     <MenuItem as={NavLink}
@@ -269,7 +268,8 @@ function Chat()
                     {chatContexts.map((item) => (
                         <MenuItem as={NavLink}
                             to={"/chat/"+item.id}
-                            key={item.id}>
+                            key={item.id}
+                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}>
                             <div className="hover-content">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                     <span className="overflow ellipsis">{item.name}</span>
@@ -363,7 +363,7 @@ function Chat()
                 </Sidebar>
                 <SidebarPusher>
 
-            <div className={sideOverlayVisible ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
+            <div className={sideOverlayVisible && currentScreenSize !== "xs" ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
                 <div className="top-menubar">
                     <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
                         <Popup trigger={

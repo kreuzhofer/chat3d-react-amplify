@@ -1,12 +1,13 @@
-import type { Schema } from "../../amplify/data/resource";
+import type { IChatMessage, Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
-import ChatMessage from "../Components/ChatMessage";
 import { useEffect, useState, useRef } from "react";
 import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
+import { list, remove } from 'aws-amplify/storage';
+import ChatMessage from "../Components/ChatMessage";
 
 const client = generateClient<Schema>();
 
@@ -243,7 +244,46 @@ function Chat()
                                                 <Icon name="edit"/>
                                                 Rename
                                             </MenuItem>
-                                            <MenuItem onClick={(e) => e.preventDefault()}>
+                                            <MenuItem onClick={async function (e) {
+                                                    e.preventDefault();
+                                                    console.log("trying to delete: "+item.id);
+                                                    // iterate over all chat items and delete them
+                                                    const chatContextToDelete = await client.models.ChatContext.get({ id: item.id });
+                                                    if(chatContextToDelete.data)
+                                                    {
+                                                        const chatItemsForChatContext = await chatContextToDelete.data.chatItems();
+                                                        chatItemsForChatContext.data.forEach(async (item) => {
+                                                            console.log("deleting chat item: "+item.id);
+                                                            // iterate over all messages in the chatItem and delete all scad and png files in the s3 bucket matching the message id
+                                                            if(item.messages)
+                                                            {
+                                                                if (typeof item.messages === 'string') {
+                                                                    const messages: IChatMessage[] = item.messages ? JSON.parse(item.messages as string) : [];
+                                                                    
+                                                                    messages.forEach(async (message) => {
+                                                                        if(message.itemType === "image")
+                                                                        {
+                                                                            const key = "modelcreator/"+message.id;
+
+                                                                            var filesForKey = await list({path: key});
+                                                                            console.log("filesForKey: "+JSON.stringify(filesForKey));
+                                                                            filesForKey.items.forEach(async (file) => {
+                                                                                console.log("deleting file: "+file.path);
+                                                                                await remove({path: file.path});
+                                                                            });
+                                                                        }
+                                                                    });
+                                                                }
+                                                            }
+                                                            await client.models.ChatItem.delete({ id: item.id });
+                                                        });
+
+                                                        console.log("deleting chat context: "+item.id);
+                                                        await client.models.ChatContext.delete({ id: item.id });
+                                                        navigate("/chat/new");
+                                                    }
+
+                                                    }}>
                                                 <Icon name="trash"/>
                                                 Delete
                                             </MenuItem>
@@ -266,6 +306,7 @@ function Chat()
                     <div className="user">
                         <Popup on={"click"} trigger={
                             /* https://www.perplexity.ai/search/i-like-to-create-avatar-images-c4mY118TRlexy9NxCk2Fyw */
+                            /* https://www.stefanjudis.com/blog/apis-to-generate-random-user-avatars/ */
                             <Image avatar src={userAttributes && userAttributes.picture ? userAttributes.picture : "https://api.dicebear.com/9.x/avataaars/svg?seed="+(user ? user.userId : "") } />
                             } hideOnScroll>
                             <Menu vertical borderless fluid>

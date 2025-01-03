@@ -2,7 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 
-export interface ChatMessage {
+export interface IChatMessage {
   id: string;
   text: string;
   state: string;

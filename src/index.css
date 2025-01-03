@@ -1,4 +1,8 @@
 
+#root
+{
+  font-size: 16px;
+}
 
 body {
   background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));

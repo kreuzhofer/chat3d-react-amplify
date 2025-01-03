@@ -251,7 +251,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 "Return your results separated in exactly three xml tags. <plan></plan> with your detailed plan for the model creation. "+
                 "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names. "+
                 "You must ensure that all xml tags contain an opening and closing tag in your response. "+
-                "If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front. "
+                "If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front. "+
+                "Animate the generated model to turn around the z-axis. "
 
                 const converse3DModelCommandInput = {
                     modelId: generate3dmodelId,

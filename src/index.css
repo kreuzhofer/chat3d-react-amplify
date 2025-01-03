@@ -8,7 +8,7 @@ body {
   background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));
   display: flex;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
   /*justify-content: center;*/

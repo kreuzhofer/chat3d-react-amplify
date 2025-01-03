@@ -8,6 +8,7 @@ import outputs from "../../amplify_outputs.json";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
+import { useResponsiveness } from "react-responsiveness";
 
 const client = generateClient<Schema>();
 
@@ -21,10 +22,14 @@ function Chat()
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [subScriptions] = useState<any[]>([]);
     const [chatContexts, setChatContexts] = useState<Array<Schema["ChatContext"]["type"]>>([]);
-    const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(true);
+    const [sideOverlayVisible, setSideOverlayVisible] = useState<boolean>(false);
     const chatAreaRef = useRef<HTMLDivElement | null>(null);
+    const minimizeButtonRef = useRef<HTMLDivElement | null>(null);
     const [user, setUser] = useState<any>(null);
     const [userAttributes, setUserAttributes] = useState<any>(null);
+    const { isMax, currentInterval } = useResponsiveness()
+    const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
+    const [lastScreenSize, setLastScreenSize] = useState<string>("");
 
     const handleScrollToBottom = () => {
         //
@@ -211,22 +216,45 @@ function Chat()
             });
             subScriptions.length = 0;
         };
+
     }, [chatIdRef.current]);
+
+    useEffect(() => {
+        if(currentInterval !== currentScreenSize)
+        {
+            setLastScreenSize(currentScreenSize);
+            setCurrentScreenSize(currentInterval);
+        }
+    }, [currentInterval]);
+
+    useEffect(() => {
+        if(currentScreenSize === "xs" && lastScreenSize !== "xs")
+        {
+            setSideOverlayVisible(false);
+        }
+        if(lastScreenSize === "xs" && currentScreenSize !== "xs")
+        {
+            setSideOverlayVisible(true);
+        }
+
+    }, [currentScreenSize]);
 
     return (
             <>
             <SidebarPushable>
                 <Sidebar
-                    animation="overlay"
+                    animation={currentScreenSize !== "xs" ? "overlay" : "push"}
                     visible={sideOverlayVisible}
-                    onHide={() => setSideOverlayVisible(false)}
+                    onHide={() => sideOverlayVisible ? setSideOverlayVisible(false) : null }
                     className="chat-sidebar"
-                    target={chatAreaRef.current || undefined}
+                    target={isMax("sm") ? minimizeButtonRef.current || undefined : chatAreaRef.current || undefined }
                 >
 
                 <div className="top-menubar">
                     <Popup trigger={
-                        <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        <div ref={minimizeButtonRef}>
+                            <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        </div>
                     }>Close sidebar</Popup>
                 </div>
                 <Menu vertical borderless fluid>
@@ -240,7 +268,8 @@ function Chat()
                     {chatContexts.map((item) => (
                         <MenuItem as={NavLink}
                             to={"/chat/"+item.id}
-                            key={item.id}>
+                            key={item.id}
+                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}>
                             <div className="hover-content">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                     <span className="overflow ellipsis">{item.name}</span>
@@ -334,7 +363,7 @@ function Chat()
                 </Sidebar>
                 <SidebarPusher>
 
-            <div className={sideOverlayVisible ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
+            <div className={sideOverlayVisible && currentScreenSize !== "xs" ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
                 <div className="top-menubar">
                     <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
                         <Popup trigger={

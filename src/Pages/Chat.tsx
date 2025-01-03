@@ -106,9 +106,9 @@ function Chat()
                   content: query,
                 })
                 .then(async (res) => {
-                    var chatContextUpdate = await client.models.ChatContext.update({ id: chatContextRef.current.id, name: res.data?.name ?? "error" });
+                    var chatContextUpdate = await client.models.ChatContext.update({ id: chatContextRef.current.id, name: res.data?.name ?? "unnamed chat" });
                     if(chatContextUpdate.errors)
-                        console.log(chatContextUpdate.errors);
+                        console.error(chatContextUpdate.errors);
                 });
             }
 
@@ -243,7 +243,7 @@ function Chat()
                             key={item.id}>
                             <div className="hover-content">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span>{item.name}</span>
+                                    <span className="overflow ellipsis">{item.name}</span>
                                     <Popup
                                         contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
                                         trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
@@ -304,7 +304,7 @@ function Chat()
                                 </div>
                             </div>   
                             <div className="default-content">
-                                {item.name}
+                                <span className="overflow ellipsis">{item.name}</span>
                             </div> 
                         </MenuItem>
                     ))}

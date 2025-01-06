@@ -259,7 +259,9 @@ function Chat()
                 </div>
                 <Menu vertical borderless fluid>
                     <MenuItem as={NavLink}
-                        to="/chat/new">
+                        to="/chat/new"
+                        onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}
+                        >
                         <Icon name="edit"/>
                         New Chat
                     </MenuItem>
@@ -269,7 +271,8 @@ function Chat()
                         <MenuItem as={NavLink}
                             to={"/chat/"+item.id}
                             key={item.id}
-                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}>
+                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}
+                            >
                             <div className="hover-content">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                     <span className="overflow ellipsis">{item.name}</span>
@@ -277,10 +280,9 @@ function Chat()
                                         contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
                                         trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
                                         on='click'
-                                        position='right center'
                                         hideOnScroll
                                     >
-                                        <Menu>
+                                        <Menu vertical borderless fluid>
                                             <MenuItem onClick={(e) => e.preventDefault()}>
                                                 <Icon name="edit"/>
                                                 Rename

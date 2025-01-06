@@ -1,29 +1,62 @@
+/* 
+@supports (height:100cqh) {
+  :root {
+      --cqh-full: 100cqh;
+      --cqw-full: 100cqw;
+  }
+} */
 
-#root
+@supports (height: 100dvh) {
+  html, body, #root {
+    min-height: 100dvh;
+    height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-device-pixel-ratio:2), (min-resolution: 192dpi), (min-resolution: 2dppx) {
+  :root {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+  container-type: size;
+}
+
+#root {
+  height: var(--cqh-full, 100dvh);
+  max-height: 100dvh;
+}
+
+html
 {
   font-size: 16px !important;
 }
 
 html body {
-  min-height: 100svh !important; 
-  min-height: -webkit-fill-available !important;
-}
+  font-size: 16px !important;
+ }
 
 html body #root {
-  background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));
+/*   background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));
   display: flex;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; */
   /*height: 100%;*/
-  width: 100% !important;
-  overflow-x: hidden;
+/*   width: 100% !important;
+  overflow-x: hidden; */
   /*justify-content: center;*/
   /*align-items: center;*/
   /*min-height: 2000px;*/
   /*padding-top: 100px;*/
-  -webkit-font-smoothing: antialiased;
+/*   -webkit-font-smoothing: antialiased;
   -moz-font-smoothing: grayscale;
   min-height: 100vh; 
-  min-height: -webkit-fill-available;
+  min-height: -webkit-fill-available; */
 }
 
 /* .ui.borderless.menu {
@@ -85,14 +118,14 @@ div.ui.left.sidebar {
 }
 
 .chat-sidebar {
-  height: 100vh;
+  height: 100cqh;
   width: 260px;
   float: left;
   background-color: #f8f8f8;
 }
 
 .chat-contexts {
-  height: calc(100vh - 165px);
+  height: calc(100cqh - 176px);
   overflow: auto;
 }
 
@@ -100,7 +133,7 @@ div.ui.left.sidebar {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  height: 100vh;
+  height: calc(100cqh);
   width: auto;
   margin-left: 260px;
 }
@@ -114,7 +147,7 @@ div.ui.left.sidebar {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  height: calc(100vh - 80px);
+  height: calc(100cqh - 80px);
   overflow: auto;
 }
 

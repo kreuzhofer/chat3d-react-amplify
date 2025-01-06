@@ -251,7 +251,7 @@ function Chat()
                 >
 
                 <div className="top-menubar">
-                    <Popup trigger={
+                    <Popup hideOnScroll trigger={
                         <div ref={minimizeButtonRef}>
                             <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
                         </div>
@@ -366,7 +366,7 @@ function Chat()
             <div className={sideOverlayVisible && currentScreenSize !== "xs" ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
                 <div className="top-menubar">
                     <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
-                        <Popup trigger={
+                        <Popup hideOnScroll trigger={
                             <Icon bordered link name="columns" 
                                 onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
                         }>Open sidebar</Popup>

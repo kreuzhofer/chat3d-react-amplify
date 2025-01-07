@@ -79,6 +79,8 @@ function Chat()
     }
 
     async function submitChatBackendCall() {
+        if(query === "")
+            return;
         console.log("submitChatBackendCall");
         console.log("chatId: "+chatIdRef.current);
         console.log("chatContext: "+JSON.stringify(chatContextRef.current));

@@ -2,7 +2,6 @@ import type { Schema, IChatMessage } from "../../amplify/data/resource";
 import { Loader, Segment, Icon } from "semantic-ui-react";
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 
-
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {
     const messages = item.messages ? JSON.parse(item.messages as string) as IChatMessage[] : [];
@@ -47,12 +46,13 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                         </div>
                     </div>
                 )
-            else if(message.itemType === "stl")
+            else if(message.itemType === "3dmodel")
+            {
                 return(
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}
-                            <div className="response-actions">
-                                <a href="images/candleStand.stl" download="candleStand.stl" className="ui primary button">Download STL</a>
+                            <div className="response-3dmodel">
+                                <StorageImage alt="image" path={message.attachment} />
                             </div> 
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>
@@ -61,6 +61,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                         </div>
                     </div>
                 )
+            }
             return null;
         })}
         </>

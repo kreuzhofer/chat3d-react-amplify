@@ -43,7 +43,7 @@ function extractSections(text: string): DocumentSections {
   };
 }
 
-async function invokeOpenScadExecutorFunction(fileName: string, openscadExecutorFunctionName: string, bucketName: string) {
+async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, openscadExecutorFunctionName: string, bucketName: string) {
 
   const lambdaClient = new LambdaClient({});
     const invokeParams = {
@@ -51,6 +51,7 @@ async function invokeOpenScadExecutorFunction(fileName: string, openscadExecutor
       InvocationType: 'RequestResponse' as const,
       Payload: JSON.stringify({
         fileName: fileName,
+        targetFilename: targetFilename,
         bucket: bucketName
       }),
     };
@@ -128,8 +129,9 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
       system:[{
-        text: "You are a helpful 3d modeling assistant. The user can ask you to create a 3D model or other things about 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning."+ 
-        "Every time the user asks you to create a 3d model, you will use a tool to create a 3D model and you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool."+
+        text: "You are a helpful 3d modeling assistant. The user can ask you to create a 3D model and you will discuss with them the details and be able to improve the design in a step-by-step conversation. "+ 
+        "Before you ask for the get_3D_model tool, ensure you have enough information to create a model with details. For example: If a user asks you to create a box, ask for the dimensions and if the user asks you to create something creative like a castle, ask for the theme. "+
+        "Every time you decide to ask for the get_3D_model tool, you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool."+
         "You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning and you will create 3d models. Any other discussions you will politely decline."
       }],
       toolConfig: {
@@ -243,8 +245,10 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 "You will strive for high detail, dimensional accuracy and structural integrity. "+
                 "If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together. "+
                 "Always start with creating functions for specific details of the final model so you are not missing out on them later. "+
+                "For multi-color models, assemble all parts that have the same color in one function per color do not create a separate module at the end, instead just call the functions individually. "
+                +"Do not do any transformations whatsoever outside of the individual modules. Anything related to the colored parts needs to be done in their respective modules. "+
                 "Body parts should be connected, avoid parts floating in the air unless intended. "+
-                "Make models parametric to have parameters for modifying dimensions of the object. "+
+                "Make models parametric where it makes sense. For example: A box should have parameters for width, height and depth and if the box is open on one side it also should have a wall-thickness parameter. "+
                 "Always set $fn to 100. Start every answer by creating a plan of how you are going to create the object and how it will ensure to fit the requested object. "+
                 "Elaborate step by step your thoughts and add the Openscad script as your last element to the response. "+
                 "Add decent commenting in your code to support your thoughts how this achieves the result. "+
@@ -252,8 +256,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 "Return your results separated in exactly three xml tags. <plan></plan> with your detailed plan for the model creation. "+
                 "<code></code> containing the code and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names. "+
                 "You must ensure that all xml tags contain an opening and closing tag in your response. "+
-                "If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front. "+
-                "Animate the generated model to turn around the z-axis. "
+                "If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front. "
+                //+"Animate the generated model to turn around the z-axis. "
 
                 const converse3DModelCommandInput = {
                     modelId: generate3dmodelId,
@@ -315,26 +319,36 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   messages: JSON.stringify(messages)
                   });
 
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, executorFunctionName, bucket);
+                const targetImagefilename = messageId+".png";
+                const target3MFFilename = messageId+".3mf";
+                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetImagefilename, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
-                if(scadExecutorResult?.statusCode !== 200)
+
+                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
+                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
+
+                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
+                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
                 {
-                  messages.pop()
+                  messages.pop();
+                  messages.pop();
                   messages.push(
                     {
                       id: messageId,
-                      itemType: "image",
-                      text: scadExecutorResult?.body,
+                      itemType: "errormessage",
+                      text: "There was a problem creating the model. Please try again later.",
                       state: "error",
                       stateMessage: "",
                       attachment: ""
                     } as IChatMessage
                   );
+                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                    messages: JSON.stringify(messages)
+                    });  
                   return scadExecutorResult?.body;
                 }
-                const modelImageFileName = messageId+".png";
-                const modelImageKey = "modelcreator/"+modelImageFileName;
-
+                
+                const modelImageKey = "modelcreator/"+targetImagefilename;
                 // update message inside of newAssistantChatItem with state completed
                 messages.pop()
                 messages.push(
@@ -342,11 +356,59 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     id: messageId,
                     itemType: "image",
                     text: comment,
-                    state: "completed",
-                    stateMessage: "",
+                    state: "pending",
+                    stateMessage: "creating 3D model...",
                     attachment: modelImageKey
                   } as IChatMessage
                 );
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });  
+
+                // render final model file
+                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, target3MFFilename, executorFunctionName, bucket);
+                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
+
+                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
+                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
+
+                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
+                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
+                {
+                  messages.pop();
+                  messages.pop();
+                  messages.push(
+                    {
+                      id: messageId,
+                      itemType: "errormessage",
+                      text: "There was a problem creating the model. Please try again later.",
+                      state: "error",
+                      stateMessage: "",
+                      attachment: ""
+                    } as IChatMessage
+                  );
+                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                    messages: JSON.stringify(messages)
+                    });  
+                  return scadExecutorResult?.body;
+                }
+
+                const model3MFKey = "modelcreator/"+target3MFFilename;
+                messages.pop()
+                messages.push(
+                  {
+                    id: messageId,
+                    itemType: "3dmodel",
+                    text: comment,
+                    state: "completed",
+                    stateMessage: "",
+                    attachment: model3MFKey
+                  } as IChatMessage
+                );
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });  
+
                 // var filesForKey = await list({path: "modelcreator/"+messageId});
                 // filesForKey.items.forEach((file) => {
                 //   messages.push(

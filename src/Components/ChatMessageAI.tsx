@@ -1,6 +1,7 @@
 import type { Schema, IChatMessage } from "../../amplify/data/resource";
 import { Loader, Segment, Icon } from "semantic-ui-react";
 import { StorageImage } from '@aws-amplify/ui-react-storage';
+import ModelViewer from "./ModelViewer";
 
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {
@@ -52,7 +53,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}
                             <div className="response-3dmodel">
-                                <StorageImage alt="image" path={message.attachment} />
+                                <ModelViewer fileName={message.attachment} />
                             </div> 
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>

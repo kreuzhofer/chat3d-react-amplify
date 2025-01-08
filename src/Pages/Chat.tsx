@@ -133,10 +133,10 @@ function Chat()
     const getUser = async () => {
         const user = await getCurrentUser();
         if (user) setUser(user);
-        console.log(user);
+        //console.log(user);
         const attributes = await fetchUserAttributes();
         if(attributes) {
-            console.log(attributes);
+            //console.log(attributes);
             setUserAttributes(attributes);
         }
     };
@@ -195,7 +195,7 @@ function Chat()
                 next: (data) => {
                     const sortedItems = data.items.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
                     setChatMessages([...sortedItems])
-                    console.debug("data.items: "+JSON.stringify(data.items));
+                    //console.debug("data.items: "+JSON.stringify(data.items));
                     handleScrollToBottom();
                 },
             });

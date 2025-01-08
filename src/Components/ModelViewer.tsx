@@ -30,11 +30,11 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         refContainer.current && refContainer.current.appendChild( renderer.domElement );
         scene.add( new THREE.AmbientLight( 0xffffff, 1 ) );
 
-        const light = new THREE.DirectionalLight( 0xffffff, 3 );
+        const light = new THREE.DirectionalLight( 0xffffff, 2 );
         light.position.set( - 1, - 2.5, 1 );
         scene.add( light );
 
-        const secondlight = new THREE.DirectionalLight( 0xffffff, 3 );
+        const secondlight = new THREE.DirectionalLight( 0xffffff, 2 );
         light.position.set( 1, 2.5, 1 );
         scene.add( secondlight );
 

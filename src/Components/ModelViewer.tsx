@@ -36,6 +36,8 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
 
         const controls = new OrbitControls( camera, renderer.domElement );
         controls.autoRotate = true;
+        controls.enableDamping = true
+        controls.dampingFactor = 0.05
         controls.update();
 
         loader.load(
@@ -64,8 +66,16 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
                 const cameraDistance = diagonal / (2 * Math.tan((fov * Math.PI) / 360))
 
                 // Position camera
-                camera.position.set(0, 0, cameraDistance)
+                //camera.position.set(0, 0, cameraDistance)
+                // Position camera at an angle (45 degrees from top)
+                const angle = Math.PI / 4 // 45 degrees
+                camera.position.set(
+                    center.x + cameraDistance * Math.sin(angle),
+                    center.y + cameraDistance * Math.sin(angle),
+                    center.z + cameraDistance * Math.cos(angle)
+                )
                 camera.lookAt(center)
+                controls.target.copy(center) // Set orbit center to object's center
 
                 var animate = function () {
                     requestAnimationFrame(animate);

@@ -75,7 +75,7 @@ const openscadExecutorFunctionWithImage = new lambda.Function(customResourceStac
   environment: {
     // Add any environment variables if needed
   },
-  timeout: Duration.seconds(60),
+  timeout: Duration.seconds(120),
   role: role,
   memorySize: 2048
 });

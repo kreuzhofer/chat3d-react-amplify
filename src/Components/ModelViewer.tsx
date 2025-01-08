@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getUrl } from 'aws-amplify/storage';
 import { useEffect, useRef } from "react";
 import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 interface ModelViewerProps {
     fileName: string;
 }
@@ -22,6 +23,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera();
         var renderer = new THREE.WebGLRenderer();
+
         renderer.setSize(256, 256);
         // document.body.appendChild( renderer.domElement );
         // use ref as a mount point of the Three.js scene instead of the document.body
@@ -31,6 +33,10 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         const light = new THREE.DirectionalLight( 0xffffff, 2 );
         light.position.set( - 1, - 2.5, 1 );
         scene.add( light );
+
+        const controls = new OrbitControls( camera, renderer.domElement );
+        controls.autoRotate = true;
+        controls.update();
 
         loader.load(
             downloadUrl,
@@ -64,14 +70,15 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
                 var animate = function () {
                     requestAnimationFrame(animate);
                     //object.rotation.x += 0.01;
-                    object.rotation.z += 0.01;
+                    //object.rotation.z += 0.01;
+                    controls.update();
                     renderer.render(scene, camera);
                 };
                 animate();
             },
-            // (xhr) => {
-            //     console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-            // },
+            () => {
+                //console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+            },
             (error) => {
                 console.error(error)
             }
@@ -86,9 +93,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
 
   }, [fileName]);
   return (
-    <div style={{ width: '256px', height: '256px' }}>
-        <div ref={refContainer}></div>
-    </div>
+    <div ref={refContainer}></div>
   );
 }
 

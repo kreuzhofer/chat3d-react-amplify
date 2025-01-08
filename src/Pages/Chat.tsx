@@ -182,7 +182,7 @@ function Chat()
             navigate("/chat");
         }
 
-        if(chatIdRef.current !== "" && chatContextRef.current === null)
+        if(chatIdRef.current !== "")
         {
             fetchChatContext();
         }

@@ -53,7 +53,9 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}
                             <div className="response-3dmodel">
-                                <ModelViewer fileName={message.attachment} />
+                                <Segment>
+                                    <ModelViewer fileName={message.attachment} />
+                                </Segment>
                             </div> 
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>

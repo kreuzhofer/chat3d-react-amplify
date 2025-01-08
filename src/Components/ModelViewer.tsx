@@ -69,9 +69,9 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
                 };
                 animate();
             },
-            (xhr) => {
-                console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
-            },
+            // (xhr) => {
+            //     console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+            // },
             (error) => {
                 console.error(error)
             }

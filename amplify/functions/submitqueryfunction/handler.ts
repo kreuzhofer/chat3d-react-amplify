@@ -213,7 +213,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: "", 
                     state: "pending",
                     stateMessage: "creating model sketch...",
-                    attachment: "modelcreator/generating.png"
+                    attachment: ""
                   } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -332,7 +332,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: "", 
                     state: "pending",
                     stateMessage: "creating preview image...",
-                    attachment: "modelcreator/generating.png"
+                    attachment: ""
                   } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 

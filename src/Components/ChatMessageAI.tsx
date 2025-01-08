@@ -42,7 +42,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                                         ) : (
                                             <StorageImage alt="image" path={message.attachment} />
                                         )
-                                    ) : null }
+                                    ) : <StorageImage alt="image" path={message.attachment} /> }
                                 </Segment>
                             </div>
                         </div>

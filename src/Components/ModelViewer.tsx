@@ -28,11 +28,15 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         // document.body.appendChild( renderer.domElement );
         // use ref as a mount point of the Three.js scene instead of the document.body
         refContainer.current && refContainer.current.appendChild( renderer.domElement );
-        scene.add( new THREE.AmbientLight( 0xffffff, 0.6 ) );
+        scene.add( new THREE.AmbientLight( 0xffffff, 1 ) );
 
-        const light = new THREE.DirectionalLight( 0xffffff, 2 );
+        const light = new THREE.DirectionalLight( 0xffffff, 3 );
         light.position.set( - 1, - 2.5, 1 );
         scene.add( light );
+
+        const secondlight = new THREE.DirectionalLight( 0xffffff, 3 );
+        light.position.set( 1, 2.5, 1 );
+        scene.add( secondlight );
 
         const controls = new OrbitControls( camera, renderer.domElement );
         controls.autoRotate = true;

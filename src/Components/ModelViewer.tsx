@@ -21,6 +21,8 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
 
         // === THREE.JS CODE START ===
         var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x404040)
+
         var camera = new THREE.PerspectiveCamera();
         var renderer = new THREE.WebGLRenderer();
 

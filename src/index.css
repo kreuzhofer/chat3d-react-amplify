@@ -175,6 +175,7 @@ div.ui.left.sidebar {
 }
 .message.ai .content {
   background-color: #e0e1e2;
+  max-width: 80vw;
 }
 .message.ai.error .content {
   background-color: #ff000036;

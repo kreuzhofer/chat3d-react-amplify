@@ -28,8 +28,6 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                     </div>
                 )
             else if(message.itemType === "image")
-            {
-                console.log("attachment", message.attachment);
                 return(
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}
@@ -50,7 +48,6 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                         </div>
                     </div>
                 )
-            }
             else if(message.itemType === "3dmodel")
             {
                 return(

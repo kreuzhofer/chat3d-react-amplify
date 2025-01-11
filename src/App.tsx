@@ -6,16 +6,20 @@ import ClaimPatreon from "./Pages/ClaimPatreon";
 import { ResponsivenessProvider } from "react-responsiveness";
 import mixpanel from 'mixpanel-browser'
 import Home from "./Pages/Home";
-mixpanel.init(import.meta.env.MIXPANEL_TOKEN, {track_pageview: "full-url"});
+
+if (process.env.MIXPANEL_TOKEN)
+  mixpanel.init(process.env.MIXPANEL_TOKEN, { track_pageview: "full-url" });
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          {import.meta.env.REACT_APP_ENV === "local" ? (
-          <Route index element={<Chat />} />
-          ) : (<Route index element={<Home />} />)}
+          {process.env.REACT_APP_ENV === "local" ? (
+            <Route index element={<Chat />} />
+            ) : (
+            <Route index element={<Home />} />
+          )}
           <Route path="/chat/:chatId?" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/claim-patreon" element={<ClaimPatreon />} />

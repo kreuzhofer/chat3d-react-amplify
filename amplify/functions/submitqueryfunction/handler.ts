@@ -429,20 +429,6 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   messages: JSON.stringify(messages)
                   });  
 
-                // var filesForKey = await list({path: "modelcreator/"+messageId});
-                // filesForKey.items.forEach((file) => {
-                //   messages.push(
-                //   {
-                //     id: messageId,
-                //     itemType: "image",
-                //     text: comment,
-                //     state: "completed",
-                //     stateMessage: "",
-                //     attachment: file.path
-                //   } as IChatMessage
-                // );
-                // });
-
                 // add meta information that was created by the tool
                 messages.push(
                   {

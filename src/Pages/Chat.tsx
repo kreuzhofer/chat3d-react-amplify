@@ -234,7 +234,7 @@ function Chat()
         {
             setSideOverlayVisible(false);
         }
-        if(lastScreenSize === "xs" && currentScreenSize !== "xs")
+        if((lastScreenSize === "xs" && currentScreenSize !== "xs") || (lastScreenSize === "" && currentScreenSize !== "xs"))
         {
             setSideOverlayVisible(true);
         }

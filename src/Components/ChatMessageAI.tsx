@@ -86,6 +86,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}
                             <div className="response-3dmodel">
+                                <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="Download 3MF file" />
                                 <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="Download CSG file" />
                             </div>
                         </div>

@@ -340,7 +340,6 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   });
 
                 const targetImagefilename = messageId+".png";
-                const targetModelFilename = messageId+".3mf";
                 var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetImagefilename, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
 
@@ -386,6 +385,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   });  
 
                 // render final model file
+                const targetModelFilename = messageId+".3mf";
                 var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetModelFilename, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
 
@@ -442,7 +442,21 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
                   messages: JSON.stringify(messages)
-                  });  
+                  });
+                  
+                messages.push(
+                    {
+                      id: messageId,
+                      itemType: "cadfiles",
+                      text: "Creating the CSG and STEP files will take a moment...",
+                      state: "pending",
+                      stateMessage: "",
+                      attachment: ""
+                    } as IChatMessage
+                  );
+                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                  messages: JSON.stringify(messages)
+                  });
 
             } else {
                 throw new Error("Input does not have a description property");

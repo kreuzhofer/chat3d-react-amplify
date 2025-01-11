@@ -31,6 +31,9 @@ function Chat()
     const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
 
+    console.log("Chat env: "+JSON.stringify(import.meta.env));
+    console.log("Chat vars: "+JSON.stringify(process.env));
+
     const handleScrollToBottom = () => {
         //
         messagesEndRef.current?.scrollIntoView();

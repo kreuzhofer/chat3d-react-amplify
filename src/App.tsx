@@ -5,7 +5,7 @@ import Profile from "./Pages/Profile";
 import ClaimPatreon from "./Pages/ClaimPatreon";
 import { ResponsivenessProvider } from "react-responsiveness";
 import mixpanel from 'mixpanel-browser'
-mixpanel.init('422c4d650520a3b59f235842427b3aa3', {track_pageview: "full-url"});
+mixpanel.init(import.meta.env.MIXPANEL_TOKEN, {track_pageview: "full-url"});
 
 function App() {
   return (

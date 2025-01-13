@@ -20,7 +20,7 @@ function App() {
             ) : (
             <Route index element={<Home />} />
           )} */}
-          <Route index element={<Home />} />
+          <Route index element={<Chat />} />
 
           <Route path="/chat/:chatId?" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />

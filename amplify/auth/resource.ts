@@ -1,5 +1,7 @@
 import { defineAuth, secret } from '@aws-amplify/backend';
 import { ProviderAttribute } from 'aws-cdk-lib/aws-cognito';
+import { preSignUp } from './pre-sign-up/resource';
+import { postAuthentication } from './post-authentication/resource';
 
 /**
  * Define and configure your auth resource
@@ -29,4 +31,8 @@ export const auth = defineAuth({
     }
   },
   
+  triggers: {
+    preSignUp,
+    postAuthentication,
+  }
 });

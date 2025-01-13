@@ -7,10 +7,11 @@ import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import "./index.css";
 Amplify.configure(outputs);
+const isDev = import.meta.env.DEV;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Authenticator>
+    <Authenticator hideSignUp={!isDev}>
       <WithResponsiveness />
     </Authenticator>
   </React.StrictMode>

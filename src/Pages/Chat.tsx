@@ -77,7 +77,7 @@ function Chat()
         if(newAssistantChatItem.errors)
             console.log(newAssistantChatItem.errors);
 
-        console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
+        //console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
         return { newUserChatItem, newAssistantChatItem };
     }
 

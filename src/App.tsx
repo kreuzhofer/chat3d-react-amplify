@@ -5,7 +5,7 @@ import Profile from "./Pages/Profile";
 import ClaimPatreon from "./Pages/ClaimPatreon";
 import { ResponsivenessProvider } from "react-responsiveness";
 import mixpanel from 'mixpanel-browser'
-import Home from "./Pages/Home";
+//import Home from "./Pages/Home";
 
 if (process.env.MIXPANEL_TOKEN)
   mixpanel.init(process.env.MIXPANEL_TOKEN, { track_pageview: "full-url" });

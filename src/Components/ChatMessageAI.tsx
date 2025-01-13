@@ -53,13 +53,6 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                 )
             else if(message.itemType === "3dmodel")
             {
-                getUrl({
-                    path: filePrefix+message.id+".step",
-                    // Alternatively, path: ({identityId}) => `album/{identityId}/1.jpg`
-                  }).then(linkToStorageFile => {
-                    console.log('signed URL: ', linkToStorageFile.url);
-                    console.log('URL expires at: ', linkToStorageFile.expiresAt);
-                  });
                 return(
                     <div className="message ai" key={message.id}>
                         <div className="content">{message.text}

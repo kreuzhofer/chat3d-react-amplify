@@ -15,11 +15,13 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          {process.env.REACT_APP_ENV === "local" ? (
+          {/* {process.env.REACT_APP_ENV === "local" ? (
             <Route index element={<Chat />} />
             ) : (
             <Route index element={<Home />} />
-          )}
+          )} */}
+          <Route index element={<Home />} />
+
           <Route path="/chat/:chatId?" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/claim-patreon" element={<ClaimPatreon />} />

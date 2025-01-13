@@ -31,6 +31,9 @@ function Chat()
     const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
 
+    // console.log("Chat env: "+JSON.stringify(import.meta.env));
+    // console.log("Chat vars: "+JSON.stringify(process.env));
+
     const handleScrollToBottom = () => {
         //
         messagesEndRef.current?.scrollIntoView();
@@ -74,7 +77,7 @@ function Chat()
         if(newAssistantChatItem.errors)
             console.log(newAssistantChatItem.errors);
 
-        console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
+        //console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
         return { newUserChatItem, newAssistantChatItem };
     }
 
@@ -94,9 +97,9 @@ function Chat()
                 chatIdRef.current = chatContextCreate.data.id;
                 chatContextRef.current = chatContextCreate.data;
             }
-            console.log("chat context data: " + JSON.stringify(chatContextCreate.data));
-            console.log("chat context created: " + chatContextCreate.data?.id);
-            console.log("chat context owner: " + chatContextCreate.data?.owner);
+            //console.log("chat context data: " + JSON.stringify(chatContextCreate.data));
+            //console.log("chat context created: " + chatContextCreate.data?.id);
+            //console.log("chat context owner: " + chatContextCreate.data?.owner);
             navigate("/chat/" + chatContextRef.current.id);
         }
 
@@ -234,7 +237,7 @@ function Chat()
         {
             setSideOverlayVisible(false);
         }
-        if(lastScreenSize === "xs" && currentScreenSize !== "xs")
+        if((lastScreenSize === "xs" && currentScreenSize !== "xs") || (lastScreenSize === "" && currentScreenSize !== "xs"))
         {
             setSideOverlayVisible(true);
         }

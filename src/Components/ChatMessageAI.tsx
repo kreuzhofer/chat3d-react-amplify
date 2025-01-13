@@ -3,7 +3,6 @@ import { Loader, Segment, Icon, Placeholder, PlaceholderImage, Button } from "se
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 import ModelViewer from "./ModelViewer";
 import FileDownloadButton from "./FileDownloadButton";
-import { getUrl } from "aws-amplify/storage";
 
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {

@@ -446,7 +446,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   
                 messages.push(
                     {
-                      id: messageId,
+                      id: uuidv4(),
                       itemType: "cadfiles",
                       text: "Creating the CSG and STEP files will take a moment...",
                       state: "pending",

@@ -3,6 +3,8 @@ import { Loader, Segment, Icon, Placeholder, PlaceholderImage, Button } from "se
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 import ModelViewer from "./ModelViewer";
 import FileDownloadButton from "./FileDownloadButton";
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function ChatMessageAI(item: Schema["ChatItem"]["type"])
 {
@@ -16,7 +18,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                 return (
                     <div className="message ai" key={message.id}>
                         <div className="content">
-                            {message.text}
+                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                             <Loader active={message.state==="pending"} inline />
                         </div>
                     </div>
@@ -25,14 +27,16 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                 return (
                     <div className="message ai error" key={message.id}>
                         <div className="content">
-                            <Icon name="lemon"/>{message.text}
+                            <Icon name="lemon"/>
+                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                         </div>
                     </div>
                 )
             else if(message.itemType === "image")
                 return(
                     <div className="message ai" key={message.id}>
-                        <div className="content">{message.text}
+                        <div className="content">
+                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                             <div className="response-3dmodel">
                                 <Segment>
                                     <Loader active={message.state==="pending"}>{message.stateMessage}</Loader>
@@ -54,7 +58,8 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
             {
                 return(
                     <div className="message ai" key={message.id}>
-                        <div className="content">{message.text}
+                        <div className="content">
+                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                             <div className="response-3dmodel">
                                 <Segment>
                                     <ModelViewer fileName={message.attachment} />
@@ -76,7 +81,8 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
             {
                 return(
                     <div className="message ai" key={message.id}>
-                        <div className="content">{message.text}
+                        <div className="content">
+                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                             <div className="response-3dmodel">
                                 <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="Download 3MF file" />
                                 <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="Download CSG file" />

@@ -132,7 +132,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
       modelId: modelId,
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
-      system:[conversationSystemPrompt],
+      system: [{ text: conversationSystemPrompt }],
       toolConfig: {
         tools: [
           {

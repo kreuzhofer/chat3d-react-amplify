@@ -395,20 +395,6 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
                   messages: JSON.stringify(messages)
                   });
-                  
-                messages.push(
-                    {
-                      id: uuidv4(),
-                      itemType: "cadfiles",
-                      text: "Creating the CSG and STEP files will take a moment...",
-                      state: "pending",
-                      stateMessage: "",
-                      attachment: ""
-                    } as IChatMessage
-                  );
-                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                  messages: JSON.stringify(messages)
-                  });
 
             } else {
                 throw new Error("Input does not have a description property");

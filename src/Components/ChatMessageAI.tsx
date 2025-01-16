@@ -66,7 +66,8 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                                 </Segment>
                             </div>
                             <div className="response-3dmodel">
-                                <Button as="a" href="{}"></Button>
+                                <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="Download 3MF file" />
+                                <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="Download CSG file" />
                             </div>
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>
@@ -76,21 +77,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                         </div>
                     </div>
                 )
-            }
-            else if(message.itemType === "cadfiles")
-            {
-                return(
-                    <div className="message ai" key={message.id}>
-                        <div className="content">
-                            <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
-                            <div className="response-3dmodel">
-                                <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="Download 3MF file" />
-                                <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="Download CSG file" />
-                            </div>
-                        </div>
-                    </div>
-                )
-            }            
+            }         
             return null;
         })}
         </>

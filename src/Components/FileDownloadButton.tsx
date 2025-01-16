@@ -19,8 +19,8 @@ const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({ fileName, text 
             }
             // Alternatively, path: ({identityId}) => `album/{identityId}/1.jpg`
             }).then(linkToStorageFile => {
-                console.log('signed URL: ', linkToStorageFile.url);
-                console.log('URL expires at: ', linkToStorageFile.expiresAt);
+                // console.log('signed URL: ', linkToStorageFile.url);
+                // console.log('URL expires at: ', linkToStorageFile.expiresAt);
                 setDownloadUrl(linkToStorageFile.url.toString());
             });
     }, [fileName]);

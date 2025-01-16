@@ -47,7 +47,7 @@ function Chat()
     }
 
     async function createNewChatItems(chatContextId: string) {
-        console.log("creating new chat items for context: " + chatContextId);
+        //console.log("creating new chat items for context: " + chatContextId);
         var newUserChatItem = await client.models.ChatItem.create({
             chatContextId: chatContextId, role: "user",
             messages: JSON.stringify([
@@ -84,9 +84,9 @@ function Chat()
     async function submitChatBackendCall() {
         if(query === "")
             return;
-        console.log("submitChatBackendCall");
-        console.log("chatId: "+chatIdRef.current);
-        console.log("chatContext: "+JSON.stringify(chatContextRef.current));
+        //console.log("submitChatBackendCall");
+        //console.log("chatId: "+chatIdRef.current);
+        //console.log("chatContext: "+JSON.stringify(chatContextRef.current));
         if(chatIdRef.current === "new")
             chatIdRef.current = "";
         if (chatContextRef.current === null && chatIdRef.current === "") {
@@ -172,11 +172,11 @@ function Chat()
         {
             const chatContextGet = await client.models.ChatContext.get({ id: chatIdRef.current });
             chatContextRef.current = chatContextGet.data;
-            console.log("Chat context auto loaded")
+            //console.log("Chat context auto loaded")
             handleScrollToBottom();
         }
 
-        console.log("chatId in useEffect: "+chatIdRef.current);
+        //console.log("chatId in useEffect: "+chatIdRef.current);
         if(chatIdRef.current === "new")
         {
             chatContextRef.current = null;
@@ -202,7 +202,7 @@ function Chat()
                     handleScrollToBottom();
                 },
             });
-            console.log("ChatItem subscription created");
+            //console.log("ChatItem subscription created");
             subScriptions.push(subscription);
         }
 
@@ -217,7 +217,7 @@ function Chat()
         return ()=>{
             subScriptions.forEach((subscription) => {
                 subscription.unsubscribe()
-                console.log("subscription removed");
+                //console.log("subscription removed");
             });
             subScriptions.length = 0;
         };
@@ -243,6 +243,10 @@ function Chat()
         }
 
     }, [currentScreenSize]);
+
+    const regenerateResponse = async (id: string) => {
+        alert("regenerateResponse: "+id);
+    }
 
     return (
             <>
@@ -314,9 +318,9 @@ function Chat()
                                                                             const key = "modelcreator/"+message.id;
 
                                                                             var filesForKey = await list({path: key});
-                                                                            console.log("filesForKey: "+JSON.stringify(filesForKey));
+                                                                            //console.log("filesForKey: "+JSON.stringify(filesForKey));
                                                                             filesForKey.items.forEach(async (file) => {
-                                                                                console.log("deleting file: "+file.path);
+                                                                                //console.log("deleting file: "+file.path);
                                                                                 await remove({path: file.path});
                                                                             });
                                                                         }
@@ -389,7 +393,7 @@ function Chat()
                 </div>
                 <div className="chat-container" style={{display: chatIdRef.current === "" ? "none" : "block"}}>
                     {chatMessages.map((item) => (
-                        <ChatMessage {...item} key={item.id} />
+                        <ChatMessage item={item} key={item.id} onRefreshClick={(id) => {regenerateResponse(id)} } />
                     ))}
                     <div ref={messagesEndRef}></div>
                 </div>

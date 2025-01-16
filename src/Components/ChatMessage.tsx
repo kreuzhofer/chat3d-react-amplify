@@ -2,7 +2,12 @@ import type { Schema } from "../../amplify/data/resource";
 import ChatMessageAI from "./ChatMessageAI";
 import ChatMessageUser from "./ChatMessageUser";
 
-function ChatMessage(item: Schema["ChatItem"]["type"])
+interface ChatMessageProps {
+    item: Schema["ChatItem"]["type"];
+    onRefreshClick: (id: string) => void;
+}
+
+const ChatMessage: React.FC<ChatMessageProps> = ({ item, onRefreshClick }) => 
 {
     if(item.role === "user")
     return (
@@ -10,7 +15,7 @@ function ChatMessage(item: Schema["ChatItem"]["type"])
     )
     else if(item.role === "assistant")
     return (
-        <ChatMessageAI {...item} />
+        <ChatMessageAI item={item} onRefreshClick={onRefreshClick} />
     );
 }
 

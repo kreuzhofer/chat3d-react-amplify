@@ -1,12 +1,17 @@
 import type { Schema, IChatMessage } from "../../amplify/data/resource";
-import { Loader, Segment, Icon, Placeholder, PlaceholderImage, Button } from "semantic-ui-react";
+import { Loader, Segment, Icon, Placeholder, PlaceholderImage } from "semantic-ui-react";
 import { StorageImage } from '@aws-amplify/ui-react-storage';
 import ModelViewer from "./ModelViewer";
 import FileDownloadButton from "./FileDownloadButton";
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-function ChatMessageAI(item: Schema["ChatItem"]["type"])
+interface ChatMessageAIProps {
+    item: Schema["ChatItem"]["type"];
+    onRefreshClick: (id: string) => void;
+}
+
+const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
 {
     const messages = item.messages ? JSON.parse(item.messages as string) as IChatMessage[] : [];
     const filePrefix = "modelcreator/";
@@ -72,7 +77,7 @@ function ChatMessageAI(item: Schema["ChatItem"]["type"])
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>
                                 <i className="thumbs down outline icon"></i>
-                                <i className="refresh icon"></i>
+                                <Icon link name="refresh" onClick={()=>onRefreshClick(item.id)}></Icon>
                             </div>
                         </div>
                     </div>

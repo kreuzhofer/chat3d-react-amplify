@@ -1,4 +1,4 @@
-import type { IChatMessage, Schema } from "../../amplify/data/resource";
+import type { Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useState, useRef } from "react";
 import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
@@ -6,7 +6,6 @@ import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
-import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
 import ChatContextComponent from "../Components/ChatContextComponent";

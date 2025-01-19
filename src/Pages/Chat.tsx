@@ -109,9 +109,10 @@ function Chat()
             setQuery(""); // remove last query
             var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContextRef.current.id);
 
-            if(!chatContextRef.current.name || chatContextRef.current.name === "unnamed chat")
+            if(chatContextRef.current && chatContextRef.current.name === "unnamed chat")
             {
                 // create name with ai
+                //console.log("naming chat context...");
                 client.generations
                 .chatNamer({
                   content: query,

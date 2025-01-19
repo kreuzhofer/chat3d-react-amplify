@@ -78,8 +78,8 @@ const ChatContextComponent: React.FC<ChatContextComponentProps> = ({chatContext,
                 </Popup>
             </div>
         </div>   
-        <div className="default-content">
-            <span className="overflow ellipsis">{chatContext.name}</span>
+        <div className="default-content overflow ellipsis">
+            {chatContext.name}
         </div> 
     </MenuItem>
     )    

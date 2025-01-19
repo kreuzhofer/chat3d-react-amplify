@@ -9,6 +9,7 @@ import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
+import ChatContextComponent from "../Components/ChatContextComponent";
 
 const client = generateClient<Schema>();
 
@@ -90,7 +91,7 @@ function Chat()
         if(chatIdRef.current === "new")
             chatIdRef.current = "";
         if (chatContextRef.current === null && chatIdRef.current === "") {
-            console.log("No context and no chatId");
+            //console.log("No context and no chatId");
             const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
             if(chatContextCreate.data)
             {
@@ -277,76 +278,7 @@ function Chat()
                 </Menu>
                 <Menu vertical borderless fluid className="chat-contexts">
                     {chatContexts.map((item) => (
-                        <MenuItem as={NavLink}
-                            to={"/chat/"+item.id}
-                            key={item.id}
-                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}
-                            >
-                            <div className="hover-content">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span className="overflow ellipsis">{item.name}</span>
-                                    <Popup
-                                        contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
-                                        trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
-                                        on='click'
-                                        hideOnScroll
-                                    >
-                                        <Menu vertical borderless fluid>
-                                            <MenuItem onClick={(e) => e.preventDefault()}>
-                                                <Icon name="edit"/>
-                                                Rename
-                                            </MenuItem>
-                                            <MenuItem onClick={async function (e) {
-                                                    e.preventDefault();
-                                                    console.log("trying to delete: "+item.id);
-                                                    // iterate over all chat items and delete them
-                                                    const chatContextToDelete = await client.models.ChatContext.get({ id: item.id });
-                                                    if(chatContextToDelete.data)
-                                                    {
-                                                        const chatItemsForChatContext = await chatContextToDelete.data.chatItems();
-                                                        chatItemsForChatContext.data.forEach(async (item) => {
-                                                            console.log("deleting chat item: "+item.id);
-                                                            // iterate over all messages in the chatItem and delete all scad and png files in the s3 bucket matching the message id
-                                                            if(item.messages)
-                                                            {
-                                                                if (typeof item.messages === 'string') {
-                                                                    const messages: IChatMessage[] = item.messages ? JSON.parse(item.messages as string) : [];
-                                                                    
-                                                                    messages.forEach(async (message) => {
-                                                                        if(message.itemType === "image")
-                                                                        {
-                                                                            const key = "modelcreator/"+message.id;
-
-                                                                            var filesForKey = await list({path: key});
-                                                                            //console.log("filesForKey: "+JSON.stringify(filesForKey));
-                                                                            filesForKey.items.forEach(async (file) => {
-                                                                                //console.log("deleting file: "+file.path);
-                                                                                await remove({path: file.path});
-                                                                            });
-                                                                        }
-                                                                    });
-                                                                }
-                                                            }
-                                                            await client.models.ChatItem.delete({ id: item.id });
-                                                        });
-
-                                                        console.log("deleting chat context: "+item.id);
-                                                        await client.models.ChatContext.delete({ id: item.id });
-                                                        navigate("/chat/new");
-                                                    }
-
-                                                    }}>
-                                                <Icon name="trash"/>
-                                                Delete
-                                            </MenuItem>
-                                        </Menu>
-                                    </Popup>
-                                </div>
-                            </div>   
-                            <div className="default-content">
-                                <span className="overflow ellipsis">{item.name}</span>
-                            </div> 
-                        </MenuItem>
+                        <ChatContextComponent chatContext={item} key={item.id} onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}} />
                     ))}
                 </Menu>
 

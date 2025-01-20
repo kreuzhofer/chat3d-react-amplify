@@ -362,7 +362,7 @@ function Chat()
                                 return rest;
                             });
                           }}
-                        onUploadError={(error, { key }: { key: string }) => {
+                        onUploadError={(_error, { key }: { key: string }) => {
                             setFiles((prevFiles) => {
                               return {
                                 ...prevFiles,

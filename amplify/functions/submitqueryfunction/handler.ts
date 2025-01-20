@@ -108,31 +108,30 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
     const filteredItems = sortedItems?.filter((item) => item.id !== newAssistantChatItemId);
     const conversation = await Promise.all(filteredItems?.map(async (item) => {
-    
       const messages = (JSON.parse(item.messages as string) as IChatMessage[]) // filter out meta items and only get messages or images
-      .filter((message) => message.itemType === "message"/*  || message.itemType === "image" */);
+        .filter((message) => message.itemType === "message"/*  || message.itemType === "image" */);
 
-    // only keep the last image if there are multiple images in the list
-    const lastImageIndex = messages.map((message, index) => message.itemType === "image" ? index : -1).filter(index => index !== -1).pop();
-    const filteredMessages = messages.filter((message, index) => message.itemType === "message" || index === lastImageIndex);
-    return {
-        role: item.role,
-        content: await Promise.all(filteredMessages.map(async function (message) {
-          if(message.itemType === "message")
-            return { text: message.text }
-          else if(message.itemType === "image")
-          {
-            var imageBytes = await GetS3FileAsByteArrayAsync(bucket, message.attachment);
-            const base64Image = imageBytes ? Buffer.from(imageBytes).toString('base64') : '';
-            return { image: {
-              format: "jpeg",
-              source: {
-                bytes: base64Image
-              }
-            }}
-          }
-        })),
-      } as Message;
+      // only keep the last image if there are multiple images in the list
+      const lastImageIndex = messages.map((message, index) => message.itemType === "image" ? index : -1).filter(index => index !== -1).pop();
+      const filteredMessages = messages.filter((message, index) => message.itemType === "message" || index === lastImageIndex);
+      return {
+          role: item.role,
+          content: await Promise.all(filteredMessages.map(async function (message) {
+            if(message.itemType === "message")
+              return { text: message.text }
+            else if(message.itemType === "image")
+            {
+              var imageBytes = await GetS3FileAsByteArrayAsync(bucket, message.attachment);
+              const base64Image = imageBytes ? Buffer.from(imageBytes).toString('base64') : '';
+              return { image: {
+                format: "jpeg",
+                source: {
+                  bytes: base64Image
+                }
+              }}
+            }
+          })),
+        } as Message;
     }) || []);
 
     console.log("previous conversation: "+JSON.stringify(conversation));

@@ -9,6 +9,7 @@ import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
 import ChatContextComponent from "../Components/ChatContextComponent";
+import { FileUploader } from "@aws-amplify/ui-react-storage";
 
 const client = generateClient<Schema>();
 
@@ -334,7 +335,14 @@ function Chat()
                         What can I create for you?
                     </div>
                 ) : null}
+                <FileUploader
+                    acceptedFileTypes={['image/*']}
+                    path="public/"
+                    maxFileCount={10}
+                    isResumable
+                    />
                 <div className="input-container">
+
                     <Input
                         type="text" 
                         placeholder="Type a message..." 

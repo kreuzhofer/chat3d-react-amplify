@@ -3,6 +3,8 @@ export interface ILLMDefinition {
     modelName: string;
     executionProvider: ExecutionProvider;
     systemPrompt: string;
+    inputTokenCostPerMille: number;
+    outputTokenCostPerMille: number;
 }
 
 export enum ExecutionProvider {
@@ -19,7 +21,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
             Before you ask for the get_3D_model tool, ensure you have enough information to create a model with details. For example: If a user asks you to create a box, ask for the dimensions and if the user asks you to create something creative like a castle, ask for the theme.
             Every time you decide to ask for the get_3D_model tool, you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool.
             You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning and you will create 3d models. Any other discussions you will politely decline.
-        `
+        `,
+        inputTokenCostPerMille: 0.0008,
+        outputTokenCostPerMille: 0.004
     },
     {
         name: "3dModelLLM",
@@ -42,6 +46,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
             <code></code> containing the code, <parameters></parameters> with a list of all available parameters for the created model and <comment></comment> for your final comments about the model, not mentioning any openscad specific things or function names.
             You must ensure that all xml tags contain an opening and closing tag in your response.
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
-        `
+        `,
+        inputTokenCostPerMille: 0.003,
+        outputTokenCostPerMille: 0.015
     }
 ];

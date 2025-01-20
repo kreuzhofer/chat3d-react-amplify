@@ -20,6 +20,10 @@ const logger = winston.createLogger({
     transports: [new winston.transports.Console()],
   });
 
+import mixpanel from 'mixpanel';
+console.log("MIXPANEL_TOKEN: "+env.MIXPANEL_TOKEN);
+const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
+
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 
@@ -78,9 +82,14 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const dataClient = generateClient<Schema>();
 
     const conversationLLM = ModelGeneratorPrompts.find((item) => item.name === "conversationLLM");
+    if(!conversationLLM)
+    {
+      console.log("conversationLLM not found");
+      return;
+    }
     // Set the model ID, e.g., Claude 3 Haiku.
-    const modelId = conversationLLM?.modelName || "";
-    const conversationSystemPrompt = conversationLLM?.systemPrompt || "";
+    const conversationModelId = conversationLLM.modelName;
+    const conversationSystemPrompt = conversationLLM.systemPrompt;
 
     // load all conversation items for the chat context
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
@@ -129,7 +138,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     console.log("previous conversation: "+JSON.stringify(conversation));
 
     const converseCommandInput = {
-      modelId: modelId,
+      modelId: conversationModelId,
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
       system: [{ text: conversationSystemPrompt }],
@@ -160,6 +169,20 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     // Create a command with the model ID, the message, and a basic configuration.
     const command = new ConverseCommand(converseCommandInput);
     const response = await bedrockClient.send(command);
+    console.log("converse command response: "+response);
+    const inputTokensConversation = response.usage?.inputTokens || 0;
+    const outputTokensConversation = response.usage?.outputTokens || 0;
+    const inputTokenCost = conversationLLM.inputTokenCostPerMille * inputTokensConversation / 1000;
+    const outputTokenCost = conversationLLM.outputTokenCostPerMille * outputTokensConversation / 1000;
+    const tokenCost = inputTokenCost + outputTokenCost;
+    tracker.track('bedrock_conversation', {
+      modelId: conversationModelId,
+      inputTokens: inputTokensConversation,
+      outputTokens: outputTokensConversation,
+      inputTokenCost: inputTokenCost,
+      outputTokenCost: outputTokenCost,
+      tokenCost: tokenCost,
+    });
 
     // update response in database
     console.log(response);
@@ -175,16 +198,21 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     var assistantMessage = assistantMessages?.find((item) => item.text);
     var assistantMessageText = assistantMessage?.text || "Let me think about that for a moment...";
     await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-      messages: JSON.stringify(
+      messages : JSON.stringify(
         [
           { 
             id: uuidv4(),
             itemType: "message",
             text: assistantMessageText,
             state: "completed",
-            stateMessage: ""
+            stateMessage: "",
+            intputTokens : inputTokensConversation,
+            outputTokens : outputTokensConversation,
+            inputTokenCost : inputTokenCost,
+            outputTokenCost : outputTokenCost,
+            tokenCost : tokenCost
           }
-        ])
+        ] as IChatMessage[])
       });
 
     if (response.stopReason === "tool_use") {
@@ -228,8 +256,13 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
                 const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === "3dModelLLM");
-                const system_prompt_3d_generator = modelDefinition3DGenerator?.systemPrompt || "";
-                const generate3dmodelId = modelDefinition3DGenerator?.modelName || "";
+                if(!modelDefinition3DGenerator)
+                {
+                  console.log("3dModelLLM not found");
+                  return;
+                }
+                const system_prompt_3d_generator = modelDefinition3DGenerator.systemPrompt;
+                const generate3dmodelId = modelDefinition3DGenerator.modelName;
 
                 const converse3DModelCommandInput = {
                     modelId: generate3dmodelId,
@@ -243,6 +276,19 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
                 const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
                 console.log(converse3DModelReponse);
+                const inputTokens3DModel = converse3DModelReponse.usage?.inputTokens || 0;
+                const outputTokens3DModel = converse3DModelReponse.usage?.outputTokens || 0;
+                const inputTokenCost3DModel = modelDefinition3DGenerator.inputTokenCostPerMille * inputTokens3DModel / 1000;
+                const outputTokenCost3DModel = modelDefinition3DGenerator.outputTokenCostPerMille * outputTokens3DModel / 1000;
+                const tokens3DModelCost = inputTokenCost3DModel + outputTokenCost3DModel;
+                tracker.track('bedrock_conversation', {
+                  modelId: generate3dmodelId,
+                  inputTokens: inputTokens3DModel,
+                  outputTokens: outputTokens3DModel,
+                  inputTokenCost: inputTokenCost3DModel,
+                  outputTokenCost: outputTokenCost3DModel,
+                  tokenCost: tokens3DModelCost,
+                });
 
                 var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
                 console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));
@@ -374,7 +420,12 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: comment,
                     state: "completed",
                     stateMessage: "",
-                    attachment: modelKey
+                    attachment: modelKey,
+                    intputTokens: inputTokens3DModel,
+                    outputTokens: outputTokens3DModel,
+                    inputTokenCost: inputTokenCost3DModel,
+                    outputTokenCost: outputTokenCost3DModel,
+                    tokenCost: tokens3DModelCost
                   } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -388,7 +439,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     itemType: "meta",
                     text: converse3DModelAssistantResponse?.text,
                     state: "completed",
-                    stateMessage: ""
+                    stateMessage: "",
                   } as IChatMessage
                 );
 

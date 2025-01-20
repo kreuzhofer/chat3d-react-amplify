@@ -9,6 +9,11 @@ export interface IChatMessage {
   stateMessage: string;
   itemType: string;
   attachment: string;
+  intputTokens: number;
+  outputTokens: number;
+  inputTokenCost: number;
+  outputTokenCost: number;
+  tokenCost: number;
 }
 
 const schema = a.schema({

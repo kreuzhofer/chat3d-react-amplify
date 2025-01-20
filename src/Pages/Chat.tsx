@@ -32,6 +32,7 @@ function Chat()
     const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
     const [uploadVisible, setUploadVisible] = useState<boolean>(false);
+    const [files, setFiles] = useState<{ [key: string]: { status: string } }>({});
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -336,14 +337,60 @@ function Chat()
                         What can I create for you?
                     </div>
                 ) : null}
-                <div style={uploadVisible ? {display: "block"} : {display: "none"}}>
+                <div style={uploadVisible ? {display: "block"} : {display: "none"}} key={"file-uploader"}>
                     <FileUploader
                         acceptedFileTypes={['image/*']}
                         path="upload/"
                         maxFileCount={5}
                         isResumable
                         maxFileSize={1000000}
+                        onUploadSuccess={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                return {
+                                    ...prevFiles,
+                                    [key]: {
+                                        status: 'success',
+                                    },
+                                };
+                            });
+                          }}
+                        onFileRemove={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                const { [key]: _, ...rest } = prevFiles;
+                                return rest;
+                            });
+                          }}
+                        onUploadError={(error, { key }: { key: string }) => {
+                            setFiles((prevFiles) => {
+                              return {
+                                ...prevFiles,
+                                [key]: {
+                                  status: 'error',
+                                },
+                              };
+                            });
+                          }}
+                        onUploadStart={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                return {
+                                    ...prevFiles,
+                                    [key]: {
+                                        status: 'uploading',
+                                    },
+                                };
+                            });
+                        }}
                         />
+                        {Object.keys(files).map((key) => {
+                            return files[key] ? (
+                            <div>
+                                {key}: {files[key].status}
+                            </div>
+                            ) : null;
+                        })}
                 </div>
                 <div className="input-container">
                     {uploadVisible ? 

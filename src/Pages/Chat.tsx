@@ -31,6 +31,7 @@ function Chat()
     const { isMax, currentInterval } = useResponsiveness()
     const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
+    const [uploadVisible, setUploadVisible] = useState<boolean>(false);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -335,14 +336,21 @@ function Chat()
                         What can I create for you?
                     </div>
                 ) : null}
-                <FileUploader
-                    acceptedFileTypes={['image/*']}
-                    path="public/"
-                    maxFileCount={10}
-                    isResumable
-                    />
+                <div style={uploadVisible ? {display: "block"} : {display: "none"}}>
+                    <FileUploader
+                        acceptedFileTypes={['image/*']}
+                        path="upload/"
+                        maxFileCount={5}
+                        isResumable
+                        maxFileSize={1000000}
+                        />
+                </div>
                 <div className="input-container">
-
+                    {uploadVisible ? 
+                        <Button icon="close" onClick={()=> setUploadVisible(false)} />
+                        :
+                        <Button icon="plus" onClick={()=> setUploadVisible(true)} />
+                    }   
                     <Input
                         type="text" 
                         placeholder="Type a message..." 

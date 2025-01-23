@@ -1,5 +1,4 @@
 import { getUrl } from "aws-amplify/storage";
-import { useEffect, useState } from "react";
 import { Button, Icon } from "semantic-ui-react";
 
 interface FileDownloadButtonProps {

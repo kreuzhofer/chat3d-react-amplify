@@ -8,9 +8,8 @@ interface FileDownloadButtonProps {
 }
 
 const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({ fileName, text }) => {
-    const [downloadUrl, setDownloadUrl] = useState<string>("");
 
-    useEffect(() => {
+    function downloadFile(){
         getUrl({
             path: fileName,
             options:
@@ -21,12 +20,12 @@ const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({ fileName, text 
             }).then(linkToStorageFile => {
                 // console.log('signed URL: ', linkToStorageFile.url);
                 // console.log('URL expires at: ', linkToStorageFile.expiresAt);
-                setDownloadUrl(linkToStorageFile.url.toString());
+                window.location.href = linkToStorageFile.url.toString();
             });
-    }, [fileName]);
+    }
 
     return (
-        downloadUrl!=="" ? <Button as="a" href={downloadUrl}>{text}&nbsp;&nbsp;<Icon name="download"></Icon></Button> : <div>Generating URL...</div>
+        <Button onClick={downloadFile}>{text}&nbsp;&nbsp;<Icon name="download"></Icon></Button>
     );
 }
 

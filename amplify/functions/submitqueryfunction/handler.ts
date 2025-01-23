@@ -254,7 +254,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
-                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === "3dModelLLM");
+                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === "3dModelLLM_examples");
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("3dModelLLM not found");

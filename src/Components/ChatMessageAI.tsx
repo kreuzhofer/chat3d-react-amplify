@@ -71,8 +71,9 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                                 </Segment>
                             </div>
                             <div className="response-3dmodel">
-                                <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="Download 3MF file" />
-                                <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="Download CSG file" />
+                                <FileDownloadButton fileName={filePrefix+message.id+".3mf"} text="3MF" />
+                                <FileDownloadButton fileName={filePrefix+message.id+".csg"} text="CSG" />
+                                <FileDownloadButton fileName={filePrefix+message.id+".scad"} text="SCAD" />
                             </div>
                             <div className="response-actions">
                                 <i className="thumbs up outline icon"></i>

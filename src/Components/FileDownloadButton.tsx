@@ -1,6 +1,6 @@
 import { getUrl } from "aws-amplify/storage";
 import { useEffect, useState } from "react";
-import { Button } from "semantic-ui-react";
+import { Button, Icon } from "semantic-ui-react";
 
 interface FileDownloadButtonProps {
     fileName: string;
@@ -26,7 +26,7 @@ const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({ fileName, text 
     }, [fileName]);
 
     return (
-        downloadUrl!=="" ? <Button as="a" href={downloadUrl}>{text}</Button> : <div>Generating URL...</div>
+        downloadUrl!=="" ? <Button as="a" href={downloadUrl}>{text}&nbsp;&nbsp;<Icon name="download"></Icon></Button> : <div>Generating URL...</div>
     );
 }
 

@@ -34,6 +34,9 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                         <div className="content">
                             <Icon name="lemon"/>
                             <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
+                            <div className="response-actions">
+                                <Icon link name="refresh" onClick={()=>onRefreshClick(item.id)}></Icon>
+                            </div>
                         </div>
                     </div>
                 )

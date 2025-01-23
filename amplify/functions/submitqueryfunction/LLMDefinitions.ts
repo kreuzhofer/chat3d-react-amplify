@@ -957,6 +957,159 @@ module Strandbeest(ang=$t*360,o=360/3,sgap=20,mgap=50)
 
 rotate([90,180,0]) Strandbeest();
 </example>
+<example>
+// prompt: create a shorkie dog
+
+$fn = 100;
+
+// Parameters for customization
+dog_size = 40;
+body_color = [0.6, 0.4, 0.2];    // Brown/tan
+dark_color = [0.2, 0.2, 0.2];    // Black
+light_color = [0.8, 0.6, 0.4];   // Light tan
+detail_color = [0.1, 0.1, 0.1];  // Black for eyes and nose
+
+// Main body structure
+module dog_body() {
+    color(body_color) {
+        // Main body
+        translate([0, 0, dog_size * 0.3])
+        scale([1.2, 0.8, 0.6])
+        sphere(d=dog_size);
+        
+        // Neck
+        translate([dog_size * 0.3, 0, dog_size * 0.4])
+        scale([0.4, 0.4, 0.4])
+        sphere(d=dog_size);
+        
+        // Head
+        translate([dog_size * 0.6, 0, dog_size * 0.5])
+        scale([0.5, 0.45, 0.45])
+        sphere(d=dog_size);
+        
+        // Snout
+        translate([dog_size * 0.85, 0, dog_size * 0.45])
+        scale([0.25, 0.2, 0.2])
+        sphere(d=dog_size);
+        
+        // Legs
+        for (x = [-0.2, 0.2]) {
+            for (y = [-0.2, 0.2]) {
+                translate([dog_size * x, dog_size * y, dog_size * 0.1])
+                scale([0.15, 0.15, 0.4])
+                sphere(d=dog_size);
+            }
+        }
+        
+        // Tail
+        translate([-dog_size * 0.5, 0, dog_size * 0.3])
+        union() {
+            // Base of tail
+            rotate([0, -30, 0])
+            scale([0.15, 0.15, 0.2])
+            sphere(d=dog_size);
+            
+            // Middle section curving up
+            translate([0, 0, dog_size * 0.1])
+            rotate([0, 60, 0])
+            scale([0.12, 0.12, 0.2])
+            sphere(d=dog_size);
+            
+            // Tip section curling over
+            translate([dog_size * 0.1, 0, dog_size * 0.25])
+            rotate([0, 120, 0])
+            scale([0.1, 0.1, 0.15])
+            sphere(d=dog_size);
+        }
+    }
+}
+
+// Dark fur patches
+module dark_fur() {
+    color(dark_color) {
+        // Back patch - adjusted to follow body contour
+        translate([0, 0, dog_size * 0.48])  // Lowered position
+        scale([1.1, 0.7, 0.2])            // Increased thickness, adjusted width
+        sphere(d=dog_size);
+        
+        // Additional back patch for smooth transition
+        translate([0, 0, dog_size * 0.45])
+        scale([0.9, 0.6, 0.15])
+        sphere(d=dog_size);
+        
+        // Head patch
+        translate([dog_size * 0.6, 0, dog_size * 0.7])
+        scale([0.3, 0.25, 0.15])
+        sphere(d=dog_size);
+        
+        // Ear patches
+        translate([dog_size * 0.7, dog_size * 0.25, dog_size * 0.6])
+        scale([0.2, 0.1, 0.25])
+        sphere(d=dog_size);
+        
+        translate([dog_size * 0.7, -dog_size * 0.25, dog_size * 0.6])
+        scale([0.2, 0.1, 0.25])
+        sphere(d=dog_size);
+        
+        // Tail patch
+        translate([-dog_size * 0.5, 0, dog_size * 0.4])
+        rotate([0, 60, 0])
+        scale([0.15, 0.15, 0.25])
+        sphere(d=dog_size);
+    }
+}
+
+// Light fur accents
+module light_fur() {
+    color(light_color) {
+        // Chest
+        translate([dog_size * 0.3, 0, dog_size * 0.3])
+        scale([0.3, 0.4, 0.4])
+        sphere(d=dog_size);
+        
+        // Face
+        translate([dog_size * 0.75, 0, dog_size * 0.45])
+        scale([0.2, 0.3, 0.3])
+        sphere(d=dog_size);
+        
+        // Inner ears
+        translate([dog_size * 0.7, dog_size * 0.25, dog_size * 0.6])
+        scale([0.15, 0.05, 0.2])
+        sphere(d=dog_size);
+        
+        translate([dog_size * 0.7, -dog_size * 0.25, dog_size * 0.6])
+        scale([0.15, 0.05, 0.2])
+        sphere(d=dog_size);
+    }
+}
+
+// Face details
+module face_details() {
+    color(detail_color) {
+        // Eyes
+        translate([dog_size * 0.75, dog_size * 0.15, dog_size * 0.55])
+        sphere(d=dog_size * 0.08);
+        
+        translate([dog_size * 0.75, -dog_size * 0.15, dog_size * 0.55])
+        sphere(d=dog_size * 0.08);
+        
+        // Nose
+        translate([dog_size * 0.95, 0, dog_size * 0.45])
+        sphere(d=dog_size * 0.1);
+    }
+}
+
+// Assembly
+module shorkie() {
+    dog_body();
+    dark_fur();
+    light_fur();
+    face_details();
+}
+
+// Create the shorkie
+shorkie();
+</example>
         `,
         inputTokenCostPerMille: 0.003,
         outputTokenCostPerMille: 0.015

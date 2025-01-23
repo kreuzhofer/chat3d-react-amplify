@@ -1,4 +1,4 @@
-import type { Schema } from "../../amplify/data/resource";
+import type { IChatMessage, Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useState, useRef } from "react";
 import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
@@ -10,6 +10,7 @@ import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
 import ChatContextComponent from "../Components/ChatContextComponent";
 import { FileUploader } from "@aws-amplify/ui-react-storage";
+import { list, remove } from "aws-amplify/storage";
 
 const client = generateClient<Schema>();
 
@@ -82,6 +83,33 @@ function Chat()
 
         //console.log("created new chat items: " + newUserChatItem.data?.id + " and " + newAssistantChatItem.data?.id);
         return { newUserChatItem, newAssistantChatItem };
+    }
+
+    async function deleteChatItem(id: string) {
+        const chatItem = chatMessages.find((item) => item.id === id);
+        if(!chatItem)
+        {
+            console.error("Chat item not found: "+id);
+            return;
+        }
+        if(chatItem.messages && typeof chatItem.messages === 'string')
+        {
+            const messages: IChatMessage[] = chatItem.messages ? JSON.parse(chatItem.messages as string) : [];
+            //console.log(JSON.stringify(messages));
+            messages.forEach(async (message) => {
+
+            const key = "modelcreator/"+message.id;
+
+            var filesForKey = await list({path: key});
+            //console.log("filesForKey: "+JSON.stringify(filesForKey));
+            filesForKey.items.forEach(async (file) => {
+                //console.log("deleting file: "+file.path);
+                await remove({path: file.path});
+                });
+
+            });
+        }
+        await client.models.ChatItem.delete({ id: id });
     }
 
     async function submitChatBackendCall() {
@@ -249,7 +277,24 @@ function Chat()
     }, [currentScreenSize]);
 
     const regenerateResponse = async (id: string) => {
-        alert("regenerateResponse: "+id);
+        //alert("regenerateResponse: "+id);
+        // delete chatitem by id
+        const lastChatItem = chatMessages.find((item) => item.id === id);
+        if(!lastChatItem)
+        {
+            console.error("Chat item not found: "+id);
+            return;
+        }
+        const lastQueryChatItem = chatMessages[chatMessages.indexOf(lastChatItem) - 1];
+        if(!lastQueryChatItem)
+        {
+            console.error("Query chat item not found: "+id);
+            return;
+        }
+
+        setQuery(lastQueryChatItem.messages ? JSON.parse(lastQueryChatItem.messages as string)[0].text : "");
+        await deleteChatItem(lastChatItem.id);
+        await deleteChatItem(lastQueryChatItem.id);
     }
 
     return (

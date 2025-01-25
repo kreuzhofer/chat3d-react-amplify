@@ -5,7 +5,9 @@ import ModelViewer from "./ModelViewer";
 import FileDownloadButton from "./FileDownloadButton";
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { generateClient } from "aws-amplify/api";
 
+const client = generateClient<Schema>();
 interface ChatMessageAIProps {
     item: Schema["ChatItem"]["type"];
     onRefreshClick: (id: string) => void;
@@ -15,6 +17,17 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
 {
     const messages = item.messages ? JSON.parse(item.messages as string) as IChatMessage[] : [];
     const filePrefix = "modelcreator/";
+
+    async function rateItem(rating: number)
+    {
+        var newrating = undefined;
+        if(rating == item.rating) // unrate
+            newrating = 0;
+        else
+            newrating = rating;
+        // update chatitem in database
+        await client.models.ChatItem.update({rating: newrating, id: item.id});
+    }
 
     return(
         <>
@@ -79,9 +92,12 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                                 <FileDownloadButton fileName={filePrefix+message.id+".scad"} text="SCAD" />
                             </div>
                             <div className="response-actions">
-                                <i className="thumbs up outline icon"></i>
-                                <i className="thumbs down outline icon"></i>
+                                <Icon link name={item.rating === 1 ? "thumbs up" : "thumbs up outline"} onClick={()=>rateItem(1)}/>
+                                <Icon link name={item.rating === -1 ? "thumbs down" : "thumbs down outline"} onClick={()=>rateItem(-1)}/>
                                 <Icon link name="refresh" onClick={()=>onRefreshClick(item.id)}></Icon>
+                            </div>
+                            <div className="response-actions ratingmsg">
+                                {item.rating === 1 || item.rating === -1 ? "thank you for leaving a rating! 🎉" : "please rate this item 👍👎 to help me improve the results" }
                             </div>
                         </div>
                     </div>

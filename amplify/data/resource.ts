@@ -29,6 +29,7 @@ const schema = a.schema({
       chatContext: a.belongsTo("ChatContext", "chatContextId"),
       role: a.string(),
       messages: a.json(),
+      rating: a.integer(), // -1 = thumbs down, 0 = no rating, 1 = thumbs up
     }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a

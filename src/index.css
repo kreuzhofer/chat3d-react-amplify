@@ -197,6 +197,9 @@ div.ui.left.sidebar {
   cursor: pointer;
   margin-left: 10px;
 }
+.response-actions.ratingmsg {
+  font-size: 0.75em;
+}
 .response-3dmodel {
   display: flex;
   justify-content: left;

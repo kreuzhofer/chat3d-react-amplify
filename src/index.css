@@ -166,6 +166,9 @@ div.ui.left.sidebar {
   justify-content: left;
   margin-top: 10px;
 }
+.response-3dmodel.tokencost {
+  font-size: 0.5em;
+}
 .response-image {
   max-width: calc(100% - 20px);
   margin: 0 10px;

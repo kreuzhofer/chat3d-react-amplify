@@ -162,6 +162,7 @@ function Chat()
                 executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
                 bucket: outputs.storage.bucket_name
              });
+             handleScrollToBottom();
         }
     }
 
@@ -206,6 +207,7 @@ function Chat()
             chatContextRef.current = chatContextGet.data;
             //console.log("Chat context auto loaded")
             handleScrollToBottom();
+            setQuery("");
         }
 
         //console.log("chatId in useEffect: "+chatIdRef.current);
@@ -214,6 +216,7 @@ function Chat()
             chatContextRef.current = null;
             chatIdRef.current = "";
             setChatMessages([]);
+            setQuery("");
             navigate("/chat");
         }
 
@@ -444,7 +447,7 @@ function Chat()
                         <Button icon="plus" onClick={()=> setUploadVisible(true)} />
                     }   
                     <Input
-                        type="text" 
+                        type="multiline" 
                         placeholder="Type a message..." 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}

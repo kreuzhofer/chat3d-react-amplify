@@ -38,6 +38,11 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                         <div className="content">
                             <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
                             <Loader active={message.state==="pending"} inline />
+                            {message.state==="pending" ? null : (
+                                <div className="response-actions">
+                                    <Icon link name="refresh" onClick={()=>onRefreshClick(item.id)}></Icon>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
@@ -98,6 +103,9 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                             </div>
                             <div className="response-actions ratingmsg">
                                 {item.rating === 1 || item.rating === -1 ? "Thank you for leaving a rating! 🎉" : "Please rate this item 👍👎 to help me improve the results. Thank you so much!" }
+                            </div>
+                            <div className="response-3dmodel tokencost">
+                                I:{message.intputTokens}, O:{message.outputTokens}, C:{message.tokenCost}
                             </div>
                         </div>
                     </div>

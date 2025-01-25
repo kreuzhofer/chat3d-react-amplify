@@ -103,7 +103,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
         chatItems?.data.push(...fetchChatItems.data);
     }
 
-    var sortedItems = chatItems?.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1)
+    var sortedItems = chatItems ? chatItems.data.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1) : [];
     console.log("sortedItems: "+JSON.stringify(sortedItems));
 
     const filteredItems = sortedItems?.filter((item) => item.id !== newAssistantChatItemId);
@@ -244,9 +244,13 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   messages: JSON.stringify(messages)
                   });                
 
+                const lastAssistantMessageIndex = filteredItems.map((item, index) => item.role === "assistant" ? index : -1).filter(index => index !== -1).pop();
+                const lastAssistantMessage = sortedItems[lastAssistantMessageIndex ? lastAssistantMessageIndex : 0];
+                console.log("lastAssistantMessage: "+JSON.stringify(lastAssistantMessage));
+
                 const generate3dmodelMessages = filteredItems?.map((item) => {
                   let tempMessages = (JSON.parse(item.messages as string) as IChatMessage[]) // filter out meta items and only get messages
-                    .filter((message) => message.itemType === "message" || message.itemType === "meta");
+                    .filter((message) => message.itemType === "message" || (message.itemType === "meta" && item === lastAssistantMessage));
                   return {
                       role: item.role,
                       content: tempMessages.map((message) => ({ text: message.text })),

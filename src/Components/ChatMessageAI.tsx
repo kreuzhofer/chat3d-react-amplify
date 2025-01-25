@@ -97,7 +97,7 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                                 <Icon link name="refresh" onClick={()=>onRefreshClick(item.id)}></Icon>
                             </div>
                             <div className="response-actions ratingmsg">
-                                {item.rating === 1 || item.rating === -1 ? "thank you for leaving a rating! 🎉" : "please rate this item 👍👎 to help me improve the results" }
+                                {item.rating === 1 || item.rating === -1 ? "Thank you for leaving a rating! 🎉" : "Please rate this item 👍👎 to help me improve the results. Thank you so much!" }
                             </div>
                         </div>
                     </div>

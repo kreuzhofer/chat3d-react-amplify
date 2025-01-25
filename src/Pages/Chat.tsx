@@ -453,7 +453,6 @@ function Chat()
                                 submitChatBackendCall();
                             }
                         }}
-                        onSend={submitChatBackendCall}
                     >
                         <input />
                         <Button onClick={submitChatBackendCall}>Send</Button>

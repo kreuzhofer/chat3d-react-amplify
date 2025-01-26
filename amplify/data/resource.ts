@@ -41,6 +41,7 @@ const schema = a.schema({
       query: a.string(),
       executorFunctionName: a.string(),
       bucket: a.string(),
+      llmconfiguration: a.string(),
     })
     .returns(a.string())
     .handler(a.handler.function(submitQueryFunction))

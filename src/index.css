@@ -222,6 +222,9 @@ div.ui.left.sidebar {
 .chat-buttons-left {
   flex: 1;
 }
+.chat-buttons-right {
+  font-size: 0.75em;
+}
 
 .footer-menubar .settings {
   flex: 1;

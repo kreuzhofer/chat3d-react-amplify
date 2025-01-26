@@ -1,7 +1,7 @@
 import type { IChatMessage, Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useState, useRef } from "react";
-import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
+import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher, Dropdown } from 'semantic-ui-react'
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
@@ -13,6 +13,13 @@ import { FileUploader } from "@aws-amplify/ui-react-storage";
 import { list, remove } from "aws-amplify/storage";
 
 const client = generateClient<Schema>();
+
+interface IModelOption {
+    key: string;
+    text: string;
+    value: string;
+    image: { avatar: boolean, src: string };
+}
 
 function Chat()
 {
@@ -34,6 +41,70 @@ function Chat()
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
     const [uploadVisible, setUploadVisible] = useState<boolean>(false);
     const [files, setFiles] = useState<{ [key: string]: { status: string } }>({});
+
+    const modelOptions: IModelOption[] = [
+        {
+            key: "3dModelLLM",
+            text: "Claude 3.5 Sonnet v2",
+            value: "3dModelLLM",
+            image: { avatar: false, src: "" }
+        },
+        {
+            key: "3dModelLLM_examples",
+            text: "Claude 3.5 Sonnet v2 with examples",
+            value: "3dModelLLM_examples",
+            image: { avatar: false, src: "" }
+        },
+        {
+            key: "3dModelLLM_Claude_3.5_Haiku",
+            text: "Claude 3.5 Haiku",
+            value: "3dModelLLM_Claude_3.5_Haiku",
+            image: { avatar: false, src: "" }
+        },
+        {
+            key: "3dModelLLM_Claude_3.5_Haiku_examples",
+            text: "Claude 3.5 Haiku with examples",
+            value: "3dModelLLM_Claude_3.5_Haiku_examples",
+            image: { avatar: false, src: "" }
+        },
+        {
+            key: "3dModelLLM_LLama3_3_70b",
+            text: "LLama3.3 70b",
+            value: "3dModelLLM_LLama3_3_70b",
+            image: { avatar: false, src: "" }
+        },
+        {
+            key: "3dModelLLM_LLama3_3_70b_examples",
+            text: "LLama3.3 70b with examples",
+            value: "3dModelLLM_LLama3_3_70b_examples",
+            image: { avatar: false, src: "" }
+        },
+/*         {
+            key: "3dModelLLM_LLama3_2_90b",
+            text: "LLama3.2 90b",
+            value: "3dModelLLM_LLama3_2_90b",
+            image: { avatar: false, src: "" }
+        },        
+        {
+            key: "3dModelLLM_LLama3_2_90b_examples",
+            text: "LLama3.2 90b with examples",
+            value: "3dModelLLM_LLama3_2_90b_examples",
+            image: { avatar: false, src: "" }
+        },  */   
+        {
+            key: "3dModelLLM_Amazon_Nova_Pro",
+            text: "Amazon Nova Pro",
+            value: "3dModelLLM_Amazon_Nova_Pro",
+            image: { avatar: false, src: "" }
+        },      
+        {
+            key: "3dModelLLM_Amazon_Nova_Pro_examples",
+            text: "Amazon Nova Pro with examples",
+            value: "3dModelLLM_Amazon_Nova_Pro_examples",
+            image: { avatar: false, src: "" }
+        }, 
+    ];
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[0]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -160,7 +231,8 @@ function Chat()
                 newUserChatItemId: newUserChatItem.data?.id, 
                 newAssistantChatItemId: newAssistantChatItem.data?.id,
                 executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
-                bucket: outputs.storage.bucket_name
+                bucket: outputs.storage.bucket_name,
+                llmconfiguration: selectedLlmConfiguration.value
              });
              handleScrollToBottom();
         }
@@ -372,6 +444,13 @@ function Chat()
                     <img src="/images/chat3dlogo.png" height={30} width={30}/>
                     <div className="chat-title">
                         Chat3D
+                    </div>
+                    <div className="chat-buttons-right">
+                        <Dropdown inline compact direction="left" options={modelOptions} value={selectedLlmConfiguration.value} onChange={(e,v)=>{
+                            var selectedOption = modelOptions.find((option)=>option.value === v.value);
+                            if(selectedOption)
+                                setSelectedLlmConfiguration(selectedOption);
+                            }} />
                     </div>
                 </div>
                 <div className="chat-container" style={{display: chatIdRef.current === "" ? "none" : "block"}}>

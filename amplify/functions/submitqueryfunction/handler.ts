@@ -21,6 +21,7 @@ const logger = winston.createLogger({
   });
 
 import mixpanel from 'mixpanel';
+import { OpenScadExamples } from "./OpenScadExamples";
 console.log("MIXPANEL_TOKEN: "+env.MIXPANEL_TOKEN);
 const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
 
@@ -70,8 +71,8 @@ async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: 
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
-    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, executorFunctionName, bucket } = event.arguments;
-    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !executorFunctionName || !bucket) {
+    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, executorFunctionName, bucket, llmconfiguration } = event.arguments;
+    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !executorFunctionName || !bucket || !llmconfiguration) {
         throw new Error("Missing query parameter(s)");
     }
 
@@ -140,7 +141,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
       modelId: conversationModelId,
       messages: conversation as Message[],
       inferenceConfig: { maxTokens: 512, temperature: 0.5, topP: 0.9 },
-      system: [{ text: conversationSystemPrompt }],
+      system: [{ text: conversationSystemPrompt("") }],
       toolConfig: {
         tools: [
           {
@@ -258,12 +259,15 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
-                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === "3dModelLLM_examples");
+                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === llmconfiguration);
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("3dModelLLM not found");
                   return;
                 }
+
+                const examplesSection = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
+
                 const system_prompt_3d_generator = modelDefinition3DGenerator.systemPrompt;
                 const generate3dmodelId = modelDefinition3DGenerator.modelName;
 
@@ -272,7 +276,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     messages: generate3dmodelMessages as Message[],
                     inferenceConfig: { maxTokens: 4096, temperature: 1.0, topP: 0.9 },
                     system: [{
-                        text: system_prompt_3d_generator
+                        text: system_prompt_3d_generator(examplesSection)
                     }],
                 };
 

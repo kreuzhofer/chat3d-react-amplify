@@ -446,7 +446,7 @@ function Chat()
                         Chat3D
                     </div>
                     <div className="chat-buttons-right">
-                        <Dropdown inline compact direction="left" options={modelOptions} value={selectedLlmConfiguration.value} onChange={(_e,v)=>{
+                        <Dropdown inline compact direction="left" icon={null} trigger={<Icon><Image src='../../public/images/brain.svg'></Image></Icon>} options={modelOptions} value={selectedLlmConfiguration.value} onChange={(_e,v)=>{
                             var selectedOption = modelOptions.find((option)=>option.value === v.value);
                             if(selectedOption)
                                 setSelectedLlmConfiguration(selectedOption);

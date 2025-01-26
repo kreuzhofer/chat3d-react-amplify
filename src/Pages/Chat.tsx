@@ -104,7 +104,7 @@ function Chat()
             image: { avatar: false, src: "" }
         }, 
     ];
-    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[0]);
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));

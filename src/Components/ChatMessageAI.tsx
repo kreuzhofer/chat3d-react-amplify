@@ -105,7 +105,7 @@ const ChatMessageAI: React.FC<ChatMessageAIProps> = ({item, onRefreshClick}) =>
                                 {item.rating === 1 || item.rating === -1 ? "Thank you for leaving a rating! 🎉" : "Please rate this item 👍👎 to help me improve the results. Thank you so much!" }
                             </div>
                             <div className="response-3dmodel tokencost">
-                                I:{message.intputTokens}, O:{message.outputTokens}, C:{message.tokenCost}
+                                I:{message.intputTokens}, O:{message.outputTokens}, C:{message.tokenCost.toPrecision(4)}
                             </div>
                         </div>
                     </div>

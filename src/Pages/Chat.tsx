@@ -45,37 +45,37 @@ function Chat()
     const modelOptions: IModelOption[] = [
         {
             key: "3dModelLLM",
-            text: "Claude 3.5 Sonnet v2",
+            text: "Anthropic Claude 3.5 Sonnet v2",
             value: "3dModelLLM",
             image: { avatar: false, src: "" }
         },
         {
             key: "3dModelLLM_examples",
-            text: "Claude 3.5 Sonnet v2 with examples",
+            text: "Anthropic Claude 3.5 Sonnet v2 with examples",
             value: "3dModelLLM_examples",
             image: { avatar: false, src: "" }
         },
         {
             key: "3dModelLLM_Claude_3.5_Haiku",
-            text: "Claude 3.5 Haiku",
+            text: "Anthropic Claude 3.5 Haiku",
             value: "3dModelLLM_Claude_3.5_Haiku",
             image: { avatar: false, src: "" }
         },
         {
             key: "3dModelLLM_Claude_3.5_Haiku_examples",
-            text: "Claude 3.5 Haiku with examples",
+            text: "Anthropic Claude 3.5 Haiku with examples",
             value: "3dModelLLM_Claude_3.5_Haiku_examples",
             image: { avatar: false, src: "" }
         },
         {
             key: "3dModelLLM_LLama3_3_70b",
-            text: "LLama3.3 70b",
+            text: "Meta LLama3.3 70b",
             value: "3dModelLLM_LLama3_3_70b",
             image: { avatar: false, src: "" }
         },
         {
             key: "3dModelLLM_LLama3_3_70b_examples",
-            text: "LLama3.3 70b with examples",
+            text: "Meta LLama3.3 70b with examples",
             value: "3dModelLLM_LLama3_3_70b_examples",
             image: { avatar: false, src: "" }
         },
@@ -103,6 +103,20 @@ function Chat()
             value: "3dModelLLM_Amazon_Nova_Pro_examples",
             image: { avatar: false, src: "" }
         }, 
+        {
+            key: "3dModelLLM_GPT4o-mini",
+            text: "OpenAI GPT 4o-mini",
+            value: "3dModelLLM_GPT4o-mini",
+            image: { avatar: false, src: "" }
+        }, 
+        {
+            key: "3dModelLLM_GPT4o",
+            text: "OpenAI GPT 4o",
+            value: "3dModelLLM_GPT4o",
+            image: { avatar: false, src: "" }
+        }, 
+
+        
     ];
     const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[1]);
 

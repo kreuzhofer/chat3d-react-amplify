@@ -22,34 +22,17 @@ const logger = winston.createLogger({
 
 import mixpanel from 'mixpanel';
 import { OpenScadExamples } from "./OpenScadExamples";
+import { ILLMMessage } from "./ILLMAdapter";
 console.log("MIXPANEL_TOKEN: "+env.MIXPANEL_TOKEN);
 const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
+console.log("OpenAI Key:"+env.OPENAI_API_KEY);
+
+import { LLMAdapterFactory } from "./LLMAdapterFactory";
+import { extractDocumentSections } from "./Helpers";
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 
-interface DocumentSections {
-  plan: string;
-  code: string;
-  parameters: string;
-  comment: string;
-}
-
-function extractSections(text: string): DocumentSections {
-  
-  const extractSection = (section: string): string => {
-    const regex = new RegExp(`<${section}>\\n([\\s\\S]*?)\\n<\/${section}>|<${section}>([\\s\\S]*?)<\/${section}>`);
-    const match = text.match(regex);
-    return (match?.[1] || match?.[2] || '').trim();
-  };
-
-  return {
-    plan: extractSection('plan'),
-    code: extractSection('code'),
-    parameters: extractSection('parameters'),
-    comment: extractSection('comment')
-  };
-}
 
 async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, openscadExecutorFunctionName: string, bucketName: string) {
 
@@ -254,21 +237,23 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     .filter((message) => message.itemType === "message" || (message.itemType === "meta" && item === lastAssistantMessage));
                   return {
                       role: item.role,
-                      content: tempMessages.map((message) => ({ text: message.text })),
-                    } as Message;
+                      content: tempMessages.map((message) => ({type:"text", text: message.text })),
+                    } as ILLMMessage;
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
                 const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === llmconfiguration);
                 if(!modelDefinition3DGenerator)
                 {
-                  console.log("3dModelLLM not found");
+                  console.log("llmconfiguration not found");
                   return;
                 }
+                // create adapter from factory
+                const llmAdapter = LLMAdapterFactory.create(modelDefinition3DGenerator);
 
-                const examplesSection = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
+                const context = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
 
-                const system_prompt_3d_generator = modelDefinition3DGenerator.systemPrompt;
+/*                 const system_prompt_3d_generator = modelDefinition3DGenerator.systemPrompt;
                 const generate3dmodelId = modelDefinition3DGenerator.modelName;
 
                 const converse3DModelCommandInput = {
@@ -304,7 +289,21 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 console.log("converse3DModelAssistantResponse: "+JSON.stringify(converse3DModelAssistantResponse));
 
                 // create model using openscad
-                const sections = extractSections(converse3DModelAssistantResponse?.text || "");
+                const sections = extractDocumentSections(converse3DModelAssistantResponse?.text || ""); */
+
+                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context);
+                tracker.track('bedrock_conversation', {
+                  modelId: modelDefinition3DGenerator.modelName,
+                  inputTokens: llmResponse.inputTokens,
+                  outputTokens: llmResponse.outputTokens,
+                  inputTokenCost: llmResponse.inputTokenCost,
+                  outputTokenCost: llmResponse.outputTokenCost,
+                  tokenCost: llmResponse.tokensCost,
+                });
+
+                // create model using openscad
+                const sections = extractDocumentSections(llmResponse.content[0].text ? llmResponse.content[0].text : "");
+
                 const code = sections.code;
                 const plan = sections.plan;
                 const comment = sections.comment;
@@ -428,11 +427,11 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     state: "completed",
                     stateMessage: "",
                     attachment: modelKey,
-                    intputTokens: inputTokens3DModel,
-                    outputTokens: outputTokens3DModel,
-                    inputTokenCost: inputTokenCost3DModel,
-                    outputTokenCost: outputTokenCost3DModel,
-                    tokenCost: tokens3DModelCost
+                    intputTokens: llmResponse.inputTokens,
+                    outputTokens: llmResponse.outputTokens,
+                    inputTokenCost: llmResponse.inputTokenCost,
+                    outputTokenCost: llmResponse.outputTokenCost,
+                    tokenCost: llmResponse.tokensCost
                   } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -444,7 +443,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   {
                     id: uuidv4(),
                     itemType: "meta",
-                    text: converse3DModelAssistantResponse?.text,
+                    text: llmResponse.content[0].text,
                     state: "completed",
                     stateMessage: "",
                   } as IChatMessage

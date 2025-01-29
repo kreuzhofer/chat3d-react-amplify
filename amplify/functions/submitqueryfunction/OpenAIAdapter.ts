@@ -4,14 +4,7 @@ import { env } from '$amplify/env/submitQueryFunction';
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
 import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
-
-const OpenScadResponse = z.object({
-    plan: z.string(),
-    code: z.string(),
-    parameters: z.record(z.string()),
-    comment: z.string()
-});
+import { ZodTypeAny } from "zod";
 
 export class OpenAIAdapter implements ILLMAdapter {
     private modelDefinition: ILLMDefinition;
@@ -26,7 +19,7 @@ export class OpenAIAdapter implements ILLMAdapter {
         });
     }
 
-    async submitQuery(conversation: ILLMMessage[], context: string): Promise<ILLMResponse> {
+    async submitQuery(conversation: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
         const completion = await this.openai.chat.completions.create({
             messages: [
             { role: "developer", content: this.modelDefinition.systemPrompt(context) },
@@ -38,7 +31,7 @@ export class OpenAIAdapter implements ILLMAdapter {
             model: this.modelDefinition.modelName,
             store: false,
             //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            stop: ["</comment>"]
+            response_format: zodResponseFormat(resultSchema, "response")
         });
         
         console.log(JSON.stringify(completion));
@@ -49,10 +42,19 @@ export class OpenAIAdapter implements ILLMAdapter {
         const outputTokenCost = this.modelDefinition.outputTokenCostPerMille * outputTokens / 1000;
         const tokenCost = inputTokenCost + outputTokenCost;
 
-        const responseText = completion.choices[0].message.content ? completion.choices[0].message.content + "</comment>" : undefined;
-
+        const response = completion.choices[0].message;
+        if(response.refusal)
+            return {
+                content: [{ type: "text", text: "I'm sorry, I cannot do that." }],
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                inputTokenCost: inputTokenCost,
+                outputTokenCost: outputTokenCost,
+                tokensCost: tokenCost
+            };
+        console.log("OpenAI Response:"+response.content);
         return {
-            content: [{ type: completion.choices[0].message.role, text: responseText }],
+            content: [{ type: completion.choices[0].message.role, text: response.content ?? undefined }],
             inputTokens: inputTokens,
             outputTokens: outputTokens,
             inputTokenCost: inputTokenCost,

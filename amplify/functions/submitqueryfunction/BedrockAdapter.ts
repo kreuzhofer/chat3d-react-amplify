@@ -1,14 +1,14 @@
-import { BedrockRuntimeClient, ConverseCommand, Message } from "@aws-sdk/client-bedrock-runtime";
+import { BedrockRuntimeClient, ConverseCommand, InvokeModelCommand, Message } from "@aws-sdk/client-bedrock-runtime";
 import { ILLMAdapter, ILLMMessage, ILLMResponse } from "./ILLMAdapter";
 import { ILLMDefinition } from "./LLMDefinitions";
-
+import { ZodTypeAny } from "zod";
 export class BedrockAdapter implements ILLMAdapter {
     modelDefinition: ILLMDefinition;
     constructor(modelDefinition: ILLMDefinition) {
         this.modelDefinition = modelDefinition;
     }
 
-    async submitQuery(messages: ILLMMessage[], context: string): Promise<ILLMResponse> {
+    async submitQuery(messages: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
         const system_prompt_3d_generator = this.modelDefinition.systemPrompt;
         const generate3dmodelId = this.modelDefinition.modelName;
         const bedrockClient = new BedrockRuntimeClient({ region: "us-east-1" });
@@ -24,12 +24,13 @@ export class BedrockAdapter implements ILLMAdapter {
             inferenceConfig: { maxTokens: 4096, temperature: 1.0, topP: 0.9 },
             system: [{
                 text: system_prompt_3d_generator(context)
-            }],
+            }]
         };
 
         const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
         const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
         console.log(converse3DModelReponse);
+
         const inputTokens3DModel = converse3DModelReponse.usage?.inputTokens || 0;
         const outputTokens3DModel = converse3DModelReponse.usage?.outputTokens || 0;
         const inputTokenCost3DModel = this.modelDefinition.inputTokenCostPerMille * inputTokens3DModel / 1000;

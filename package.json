@@ -31,7 +31,9 @@
     "semantic-ui-react": "^2.1.5",
     "three": "^0.172.0",
     "uuid": "^11.0.5",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.13.0",

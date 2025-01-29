@@ -1,3 +1,4 @@
+import { ZodTypeAny } from 'zod';
 import {ILLMAdapter, ILLMMessage, ILLMResponse} from './ILLMAdapter';
 import { ILLMDefinition } from './LLMDefinitions';
 import ollama from 'ollama';
@@ -8,7 +9,7 @@ export class OllamaAdapter implements ILLMAdapter {
         this.modelDefinition = modelDefinition;
     }
 
-    async submitQuery(messages: ILLMMessage[], context: string): Promise<ILLMResponse> {
+    async submitQuery(messages: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
         // Implement the submitQuery method
 
         const response = await ollama.chat({

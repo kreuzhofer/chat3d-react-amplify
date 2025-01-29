@@ -25,10 +25,11 @@ import { OpenScadExamples } from "./OpenScadExamples";
 import { ILLMMessage } from "./ILLMAdapter";
 console.log("MIXPANEL_TOKEN: "+env.MIXPANEL_TOKEN);
 const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
-console.log("OpenAI Key:"+env.OPENAI_API_KEY);
+//console.log("OpenAI Key:"+env.OPENAI_API_KEY);
 
 import { LLMAdapterFactory } from "./LLMAdapterFactory";
 import { extractDocumentSections } from "./Helpers";
+import { z } from "zod";
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
@@ -291,7 +292,14 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 // create model using openscad
                 const sections = extractDocumentSections(converse3DModelAssistantResponse?.text || ""); */
 
-                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context);
+                const OpenScadResponse = z.object({
+                    plan: z.string(),
+                    code: z.string(),
+                    parameters: z.array(z.string()),
+                    comment: z.string()
+                });
+
+                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context, OpenScadResponse);
                 tracker.track('bedrock_conversation', {
                   modelId: modelDefinition3DGenerator.modelName,
                   inputTokens: llmResponse.inputTokens,

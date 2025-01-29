@@ -1,3 +1,5 @@
+import { ZodTypeAny } from "zod";
+
 export interface ILLMMessageContent {
     type: string;
     text?: string;
@@ -19,5 +21,5 @@ export interface ILLMResponse {
 }
 
 export interface ILLMAdapter {
-    submitQuery(conversation: ILLMMessage[], context: string): Promise<ILLMResponse>;   
+    submitQuery(conversation: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse>;   
 }

@@ -66,7 +66,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const bedrockClient = new BedrockRuntimeClient({ region: "us-east-1" });
     const dataClient = generateClient<Schema>();
 
-    const conversationLLM = ModelGeneratorPrompts.find((item) => item.name === "conversationLLM");
+    const conversationLLM = ModelGeneratorPrompts.find((item) => item.id === "conversationLLM");
     if(!conversationLLM)
     {
       console.log("conversationLLM not found");
@@ -243,7 +243,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
-                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.name === llmconfiguration);
+                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.id === llmconfiguration);
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("llmconfiguration not found");

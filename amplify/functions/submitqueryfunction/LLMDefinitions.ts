@@ -1,6 +1,8 @@
 type SystemPromptType = ((examples: string) => string);
 export interface ILLMDefinition {
+    id: string;
     name: string;
+    enabled: boolean;
     modelName: string;
     executionProvider: ExecutionProvider;
     systemPrompt: SystemPromptType;
@@ -16,7 +18,9 @@ export enum ExecutionProvider {
 
 export const ModelGeneratorPrompts: ILLMDefinition[] = [
     {
-        name: "conversationLLM",
+        id: "conversationLLM",
+        name: "Conversation LLM",
+        enabled: false,
         modelName: 'anthropic.claude-3-haiku-20240307-v1:0',
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples)=>`
@@ -29,7 +33,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.004
     },
     {
-        name: "3dModelLLM",
+        id: "3dModelLLM",
+        name: "Anthropic Claude 3.5 Sonnet v2",
+        enabled: true,
         modelName: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples)=>`
@@ -54,7 +60,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.015
     },
     {
-        name: "3dModelLLM_Claude_3.5_Haiku",
+        id: "3dModelLLM_Claude_3.5_Haiku",
+        name: "Anthropic Claude 3.5 Haiku",
+        enabled: true,
         modelName: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt:(examples)=>`
@@ -79,7 +87,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.004
     },
     {
-        name: "3dModelLLM_examples",
+        id: "3dModelLLM_examples",
+        name: "Anthropic Claude 3.5 Sonnet v2 with examples",
+        enabled: true,
         modelName: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples)=>`
@@ -106,7 +116,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.015
     },
     {
-        name: "3dModelLLM_Claude_3.5_Haiku_examples",
+        id: "3dModelLLM_Claude_3.5_Haiku_examples",
+        name: "Anthropic Claude 3.5 Haiku with examples",
+        enabled: true,
         modelName: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -133,7 +145,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.004
     },
     {
-        name: "3dModelLLM_LLama3_3_70b",
+        id: "3dModelLLM_LLama3_3_70b",
+        name: "Meta LLama 3.3 70b",
+        enabled: true,
         modelName: "us.meta.llama3-3-70b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -158,7 +172,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.00072
     },    
     {
-        name: "3dModelLLM_LLama3_3_70b_examples",
+        id: "3dModelLLM_LLama3_3_70b_examples",
+        name: "Meta LLama 3.3 70b with examples",
+        enabled: true,
         modelName: "us.meta.llama3-3-70b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -185,7 +201,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.00072
     },
     {
-        name: "3dModelLLM_LLama3_2_90b",
+        id: "3dModelLLM_LLama3_2_90b",
+        name: "Meta LLama 3.2 90b",
+        enabled: false,
         modelName: "us.meta.llama3-2-90b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -210,7 +228,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.00072
     },
     {
-        name: "3dModelLLM_LLama3_2_90b_examples",
+        id: "3dModelLLM_LLama3_2_90b_examples",
+        name: "Meta LLama 3.2 90b with examples",
+        enabled: false,
         modelName: "us.meta.llama3-2-90b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -237,7 +257,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.00072
     },
     {
-        name: "3dModelLLM_Amazon_Nova_Pro",
+        id: "3dModelLLM_Amazon_Nova_Pro",
+        name: "Amazon Nova Pro",
+        enabled: true,
         modelName: "us.amazon.nova-pro-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -262,7 +284,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.0002
     }, 
     {
-        name: "3dModelLLM_Amazon_Nova_Pro_examples",
+        id: "3dModelLLM_Amazon_Nova_Pro_examples",
+        name: "Amazon Nova Pro with examples",
+        enabled: true,
         modelName: "us.amazon.nova-pro-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
         systemPrompt: (examples: string)=>`
@@ -289,7 +313,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.0002
     },       
     {
-        name: "3dModelLLM_GPT4o-mini",
+        id: "3dModelLLM_GPT4o-mini",
+        name: "OpenAI GPT-4o Mini",
+        enabled: true,
         modelName: "gpt-4o-mini",
         executionProvider: ExecutionProvider.OpenAI,
         systemPrompt: (examples: string)=>`
@@ -314,7 +340,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.0006
     },
     {
-        name: "3dModelLLM_GPT4o",
+        id: "3dModelLLM_GPT4o",
+        name: "OpenAI GPT-4o",
+        enabled: true,
         modelName: "gpt-4o-2024-11-20",
         executionProvider: ExecutionProvider.OpenAI,
         systemPrompt: (examples: string)=>`
@@ -339,7 +367,9 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         outputTokenCostPerMille: 0.01
     },
     {
-        name: "3dModelLLM_o1",
+        id: "3dModelLLM_o1",
+        name: "OpenAI o1",
+        enabled: false,
         modelName: "o1",
         executionProvider: ExecutionProvider.OpenAI,
         systemPrompt: (examples: string)=>`

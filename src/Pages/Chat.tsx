@@ -11,6 +11,7 @@ import { useResponsiveness } from "react-responsiveness";
 import ChatContextComponent from "../Components/ChatContextComponent";
 import { FileUploader } from "@aws-amplify/ui-react-storage";
 import { list, remove } from "aws-amplify/storage";
+import { ModelGeneratorPrompts } from "../../amplify/functions/submitqueryfunction/LLMDefinitions";
 
 const client = generateClient<Schema>();
 
@@ -42,82 +43,13 @@ function Chat()
     const [uploadVisible, setUploadVisible] = useState<boolean>(false);
     const [files, setFiles] = useState<{ [key: string]: { status: string } }>({});
 
-    const modelOptions: IModelOption[] = [
-        {
-            key: "3dModelLLM",
-            text: "Anthropic Claude 3.5 Sonnet v2",
-            value: "3dModelLLM",
-            image: { avatar: false, src: "" }
-        },
-        {
-            key: "3dModelLLM_examples",
-            text: "Anthropic Claude 3.5 Sonnet v2 with examples",
-            value: "3dModelLLM_examples",
-            image: { avatar: false, src: "" }
-        },
-        {
-            key: "3dModelLLM_Claude_3.5_Haiku",
-            text: "Anthropic Claude 3.5 Haiku",
-            value: "3dModelLLM_Claude_3.5_Haiku",
-            image: { avatar: false, src: "" }
-        },
-        {
-            key: "3dModelLLM_Claude_3.5_Haiku_examples",
-            text: "Anthropic Claude 3.5 Haiku with examples",
-            value: "3dModelLLM_Claude_3.5_Haiku_examples",
-            image: { avatar: false, src: "" }
-        },
-        {
-            key: "3dModelLLM_LLama3_3_70b",
-            text: "Meta LLama3.3 70b",
-            value: "3dModelLLM_LLama3_3_70b",
-            image: { avatar: false, src: "" }
-        },
-        {
-            key: "3dModelLLM_LLama3_3_70b_examples",
-            text: "Meta LLama3.3 70b with examples",
-            value: "3dModelLLM_LLama3_3_70b_examples",
-            image: { avatar: false, src: "" }
-        },
-/*         {
-            key: "3dModelLLM_LLama3_2_90b",
-            text: "LLama3.2 90b",
-            value: "3dModelLLM_LLama3_2_90b",
-            image: { avatar: false, src: "" }
-        },        
-        {
-            key: "3dModelLLM_LLama3_2_90b_examples",
-            text: "LLama3.2 90b with examples",
-            value: "3dModelLLM_LLama3_2_90b_examples",
-            image: { avatar: false, src: "" }
-        },  */   
-        {
-            key: "3dModelLLM_Amazon_Nova_Pro",
-            text: "Amazon Nova Pro",
-            value: "3dModelLLM_Amazon_Nova_Pro",
-            image: { avatar: false, src: "" }
-        },      
-        {
-            key: "3dModelLLM_Amazon_Nova_Pro_examples",
-            text: "Amazon Nova Pro with examples",
-            value: "3dModelLLM_Amazon_Nova_Pro_examples",
-            image: { avatar: false, src: "" }
-        }, 
-        {
-            key: "3dModelLLM_GPT4o-mini",
-            text: "OpenAI GPT 4o-mini",
-            value: "3dModelLLM_GPT4o-mini",
-            image: { avatar: false, src: "" }
-        }, 
-        {
-            key: "3dModelLLM_GPT4o",
-            text: "OpenAI GPT 4o",
-            value: "3dModelLLM_GPT4o",
-            image: { avatar: false, src: "" }
-        }, 
+    const modelOptions: IModelOption[] = ModelGeneratorPrompts.filter((def)=>def.enabled).map((definition) => ({
+        key: definition.id,
+        text: definition.name,
+        value: definition.id,
+        image: { avatar: false, src: "" },
+    } as IModelOption));
 
-        
-    ];
     const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));

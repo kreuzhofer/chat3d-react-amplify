@@ -12,5 +12,6 @@ export const submitQueryFunction = defineFunction({
     OPENAI_API_KEY: secret("OPENAI_API_KEY"),
     OPENAI_PROJECT_ID: secret("OPENAI_PROJECT_ID"),
     OPENAI_ORGANIZATION_ID: secret("OPENAI_ORGANIZATION_ID"),
+    XAI_API_KEY: secret("XAI_API_KEY"),
   },
 });

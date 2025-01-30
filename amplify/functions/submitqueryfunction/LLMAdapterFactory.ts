@@ -3,6 +3,8 @@ import { ILLMAdapter } from './ILLMAdapter';
 import { OllamaAdapter } from './OllamaAdapter';
 import { BedrockAdapter } from './BedrockAdapter';
 import { OpenAIAdapter } from './OpenAIAdapter';
+import { XAiGrokAdapter } from './XAiGrokAdapter';
+import { DeepSeekAdapter } from './DeepSeekAdapter';
 
 export class LLMAdapterFactory {
     static create(definition: ILLMDefinition): ILLMAdapter {
@@ -13,6 +15,10 @@ export class LLMAdapterFactory {
                 return new BedrockAdapter(definition);
             case ExecutionProvider.OpenAI:
                 return new OpenAIAdapter(definition);
+            case ExecutionProvider.XAi:
+                return new XAiGrokAdapter(definition);
+            case ExecutionProvider.DeepSeek:
+                return new DeepSeekAdapter(definition);
             default:
                 throw new Error(`Unsupported Execution Provider: ${definition.executionProvider}`);
         }

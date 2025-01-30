@@ -248,6 +248,7 @@ function Chat()
             chatIdRef.current = "";
             setChatMessages([]);
             setQuery("");
+            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
             navigate("/chat");
         }
 

@@ -50,7 +50,7 @@ function Chat()
         image: { avatar: false, src: "" },
     } as IModelOption));
 
-    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions[1]);
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));

@@ -139,7 +139,7 @@ function Chat()
             chatIdRef.current = "";
         if (chatContextRef.current === null && chatIdRef.current === "") {
             //console.log("No context and no chatId");
-            const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
+            const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat", conversationModelId: "conversationLLM", chat3DModelId: selectedLlmConfiguration.key });
             if(chatContextCreate.data)
             {
                 chatIdRef.current = chatContextCreate.data.id;
@@ -223,6 +223,17 @@ function Chat()
         {
             const chatContextGet = await client.models.ChatContext.get({ id: chatIdRef.current });
             chatContextRef.current = chatContextGet.data;
+            if (chatContextGet?.data?.chat3DModelId) {
+                var chat3DModelId = chatContextGet.data.chat3DModelId;
+                const selectedOption = modelOptions.find(option => option.key === chat3DModelId);
+                if (selectedOption) {
+                    setSelectedLlmConfiguration(selectedOption);
+                }
+            }
+            else
+            {
+                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+            }
             //console.log("Chat context auto loaded")
             handleScrollToBottom();
             setQuery("");

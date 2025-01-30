@@ -21,6 +21,8 @@ const schema = a.schema({
   ChatContext: a
     .model({
       name: a.string(),
+      conversationModelId: a.string(),
+      chat3DModelId: a.string(),
       chatItems: a.hasMany("ChatItem", "chatContextId"),
   }).authorization(allow => [allow.owner()]),
   ChatItem: a

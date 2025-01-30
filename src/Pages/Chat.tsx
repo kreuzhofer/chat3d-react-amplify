@@ -159,6 +159,7 @@ function Chat()
             if(chatContextRef.current && chatContextRef.current.name === "unnamed chat")
             {
                 // create name with ai
+                //console.log("chatContextRef.current: "+JSON.stringify(chatContextRef.current));
                 //console.log("naming chat context...");
                 client.generations
                 .chatNamer({
@@ -168,6 +169,7 @@ function Chat()
                     var chatContextUpdate = await client.models.ChatContext.update({ id: chatContextRef.current.id, name: res.data?.name ?? "unnamed chat" });
                     if(chatContextUpdate.errors)
                         console.error(chatContextUpdate.errors);
+                    chatContextRef.current = chatContextUpdate.data;
                 });
             }
 

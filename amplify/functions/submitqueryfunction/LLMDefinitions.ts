@@ -25,7 +25,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: false,
         modelName: 'anthropic.claude-3-haiku-20240307-v1:0',
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt: (examples)=>`
+        systemPrompt: (_examples)=>`
             You are a helpful 3d modeling assistant. The user can ask you to create a 3D model and you will discuss with them the details and be able to improve the design in a step-by-step conversation.
             Before you ask for the get_3D_model tool, ensure you have enough information to create a model with details. For example: If a user asks you to create a box, ask for the dimensions and if the user asks you to create something creative like a castle, ask for the theme.
             Every time you decide to ask for the get_3D_model tool, you will start with a message to let the user know that you are going to work on it and that it might take a minute, then as a second message, you will ask for the tool.

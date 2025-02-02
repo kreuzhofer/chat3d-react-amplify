@@ -254,44 +254,6 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 const context = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
 
-/*                 const system_prompt_3d_generator = modelDefinition3DGenerator.systemPrompt;
-                const generate3dmodelId = modelDefinition3DGenerator.modelName;
-
-                const converse3DModelCommandInput = {
-                    modelId: generate3dmodelId,
-                    messages: generate3dmodelMessages as Message[],
-                    inferenceConfig: { maxTokens: 4096, temperature: 1.0, topP: 0.9 },
-                    system: [{
-                        text: system_prompt_3d_generator(examplesSection)
-                    }],
-                };
-
-                const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
-                const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
-                console.log(converse3DModelReponse);
-                const inputTokens3DModel = converse3DModelReponse.usage?.inputTokens || 0;
-                const outputTokens3DModel = converse3DModelReponse.usage?.outputTokens || 0;
-                const inputTokenCost3DModel = modelDefinition3DGenerator.inputTokenCostPerMille * inputTokens3DModel / 1000;
-                const outputTokenCost3DModel = modelDefinition3DGenerator.outputTokenCostPerMille * outputTokens3DModel / 1000;
-                const tokens3DModelCost = inputTokenCost3DModel + outputTokenCost3DModel;
-                tracker.track('bedrock_conversation', {
-                  modelId: generate3dmodelId,
-                  inputTokens: inputTokens3DModel,
-                  outputTokens: outputTokens3DModel,
-                  inputTokenCost: inputTokenCost3DModel,
-                  outputTokenCost: outputTokenCost3DModel,
-                  tokenCost: tokens3DModelCost,
-                });
-
-                var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
-                console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));
-                var converse3DModelAssistantResponse = converse3DModelAssistantMessages?.find((item) => item.text);
-
-                console.log("converse3DModelAssistantResponse: "+JSON.stringify(converse3DModelAssistantResponse));
-
-                // create model using openscad
-                const sections = extractDocumentSections(converse3DModelAssistantResponse?.text || ""); */
-
                 const OpenScadResponse = z.object({
                     plan: z.string(),
                     code: z.string(),

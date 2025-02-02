@@ -1,4 +1,6 @@
 import type { Schema, IChatMessage } from "../../amplify/data/resource";
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function ChatMessageUser(item: Schema["ChatItem"]["type"])
 {
@@ -8,7 +10,9 @@ function ChatMessageUser(item: Schema["ChatItem"]["type"])
         <>
             {messages.map((message) => (
                 <div className="message user" key={message.id}>
-                    <div className="content">{message.text}</div>
+                    <div className="content">
+                        <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
+                    </div>
                 </div>
             ))}
         </>

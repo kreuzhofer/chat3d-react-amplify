@@ -3,7 +3,8 @@ import { env } from '$amplify/env/pre-sign-up';
 
 const listOfPreviewEmails = [
     "dkreuzh@gmail.com",
-    "daniel.kreuzhofer@gmail.com"
+    "daniel.kreuzhofer@gmail.com",
+    "amanksingh7777@gmail.com"
 ];
 
 export const handler: PreSignUpTriggerHandler = async (event) => {

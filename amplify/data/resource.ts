@@ -9,6 +9,11 @@ export interface IChatMessage {
   stateMessage: string;
   itemType: string;
   attachment: string;
+  intputTokens: number;
+  outputTokens: number;
+  inputTokenCost: number;
+  outputTokenCost: number;
+  tokenCost: number;
 }
 
 const schema = a.schema({
@@ -16,6 +21,8 @@ const schema = a.schema({
   ChatContext: a
     .model({
       name: a.string(),
+      conversationModelId: a.string(),
+      chat3DModelId: a.string(),
       chatItems: a.hasMany("ChatItem", "chatContextId"),
   }).authorization(allow => [allow.owner()]),
   ChatItem: a
@@ -24,6 +31,7 @@ const schema = a.schema({
       chatContext: a.belongsTo("ChatContext", "chatContextId"),
       role: a.string(),
       messages: a.json(),
+      rating: a.integer(), // -1 = thumbs down, 0 = no rating, 1 = thumbs up
     }).authorization((allow) => [allow.owner()]),
   
   submitQuery: a
@@ -35,6 +43,7 @@ const schema = a.schema({
       query: a.string(),
       executorFunctionName: a.string(),
       bucket: a.string(),
+      llmconfiguration: a.string(),
     })
     .returns(a.string())
     .handler(a.handler.function(submitQueryFunction))

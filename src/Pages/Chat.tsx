@@ -1,16 +1,26 @@
 import type { IChatMessage, Schema } from "../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useEffect, useState, useRef } from "react";
-import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher } from 'semantic-ui-react'
+import { Button, Icon, Input, Image, Menu, MenuItem, Popup, Sidebar, SidebarPushable, SidebarPusher, Dropdown } from 'semantic-ui-react'
 import { useParams, useNavigate, NavLink } from "react-router";
 import { v4 as uuidv4 } from 'uuid';
 import outputs from "../../amplify_outputs.json";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
-import { list, remove } from 'aws-amplify/storage';
 import ChatMessage from "../Components/ChatMessage";
 import { useResponsiveness } from "react-responsiveness";
+import ChatContextComponent from "../Components/ChatContextComponent";
+import { FileUploader } from "@aws-amplify/ui-react-storage";
+import { list, remove } from "aws-amplify/storage";
+import { ModelGeneratorPrompts } from "../../amplify/functions/submitqueryfunction/LLMDefinitions";
 
 const client = generateClient<Schema>();
+
+interface IModelOption {
+    key: string;
+    text: string;
+    value: string;
+    image: { avatar: boolean, src: string };
+}
 
 function Chat()
 {
@@ -30,6 +40,17 @@ function Chat()
     const { isMax, currentInterval } = useResponsiveness()
     const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
     const [lastScreenSize, setLastScreenSize] = useState<string>("");
+    const [uploadVisible, setUploadVisible] = useState<boolean>(false);
+    const [files, setFiles] = useState<{ [key: string]: { status: string } }>({});
+
+    const modelOptions: IModelOption[] = ModelGeneratorPrompts.filter((def)=>def.enabled).map((definition) => ({
+        key: definition.id,
+        text: definition.name,
+        value: definition.id,
+        image: { avatar: false, src: "" },
+    } as IModelOption));
+
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -47,7 +68,7 @@ function Chat()
     }
 
     async function createNewChatItems(chatContextId: string) {
-        console.log("creating new chat items for context: " + chatContextId);
+        //console.log("creating new chat items for context: " + chatContextId);
         var newUserChatItem = await client.models.ChatItem.create({
             chatContextId: chatContextId, role: "user",
             messages: JSON.stringify([
@@ -81,17 +102,44 @@ function Chat()
         return { newUserChatItem, newAssistantChatItem };
     }
 
+    async function deleteChatItem(id: string) {
+        const chatItem = chatMessages.find((item) => item.id === id);
+        if(!chatItem)
+        {
+            console.error("Chat item not found: "+id);
+            return;
+        }
+        if(chatItem.messages && typeof chatItem.messages === 'string')
+        {
+            const messages: IChatMessage[] = chatItem.messages ? JSON.parse(chatItem.messages as string) : [];
+            //console.log(JSON.stringify(messages));
+            messages.forEach(async (message) => {
+
+            const key = "modelcreator/"+message.id;
+
+            var filesForKey = await list({path: key});
+            //console.log("filesForKey: "+JSON.stringify(filesForKey));
+            filesForKey.items.forEach(async (file) => {
+                //console.log("deleting file: "+file.path);
+                await remove({path: file.path});
+                });
+
+            });
+        }
+        await client.models.ChatItem.delete({ id: id });
+    }
+
     async function submitChatBackendCall() {
         if(query === "")
             return;
-        console.log("submitChatBackendCall");
-        console.log("chatId: "+chatIdRef.current);
-        console.log("chatContext: "+JSON.stringify(chatContextRef.current));
+        //console.log("submitChatBackendCall");
+        //console.log("chatId: "+chatIdRef.current);
+        //console.log("chatContext: "+JSON.stringify(chatContextRef.current));
         if(chatIdRef.current === "new")
             chatIdRef.current = "";
         if (chatContextRef.current === null && chatIdRef.current === "") {
-            console.log("No context and no chatId");
-            const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat" });
+            //console.log("No context and no chatId");
+            const chatContextCreate = await client.models.ChatContext.create({ name: "unnamed chat", conversationModelId: "conversationLLM", chat3DModelId: selectedLlmConfiguration.key });
             if(chatContextCreate.data)
             {
                 chatIdRef.current = chatContextCreate.data.id;
@@ -108,9 +156,11 @@ function Chat()
             setQuery(""); // remove last query
             var { newUserChatItem, newAssistantChatItem } = await createNewChatItems(chatContextRef.current.id);
 
-            if(!chatContextRef.current.name || chatContextRef.current.name === "unnamed chat")
+            if(chatContextRef.current && chatContextRef.current.name === "unnamed chat")
             {
                 // create name with ai
+                //console.log("chatContextRef.current: "+JSON.stringify(chatContextRef.current));
+                //console.log("naming chat context...");
                 client.generations
                 .chatNamer({
                   content: query,
@@ -119,6 +169,7 @@ function Chat()
                     var chatContextUpdate = await client.models.ChatContext.update({ id: chatContextRef.current.id, name: res.data?.name ?? "unnamed chat" });
                     if(chatContextUpdate.errors)
                         console.error(chatContextUpdate.errors);
+                    chatContextRef.current = chatContextUpdate.data;
                 });
             }
 
@@ -128,8 +179,10 @@ function Chat()
                 newUserChatItemId: newUserChatItem.data?.id, 
                 newAssistantChatItemId: newAssistantChatItem.data?.id,
                 executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
-                bucket: outputs.storage.bucket_name
+                bucket: outputs.storage.bucket_name,
+                llmconfiguration: selectedLlmConfiguration.value
              });
+             handleScrollToBottom();
         }
     }
 
@@ -172,16 +225,30 @@ function Chat()
         {
             const chatContextGet = await client.models.ChatContext.get({ id: chatIdRef.current });
             chatContextRef.current = chatContextGet.data;
-            console.log("Chat context auto loaded")
+            if (chatContextGet?.data?.chat3DModelId) {
+                var chat3DModelId = chatContextGet.data.chat3DModelId;
+                const selectedOption = modelOptions.find(option => option.key === chat3DModelId);
+                if (selectedOption) {
+                    setSelectedLlmConfiguration(selectedOption);
+                }
+            }
+            else
+            {
+                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+            }
+            //console.log("Chat context auto loaded")
             handleScrollToBottom();
+            setQuery("");
         }
 
-        console.log("chatId in useEffect: "+chatIdRef.current);
+        //console.log("chatId in useEffect: "+chatIdRef.current);
         if(chatIdRef.current === "new")
         {
             chatContextRef.current = null;
             chatIdRef.current = "";
             setChatMessages([]);
+            setQuery("");
+            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
             navigate("/chat");
         }
 
@@ -202,7 +269,7 @@ function Chat()
                     handleScrollToBottom();
                 },
             });
-            console.log("ChatItem subscription created");
+            //console.log("ChatItem subscription created");
             subScriptions.push(subscription);
         }
 
@@ -217,7 +284,7 @@ function Chat()
         return ()=>{
             subScriptions.forEach((subscription) => {
                 subscription.unsubscribe()
-                console.log("subscription removed");
+                //console.log("subscription removed");
             });
             subScriptions.length = 0;
         };
@@ -243,6 +310,27 @@ function Chat()
         }
 
     }, [currentScreenSize]);
+
+    const regenerateResponse = async (id: string) => {
+        //alert("regenerateResponse: "+id);
+        // delete chatitem by id
+        const lastChatItem = chatMessages.find((item) => item.id === id);
+        if(!lastChatItem)
+        {
+            console.error("Chat item not found: "+id);
+            return;
+        }
+        const lastQueryChatItem = chatMessages[chatMessages.indexOf(lastChatItem) - 1];
+        if(!lastQueryChatItem)
+        {
+            console.error("Query chat item not found: "+id);
+            return;
+        }
+
+        setQuery(lastQueryChatItem.messages ? JSON.parse(lastQueryChatItem.messages as string)[0].text : "");
+        await deleteChatItem(lastChatItem.id);
+        await deleteChatItem(lastQueryChatItem.id);
+    }
 
     return (
             <>
@@ -273,76 +361,7 @@ function Chat()
                 </Menu>
                 <Menu vertical borderless fluid className="chat-contexts">
                     {chatContexts.map((item) => (
-                        <MenuItem as={NavLink}
-                            to={"/chat/"+item.id}
-                            key={item.id}
-                            onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}}
-                            >
-                            <div className="hover-content">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span className="overflow ellipsis">{item.name}</span>
-                                    <Popup
-                                        contentStyle={{ display: 'flex', justifyContent: 'flex-end' }}
-                                        trigger={<Icon name="ellipsis horizontal" onClick={(e: { preventDefault: () => any; }) => e.preventDefault()} />}
-                                        on='click'
-                                        hideOnScroll
-                                    >
-                                        <Menu vertical borderless fluid>
-                                            <MenuItem onClick={(e) => e.preventDefault()}>
-                                                <Icon name="edit"/>
-                                                Rename
-                                            </MenuItem>
-                                            <MenuItem onClick={async function (e) {
-                                                    e.preventDefault();
-                                                    console.log("trying to delete: "+item.id);
-                                                    // iterate over all chat items and delete them
-                                                    const chatContextToDelete = await client.models.ChatContext.get({ id: item.id });
-                                                    if(chatContextToDelete.data)
-                                                    {
-                                                        const chatItemsForChatContext = await chatContextToDelete.data.chatItems();
-                                                        chatItemsForChatContext.data.forEach(async (item) => {
-                                                            console.log("deleting chat item: "+item.id);
-                                                            // iterate over all messages in the chatItem and delete all scad and png files in the s3 bucket matching the message id
-                                                            if(item.messages)
-                                                            {
-                                                                if (typeof item.messages === 'string') {
-                                                                    const messages: IChatMessage[] = item.messages ? JSON.parse(item.messages as string) : [];
-                                                                    
-                                                                    messages.forEach(async (message) => {
-                                                                        if(message.itemType === "image")
-                                                                        {
-                                                                            const key = "modelcreator/"+message.id;
-
-                                                                            var filesForKey = await list({path: key});
-                                                                            console.log("filesForKey: "+JSON.stringify(filesForKey));
-                                                                            filesForKey.items.forEach(async (file) => {
-                                                                                console.log("deleting file: "+file.path);
-                                                                                await remove({path: file.path});
-                                                                            });
-                                                                        }
-                                                                    });
-                                                                }
-                                                            }
-                                                            await client.models.ChatItem.delete({ id: item.id });
-                                                        });
-
-                                                        console.log("deleting chat context: "+item.id);
-                                                        await client.models.ChatContext.delete({ id: item.id });
-                                                        navigate("/chat/new");
-                                                    }
-
-                                                    }}>
-                                                <Icon name="trash"/>
-                                                Delete
-                                            </MenuItem>
-                                        </Menu>
-                                    </Popup>
-                                </div>
-                            </div>   
-                            <div className="default-content">
-                                <span className="overflow ellipsis">{item.name}</span>
-                            </div> 
-                        </MenuItem>
+                        <ChatContextComponent chatContext={item} key={item.id} onClick={() => {currentScreenSize === "xs" ? setSideOverlayVisible(false) : null;}} />
                     ))}
                 </Menu>
 
@@ -386,10 +405,17 @@ function Chat()
                     <div className="chat-title">
                         Chat3D
                     </div>
+                    <div className="chat-buttons-right">
+                        <Dropdown inline compact direction="left" icon={null} trigger={<Icon><Image src='/images/brain.svg'></Image></Icon>} options={modelOptions} value={selectedLlmConfiguration.value} onChange={(_e,v)=>{
+                            var selectedOption = modelOptions.find((option)=>option.value === v.value);
+                            if(selectedOption)
+                                setSelectedLlmConfiguration(selectedOption);
+                            }} />
+                    </div>
                 </div>
                 <div className="chat-container" style={{display: chatIdRef.current === "" ? "none" : "block"}}>
                     {chatMessages.map((item) => (
-                        <ChatMessage {...item} key={item.id} />
+                        <ChatMessage item={item} key={item.id} onRefreshClick={(id) => {regenerateResponse(id)} } />
                     ))}
                     <div ref={messagesEndRef}></div>
                 </div>
@@ -398,9 +424,69 @@ function Chat()
                         What can I create for you?
                     </div>
                 ) : null}
+                <div style={uploadVisible ? {display: "block"} : {display: "none"}} key={"file-uploader"}>
+                    <FileUploader
+                        acceptedFileTypes={['image/*']}
+                        path="upload/"
+                        maxFileCount={5}
+                        isResumable
+                        maxFileSize={1000000}
+                        onUploadSuccess={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                return {
+                                    ...prevFiles,
+                                    [key]: {
+                                        status: 'success',
+                                    },
+                                };
+                            });
+                          }}
+                        onFileRemove={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                const { [key]: _, ...rest } = prevFiles;
+                                return rest;
+                            });
+                          }}
+                        onUploadError={(_error, { key }: { key: string }) => {
+                            setFiles((prevFiles) => {
+                              return {
+                                ...prevFiles,
+                                [key]: {
+                                  status: 'error',
+                                },
+                              };
+                            });
+                          }}
+                        onUploadStart={(event: { key?: string }) => {
+                            const key = event.key ?? '';
+                            return setFiles((prevFiles) => {
+                                return {
+                                    ...prevFiles,
+                                    [key]: {
+                                        status: 'uploading',
+                                    },
+                                };
+                            });
+                        }}
+                        />
+                        {Object.keys(files).map((key) => {
+                            return files[key] ? (
+                            <div>
+                                {key}: {files[key].status}
+                            </div>
+                            ) : null;
+                        })}
+                </div>
                 <div className="input-container">
+                    {uploadVisible ? 
+                        <Button icon="close" onClick={()=> setUploadVisible(false)} />
+                        :
+                        <Button icon="plus" onClick={()=> setUploadVisible(true)} />
+                    }   
                     <Input
-                        type="text" 
+                        type="multiline" 
                         placeholder="Type a message..." 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -409,7 +495,6 @@ function Chat()
                                 submitChatBackendCall();
                             }
                         }}
-                        onSend={submitChatBackendCall}
                     >
                         <input />
                         <Button onClick={submitChatBackendCall}>Send</Button>

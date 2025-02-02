@@ -10,6 +10,7 @@ import { patreonOauthRequestHandlerFunction } from './functions/handlePatreonOau
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Duration } from 'aws-cdk-lib';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 const backend = defineBackend({
   auth,
@@ -34,6 +35,7 @@ const statement = new iam.PolicyStatement({
 });
 
 submitQueryLambda.addToRolePolicy(statement);
+
 
 const patreonOauthLambda = backend.patreonOauthRequestHandlerFunction.resources.lambda;
 const customResourceStack = backend.createStack('LambdaCustomResourceStack');
@@ -75,9 +77,10 @@ const openscadExecutorFunctionWithImage = new lambda.Function(customResourceStac
   environment: {
     // Add any environment variables if needed
   },
-  timeout: Duration.seconds(120),
+  timeout: Duration.seconds(240),
   role: role,
-  memorySize: 2048
+  memorySize: 2048,
+  logRetention: RetentionDays.ONE_WEEK
 });
 
 backend.addOutput({

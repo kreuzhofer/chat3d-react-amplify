@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { getUrl } from 'aws-amplify/storage';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Progress } from 'semantic-ui-react';
 interface ModelViewerProps {
     fileName: string;
 }
@@ -10,6 +11,7 @@ interface ModelViewerProps {
 const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
   const refContainer = useRef<HTMLDivElement>(null);
   const refFilename = useRef<string>("");
+  const [progress, setProgress] = useState(0);
 
     async function loadFile(url: string ) {
         const linkToStorageFile = await getUrl({
@@ -92,7 +94,8 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
                 };
                 animate();
             },
-            () => {
+            (xhr) => {
+                setProgress((xhr.loaded / xhr.total) * 100);
                 //console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
             },
             (error) => {
@@ -109,7 +112,10 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
 
   }, [fileName]);
   return (
-    <div ref={refContainer}></div>
+    <>
+        { progress<100 ? <Progress percent={progress} indicating>Loading model</Progress> : <></>}
+        <div ref={refContainer}></div>
+    </>
   );
 }
 

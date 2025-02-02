@@ -1,11 +1,3 @@
-/* 
-@supports (height:100cqh) {
-  :root {
-      --cqh-full: 100cqh;
-      --cqw-full: 100cqw;
-  }
-} */
-
 @supports (height: 100dvh) {
   html, body, #root {
     min-height: 100dvh;
@@ -41,37 +33,6 @@ html
 html body {
   font-size: 16px !important;
  }
-
-html body #root {
-/*   background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));
-  display: flex;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; */
-  /*height: 100%;*/
-/*   width: 100% !important;
-  overflow-x: hidden; */
-  /*justify-content: center;*/
-  /*align-items: center;*/
-  /*min-height: 2000px;*/
-  /*padding-top: 100px;*/
-/*   -webkit-font-smoothing: antialiased;
-  -moz-font-smoothing: grayscale;
-  min-height: 100vh; 
-  min-height: -webkit-fill-available; */
-}
-
-/* .ui.borderless.menu {
-  background-color: #f8f8f8;
-  box-shadow: none;
-  flex-wrap: wrap;
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-} */
-
-/* .ui.borderless.menu .header.item {
-  font-size: 18px;
-  font-weight: 400;
-} */
 
 div.ui.container {
   margin-left: 0px !important;
@@ -197,10 +158,16 @@ div.ui.left.sidebar {
   cursor: pointer;
   margin-left: 10px;
 }
+.response-actions.ratingmsg {
+  font-size: 0.75em;
+}
 .response-3dmodel {
   display: flex;
   justify-content: left;
   margin-top: 10px;
+}
+.response-3dmodel.tokencost {
+  font-size: 0.5em;
 }
 .response-image {
   max-width: calc(100% - 20px);
@@ -254,6 +221,9 @@ div.ui.left.sidebar {
 
 .chat-buttons-left {
   flex: 1;
+}
+.chat-buttons-right {
+  font-size: 0.75em;
 }
 
 .footer-menubar .settings {

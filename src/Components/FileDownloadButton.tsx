@@ -1,6 +1,5 @@
 import { getUrl } from "aws-amplify/storage";
-import { useEffect, useState } from "react";
-import { Button } from "semantic-ui-react";
+import { Button, Icon } from "semantic-ui-react";
 
 interface FileDownloadButtonProps {
     fileName: string;
@@ -8,25 +7,24 @@ interface FileDownloadButtonProps {
 }
 
 const FileDownloadButton: React.FC<FileDownloadButtonProps> = ({ fileName, text }) => {
-    const [downloadUrl, setDownloadUrl] = useState<string>("");
 
-    useEffect(() => {
+    function downloadFile(){
         getUrl({
             path: fileName,
             options:
             {
-                expiresIn: 300,
+                expiresIn: 900,
             }
             // Alternatively, path: ({identityId}) => `album/{identityId}/1.jpg`
             }).then(linkToStorageFile => {
                 // console.log('signed URL: ', linkToStorageFile.url);
                 // console.log('URL expires at: ', linkToStorageFile.expiresAt);
-                setDownloadUrl(linkToStorageFile.url.toString());
+                window.location.href = linkToStorageFile.url.toString();
             });
-    }, [fileName]);
+    }
 
     return (
-        downloadUrl!=="" ? <Button as="a" href={downloadUrl}>{text}</Button> : <div>Generating URL...</div>
+        <Button onClick={downloadFile}>{text}&nbsp;&nbsp;<Icon name="download"></Icon></Button>
     );
 }
 

@@ -40,7 +40,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt: (examples)=>`
+        systemPrompt: (_examples)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -96,7 +96,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt:(examples)=>`
+        systemPrompt:(_examples)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -152,7 +152,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "us.meta.llama3-3-70b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -208,7 +208,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: false,
         modelName: "us.meta.llama3-2-90b-instruct-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -264,7 +264,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "us.amazon.nova-pro-v1:0",
         executionProvider: ExecutionProvider.AWS_Bedrock,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -320,7 +320,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "gpt-4o-mini",
         executionProvider: ExecutionProvider.OpenAI,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -347,7 +347,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "gpt-4o-2024-11-20",
         executionProvider: ExecutionProvider.OpenAI,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -374,7 +374,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: false,
         modelName: "o1",
         executionProvider: ExecutionProvider.OpenAI,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -401,7 +401,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "grok-2-latest",
         executionProvider: ExecutionProvider.XAi,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.
@@ -430,7 +430,7 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         enabled: true,
         modelName: "grok-beta",
         executionProvider: ExecutionProvider.XAi,
-        systemPrompt: (examples: string)=>`
+        systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
             If you are prompted to create functional parts, especially if they need to be assembled or are like lego bricks replicatable and combinable, they need to be fitting together.

@@ -23,3 +23,14 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
+
+## Local development
+
+To start a local webserver to run the app, you still need an AWS Amplify Sandbox environment.
+To deploy your sandbox to AWS, run the following command in the terminal
+
+```code
+npx dotenvx run npx ampx sandbox
+```
+
+running dotenvx ensures your local .env file will be applied to the sandbox environment to set environment variables for the backend and frontend code

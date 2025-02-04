@@ -1,4 +1,4 @@
-import {ExecutionProvider, ILLMDefinition} from './LLMDefinitions';
+import {InferenceProvider, ILLMDefinition} from './LLMDefinitions';
 import { ILLMAdapter } from './ILLMAdapter';
 import { OllamaAdapter } from './OllamaAdapter';
 import { BedrockAdapter } from './BedrockAdapter';
@@ -7,20 +7,20 @@ import { XAiGrokAdapter } from './XAiGrokAdapter';
 import { DeepSeekAdapter } from './DeepSeekAdapter';
 
 export class LLMAdapterFactory {
-    static create(definition: ILLMDefinition): ILLMAdapter {
-        switch (definition.executionProvider) {
-            case ExecutionProvider.Ollama:
+    static initializeAdapter(definition: ILLMDefinition): ILLMAdapter {
+        switch (definition.inferenceProvider) {
+            case InferenceProvider.Ollama:
                 return new OllamaAdapter(definition);
-            case ExecutionProvider.AWS_Bedrock:
+            case InferenceProvider.AWS_Bedrock:
                 return new BedrockAdapter(definition);
-            case ExecutionProvider.OpenAI:
+            case InferenceProvider.OpenAI:
                 return new OpenAIAdapter(definition);
-            case ExecutionProvider.XAi:
+            case InferenceProvider.XAi:
                 return new XAiGrokAdapter(definition);
-            case ExecutionProvider.DeepSeek:
+            case InferenceProvider.DeepSeek:
                 return new DeepSeekAdapter(definition);
             default:
-                throw new Error(`Unsupported Execution Provider: ${definition.executionProvider}`);
+                throw new Error(`Unsupported Execution Provider: ${definition.inferenceProvider}`);
         }
     }
 }

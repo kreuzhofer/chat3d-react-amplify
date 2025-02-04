@@ -4,13 +4,14 @@ export interface ILLMDefinition {
     name: string;
     enabled: boolean;
     modelName: string;
-    executionProvider: ExecutionProvider;
+    inferenceProvider: InferenceProvider;
+    renderingProvider: RenderingProvider;
     systemPrompt: SystemPromptType;
     inputTokenCostPerMille: number;
     outputTokenCostPerMille: number;
 }
 
-export enum ExecutionProvider {
+export enum InferenceProvider {
     AWS_Bedrock = "AWS_Bedrock",
     Ollama = "Ollama",
     OpenAI = "OpenAI",
@@ -18,13 +19,19 @@ export enum ExecutionProvider {
     DeepSeek = "DeepSeek"
 }
 
-export const ModelGeneratorPrompts: ILLMDefinition[] = [
+export enum RenderingProvider {
+    OpenScad = "OpenScad",
+    Build123d = "Build123d",
+}
+
+export const LLMDefinitions: ILLMDefinition[] = [
     {
         id: "conversationLLM",
         name: "Conversation LLM",
         enabled: false,
         modelName: 'anthropic.claude-3-haiku-20240307-v1:0',
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples)=>`
             You are a helpful 3d modeling assistant. The user can ask you to create a 3D model and you will discuss with them the details and be able to improve the design in a step-by-step conversation.
             Before you ask for the get_3D_model tool, ensure you have enough information to create a model with details. For example: If a user asks you to create a box, ask for the dimensions and if the user asks you to create something creative like a castle, ask for the theme.
@@ -39,7 +46,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Anthropic Claude 3.5 Sonnet v2",
         enabled: true,
         modelName: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -66,7 +74,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Anthropic Claude 3.5 Sonnet v2 with examples",
         enabled: true,
         modelName: "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (examples)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -95,7 +104,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Anthropic Claude 3.5 Haiku",
         enabled: true,
         modelName: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt:(_examples)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -122,7 +132,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Anthropic Claude 3.5 Haiku with examples",
         enabled: true,
         modelName: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -151,7 +162,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Meta LLama 3.3 70b",
         enabled: true,
         modelName: "us.meta.llama3-3-70b-instruct-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -178,7 +190,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Meta LLama 3.3 70b with examples",
         enabled: true,
         modelName: "us.meta.llama3-3-70b-instruct-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -207,7 +220,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Meta LLama 3.2 90b",
         enabled: false,
         modelName: "us.meta.llama3-2-90b-instruct-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -234,7 +248,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Meta LLama 3.2 90b with examples",
         enabled: false,
         modelName: "us.meta.llama3-2-90b-instruct-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -263,7 +278,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Amazon Nova Pro",
         enabled: true,
         modelName: "us.amazon.nova-pro-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -290,7 +306,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "Amazon Nova Pro with examples",
         enabled: true,
         modelName: "us.amazon.nova-pro-v1:0",
-        executionProvider: ExecutionProvider.AWS_Bedrock,
+        inferenceProvider: InferenceProvider.AWS_Bedrock,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -319,7 +336,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "OpenAI GPT-4o Mini",
         enabled: true,
         modelName: "gpt-4o-mini",
-        executionProvider: ExecutionProvider.OpenAI,
+        inferenceProvider: InferenceProvider.OpenAI,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -346,7 +364,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "OpenAI GPT-4o",
         enabled: true,
         modelName: "gpt-4o-2024-11-20",
-        executionProvider: ExecutionProvider.OpenAI,
+        inferenceProvider: InferenceProvider.OpenAI,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -373,7 +392,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "OpenAI o1",
         enabled: false,
         modelName: "o1",
-        executionProvider: ExecutionProvider.OpenAI,
+        inferenceProvider: InferenceProvider.OpenAI,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -400,7 +420,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "OpenAI o3-mini",
         enabled: false,
         modelName: "o3-mini",
-        executionProvider: ExecutionProvider.OpenAI,
+        inferenceProvider: InferenceProvider.OpenAI,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -429,7 +450,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "XAi Grok 2",
         enabled: true,
         modelName: "grok-2-latest",
-        executionProvider: ExecutionProvider.XAi,
+        inferenceProvider: InferenceProvider.XAi,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.
@@ -458,7 +480,8 @@ export const ModelGeneratorPrompts: ILLMDefinition[] = [
         name: "XAi Grok Beta",
         enabled: true,
         modelName: "grok-beta",
-        executionProvider: ExecutionProvider.XAi,
+        inferenceProvider: InferenceProvider.XAi,
+        renderingProvider: RenderingProvider.OpenScad,
         systemPrompt: (_examples: string)=>`
             You are a professional OpenScad code writer with the skills to create highly detailed 3d models in OpenScad script language.
             You will strive for high detail, dimensional accuracy and structural integrity.

@@ -15,7 +15,7 @@ import { GetS3FileAsByteArrayAsync } from "./GetS3FileAsByteArrayAsync";
 import { Buffer } from 'buffer';
 
 import * as winston from "winston";
-import { ModelGeneratorPrompts } from "./LLMDefinitions";
+import { LLMDefinitions } from "./LLMDefinitions";
 const logger = winston.createLogger({
     transports: [new winston.transports.Console()],
   });
@@ -30,6 +30,7 @@ const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
 import { LLMAdapterFactory } from "./LLMAdapterFactory";
 import { extractDocumentSections } from "./Helpers";
 import { z } from "zod";
+import { StaticDocuments } from "./StaticDocuments";
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
@@ -66,15 +67,17 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const bedrockClient = new BedrockRuntimeClient({ region: "us-east-1" });
     const dataClient = generateClient<Schema>();
 
-    const conversationLLM = ModelGeneratorPrompts.find((item) => item.id === "conversationLLM");
-    if(!conversationLLM)
+    const conversationLlmDefinition = LLMDefinitions.find((item) => item.id === "conversationLLM");
+    if(!conversationLlmDefinition)
     {
       console.log("conversationLLM not found");
       return;
     }
+    const conversationLLM = LLMAdapterFactory.initializeAdapter(conversationLlmDefinition);
+    
     // Set the model ID, e.g., Claude 3 Haiku.
-    const conversationModelId = conversationLLM.modelName;
-    const conversationSystemPrompt = conversationLLM.systemPrompt;
+    const conversationModelId = conversationLlmDefinition.modelName;
+    const conversationSystemPrompt = conversationLlmDefinition.systemPrompt;
 
     // load all conversation items for the chat context
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
@@ -156,8 +159,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     console.log("converse command response: "+response);
     const inputTokensConversation = response.usage?.inputTokens || 0;
     const outputTokensConversation = response.usage?.outputTokens || 0;
-    const inputTokenCost = conversationLLM.inputTokenCostPerMille * inputTokensConversation / 1000;
-    const outputTokenCost = conversationLLM.outputTokenCostPerMille * outputTokensConversation / 1000;
+    const inputTokenCost = conversationLlmDefinition.inputTokenCostPerMille * inputTokensConversation / 1000;
+    const outputTokenCost = conversationLlmDefinition.outputTokenCostPerMille * outputTokensConversation / 1000;
     const tokenCost = inputTokenCost + outputTokenCost;
     tracker.track('bedrock_conversation', {
       modelId: conversationModelId,
@@ -243,25 +246,26 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
-                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.id === llmconfiguration);
+                const modelDefinition3DGenerator = LLMDefinitions.find((item) => item.id === llmconfiguration);
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("llmconfiguration not found");
                   return;
                 }
                 // create adapter from factory
-                const llmAdapter = LLMAdapterFactory.create(modelDefinition3DGenerator);
+                const llmAdapter = LLMAdapterFactory.initializeAdapter(modelDefinition3DGenerator);
 
-                const context = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
+                var context = OpenScadExamples.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
+                context += StaticDocuments.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
 
-                const OpenScadResponse = z.object({
+                const CADDesignResponse = z.object({
                     plan: z.string(),
                     code: z.string(),
                     parameters: z.array(z.string()),
                     comment: z.string()
                 });
 
-                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context, OpenScadResponse);
+                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context, CADDesignResponse);
                 tracker.track('bedrock_conversation', {
                   modelId: modelDefinition3DGenerator.modelName,
                   inputTokens: llmResponse.inputTokens,

@@ -1,9 +1,9 @@
-export interface IOpenScadExample {
+export interface IPromptExample {
     prompt: string;
     code: string;
 }
 
-export const OpenScadExamples: IOpenScadExample[] = [
+export const OpenScadExamples: IPromptExample[] = [
     {
         prompt: "Create a cute bear",
         code: `

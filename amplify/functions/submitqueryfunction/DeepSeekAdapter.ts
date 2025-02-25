@@ -3,7 +3,7 @@ import { ILLMDefinition } from './LLMDefinitions';
 import { env } from '$amplify/env/submitQueryFunction';
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
-//import { zodResponseFormat } from "openai/helpers/zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 import { ZodTypeAny } from "zod";
 
 export class DeepSeekAdapter implements ILLMAdapter {
@@ -28,8 +28,7 @@ export class DeepSeekAdapter implements ILLMAdapter {
             ],
             model: this.modelDefinition.modelName,
             store: false,
-            //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            //response_format: zodResponseFormat(resultSchema, "response")
+            response_format: zodResponseFormat(resultSchema as any, "response")
         });
         
         console.log(JSON.stringify(completion));

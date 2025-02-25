@@ -36,11 +36,11 @@ const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions);
 
 
-async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, openscadExecutorFunctionName: string, bucketName: string) {
+async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, functionName: string, bucketName: string) {
 
   const lambdaClient = new LambdaClient({});
     const invokeParams = {
-      FunctionName: openscadExecutorFunctionName,
+      FunctionName: functionName,
       InvocationType: 'RequestResponse' as const,
       Payload: JSON.stringify({
         fileName: fileName,

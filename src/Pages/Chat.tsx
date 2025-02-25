@@ -50,7 +50,8 @@ function Chat()
         image: { avatar: false, src: "" },
     } as IModelOption));
 
-    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+    const defaultLLMOption = "3dModelLLM_Claude3.7_examples";
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -234,7 +235,7 @@ function Chat()
             }
             else
             {
-                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
             }
             //console.log("Chat context auto loaded")
             handleScrollToBottom();
@@ -248,7 +249,7 @@ function Chat()
             chatIdRef.current = "";
             setChatMessages([]);
             setQuery("");
-            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
             navigate("/chat");
         }
 

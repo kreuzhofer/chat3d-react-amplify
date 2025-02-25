@@ -3,7 +3,7 @@ import { ILLMDefinition } from './LLMDefinitions';
 import { env } from '$amplify/env/submitQueryFunction';
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs';
-import { zodResponseFormat } from "openai/helpers/zod";
+//import { zodResponseFormat } from "openai/helpers/zod";
 import { ZodTypeAny } from "zod";
 
 export class OpenAIAdapter implements ILLMAdapter {
@@ -20,6 +20,9 @@ export class OpenAIAdapter implements ILLMAdapter {
     }
 
     async submitQuery(conversation: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
+        //const response_format = zodResponseFormat(resultSchema, "response");
+        //console.log("Response Format:"+JSON.stringify(response_format));
+
         const completion = await this.openai.chat.completions.create({
             messages: [
             { role: "developer", content: this.modelDefinition.systemPrompt(context) },
@@ -31,7 +34,7 @@ export class OpenAIAdapter implements ILLMAdapter {
             model: this.modelDefinition.modelName,
             store: false,
             //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            response_format: zodResponseFormat(resultSchema, "response")
+            //response_format: response_format
         });
         
         console.log(JSON.stringify(completion));

@@ -31,12 +31,14 @@ export class BedrockAdapter implements ILLMAdapter {
             system: [{
             text: system_prompt_3d_generator(context)
             }],
+            ...(this.modelDefinition.reasoning && {
             additionalModelRequestFields: generate3dmodelId === "us.anthropic.claude-3-7-sonnet-20250219-v1:0" ? {
-            thinking: {
+                thinking: {
                 type: "enabled",
                 budget_tokens: 2000
-            }
+                }
             } : undefined
+            })
         };
         console.log("converse3DModelCommandInput: "+JSON.stringify(converse3DModelCommandInput));
 

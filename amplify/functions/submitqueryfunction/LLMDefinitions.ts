@@ -9,6 +9,7 @@ export interface ILLMDefinition {
     systemPrompt: SystemPromptType;
     inputTokenCostPerMille: number;
     outputTokenCostPerMille: number;
+    reasoning: boolean;
 }
 
 export enum InferenceProvider {
@@ -39,7 +40,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             You should be helpful to the user and answer any question around topics related to 3d modeling, 3d printing, 3d reconstruction, 3d design and 3d scanning and you will create 3d models. Any other discussions you will politely decline.
         `,
         inputTokenCostPerMille: 0.0008,
-        outputTokenCostPerMille: 0.004
+        outputTokenCostPerMille: 0.004,
+        reasoning: false
     },
     {
         id: "3dModelLLM_Claude3.7",
@@ -67,7 +69,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,        
         inputTokenCostPerMille: 0.003,
-        outputTokenCostPerMille: 0.015
+        outputTokenCostPerMille: 0.015,
+        reasoning: false
     },
     {
         id: "3dModelLLM_Claude3.7_examples",
@@ -97,7 +100,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,        
         inputTokenCostPerMille: 0.003,
-        outputTokenCostPerMille: 0.015
+        outputTokenCostPerMille: 0.015,
+        reasoning: false
     },
     {
         id: "3dModelLLM",
@@ -125,7 +129,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.003,
-        outputTokenCostPerMille: 0.015
+        outputTokenCostPerMille: 0.015,
+        reasoning: false
     },
     {
         id: "3dModelLLM_examples",
@@ -155,7 +160,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,        
         inputTokenCostPerMille: 0.003,
-        outputTokenCostPerMille: 0.015
+        outputTokenCostPerMille: 0.015,
+        reasoning: false
     },
     {
         id: "3dModelLLM_Claude_3.5_Haiku",
@@ -183,7 +189,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.0008,
-        outputTokenCostPerMille: 0.004
+        outputTokenCostPerMille: 0.004,
+        reasoning: false
     },    
     {
         id: "3dModelLLM_Claude_3.5_Haiku_examples",
@@ -213,7 +220,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.0008,
-        outputTokenCostPerMille: 0.004
+        outputTokenCostPerMille: 0.004,
+        reasoning: false
     },
     {
         id: "3dModelLLM_LLama3_3_70b",
@@ -241,7 +249,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.00072,
-        outputTokenCostPerMille: 0.00072
+        outputTokenCostPerMille: 0.00072,
+        reasoning: false
     },    
     {
         id: "3dModelLLM_LLama3_3_70b_examples",
@@ -271,7 +280,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.00072,
-        outputTokenCostPerMille: 0.00072
+        outputTokenCostPerMille: 0.00072,
+        reasoning: false
     },
     {
         id: "3dModelLLM_LLama3_2_90b",
@@ -299,7 +309,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.00072,
-        outputTokenCostPerMille: 0.00072
+        outputTokenCostPerMille: 0.00072,
+        reasoning: false
     },
     {
         id: "3dModelLLM_LLama3_2_90b_examples",
@@ -329,7 +340,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.00072,
-        outputTokenCostPerMille: 0.00072
+        outputTokenCostPerMille: 0.00072,
+        reasoning: false
     },
     {
         id: "3dModelLLM_Amazon_Nova_Pro",
@@ -357,7 +369,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.0008,
-        outputTokenCostPerMille: 0.0002
+        outputTokenCostPerMille: 0.0002,
+        reasoning: false
     }, 
     {
         id: "3dModelLLM_Amazon_Nova_Pro_examples",
@@ -387,7 +400,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.0008,
-        outputTokenCostPerMille: 0.0002
+        outputTokenCostPerMille: 0.0002,
+        reasoning: false
     },       
     {
         id: "3dModelLLM_GPT4o-mini",
@@ -415,7 +429,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.00015,
-        outputTokenCostPerMille: 0.0006
+        outputTokenCostPerMille: 0.0006,
+        reasoning: false
     },
     {
         id: "3dModelLLM_GPT4o-mini_examples",
@@ -445,7 +460,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.00015,
-        outputTokenCostPerMille: 0.0006
+        outputTokenCostPerMille: 0.0006,
+        reasoning: false
     },
     {
         id: "3dModelLLM_GPT4o",
@@ -473,7 +489,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.0025,
-        outputTokenCostPerMille: 0.01
+        outputTokenCostPerMille: 0.01,
+        reasoning: false
     },
     {
         id: "3dModelLLM_GPT4o_examples",
@@ -503,7 +520,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             ${examples}
         `,
         inputTokenCostPerMille: 0.0025,
-        outputTokenCostPerMille: 0.01
+        outputTokenCostPerMille: 0.01,
+        reasoning: false
     },
     {
         id: "3dModelLLM_o1",
@@ -531,7 +549,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.015,
-        outputTokenCostPerMille: 0.06
+        outputTokenCostPerMille: 0.06,
+        reasoning: false
     },
     {
         id: "3dModelLLM_o3mini",
@@ -561,7 +580,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             comment: your final comments about the model, not mentioning any openscad specific things or function names.
         `,
         inputTokenCostPerMille: 0.0011,
-        outputTokenCostPerMille: 0.0044
+        outputTokenCostPerMille: 0.0044,
+        reasoning: false
     },    
     {
         id: "3dModelLLM_Grok2",
@@ -591,7 +611,8 @@ export const LLMDefinitions: ILLMDefinition[] = [
             comment: your final comments about the model, not mentioning any openscad specific things or function names.
         `,
         inputTokenCostPerMille: 0.002,
-        outputTokenCostPerMille: 0.01
+        outputTokenCostPerMille: 0.01,
+        reasoning: false
     },
     {
         id: "3dModelLLM_GrokBeta",
@@ -619,6 +640,7 @@ export const LLMDefinitions: ILLMDefinition[] = [
             If the model has features like a nose, eyes, mouth, etc., make sure they are in the right place and have the right size and that the model is facing towards the front.
         `,
         inputTokenCostPerMille: 0.005,
-        outputTokenCostPerMille: 0.015
+        outputTokenCostPerMille: 0.015,
+        reasoning: false
     },
 ];

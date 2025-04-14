@@ -69,10 +69,6 @@ const ChatContextComponent: React.FC<ChatContextComponentProps> = ({chatContext,
                     hideOnScroll
                 >
                     <Menu vertical borderless fluid>
-                        <MenuItem onClick={(e) => e.preventDefault()}>
-                            <Icon name="edit"/>
-                            Rename
-                        </MenuItem>
                         <MenuItem onClick={()=>setConfirmDeleteOpen(true)}>
                             <Icon name="trash"/>
                             Delete

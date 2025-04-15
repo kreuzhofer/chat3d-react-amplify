@@ -1,5 +1,5 @@
 import type { PreSignUpTriggerHandler } from 'aws-lambda';
-import { env } from '$amplify/env/pre-sign-up';
+//import { env } from '$amplify/env/pre-sign-up';
 
 const listOfPreviewEmails = [
     "dkreuzh@gmail.com",

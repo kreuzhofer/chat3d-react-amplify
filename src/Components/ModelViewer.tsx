@@ -14,7 +14,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
   const refContainer = useRef<HTMLDivElement>(null);
   const refFilename = useRef<string>("");
   const [progress, setProgress] = useState(0);
-  const { isMax, currentInterval } = useResponsiveness()
+  const { currentInterval } = useResponsiveness()
   const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
   const [lastScreenSize, setLastScreenSize] = useState<string>("");
   const [renderer, setRenderer] = useState<THREE.WebGLRenderer | null>(null);

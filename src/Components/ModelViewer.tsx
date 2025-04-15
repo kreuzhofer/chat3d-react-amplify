@@ -34,7 +34,10 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         var camera = new THREE.PerspectiveCamera();
         var renderer = new THREE.WebGLRenderer();
 
-        renderer.setSize(256, 256);
+        if(currentInterval === "xs")
+            renderer.setSize(256, 256);
+        else
+            renderer.setSize(512, 512);
         setRenderer(renderer);
         // document.body.appendChild( renderer.domElement );
         // use ref as a mount point of the Three.js scene instead of the document.body
@@ -149,7 +152,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
                     if(refContainer.current)
                         refContainer.current.style.height = "512px";
                 }
-            }
+        }
 
     }, [currentScreenSize]);
 

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { ThreeMFLoader } from 'three/addons/loaders/3MFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Progress } from 'semantic-ui-react';
+import { useResponsiveness } from "react-responsiveness";
+
 interface ModelViewerProps {
     fileName: string;
 }
@@ -12,6 +14,10 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
   const refContainer = useRef<HTMLDivElement>(null);
   const refFilename = useRef<string>("");
   const [progress, setProgress] = useState(0);
+  const { isMax, currentInterval } = useResponsiveness()
+  const [currentScreenSize, setCurrentScreenSize] = useState<string>("");
+  const [lastScreenSize, setLastScreenSize] = useState<string>("");
+  const [renderer, setRenderer] = useState<THREE.WebGLRenderer | null>(null);
 
     async function loadFile(url: string ) {
         const linkToStorageFile = await getUrl({
@@ -29,6 +35,7 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         var renderer = new THREE.WebGLRenderer();
 
         renderer.setSize(256, 256);
+        setRenderer(renderer);
         // document.body.appendChild( renderer.domElement );
         // use ref as a mount point of the Three.js scene instead of the document.body
         refContainer.current && refContainer.current.appendChild( renderer.domElement );
@@ -104,13 +111,48 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ fileName }) => {
         )
     }
 
-  useEffect(() => {
-    if(refFilename.current === fileName) return;
-    refFilename.current = fileName;
+    useEffect(() => {
+        if(refFilename.current === fileName) return;
+        refFilename.current = fileName;
 
-    loadFile(fileName);
+        loadFile(fileName);
 
-  }, [fileName]);
+    }, [fileName]);
+
+    useEffect(() => {
+        if(currentInterval !== currentScreenSize)
+        {
+            setLastScreenSize(currentScreenSize);
+            setCurrentScreenSize(currentInterval);
+        }
+    }, [currentInterval]);
+
+    useEffect(() => {
+        if(currentScreenSize === "xs" && lastScreenSize !== "xs")
+        {
+            if(renderer)
+            {
+                renderer.setSize(256, 256);
+                if(refContainer.current)
+                    refContainer.current.style.width = "256px";
+                if(refContainer.current)
+                    refContainer.current.style.height = "256px";
+            }
+        }
+        if((lastScreenSize === "xs" && currentScreenSize !== "xs") || (lastScreenSize === "" && currentScreenSize !== "xs"))
+        {
+            if(renderer)
+                {
+                    renderer.setSize(512, 512);
+                    if(refContainer.current)
+                        refContainer.current.style.width = "512px";
+                    if(refContainer.current)
+                        refContainer.current.style.height = "512px";
+                }
+            }
+
+    }, [currentScreenSize]);
+
   return (
     <>
         { progress<100 ? <Progress percent={progress} indicating>Loading model</Progress> : <></>}

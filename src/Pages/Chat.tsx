@@ -421,7 +421,7 @@ function Chat()
                     <FileUploader
                         acceptedFileTypes={['image/*']}
                         path="upload/"
-                        maxFileCount={5}
+                        maxFileCount={1}
                         isResumable
                         maxFileSize={1000000}
                         onUploadSuccess={(event: { key?: string }) => {

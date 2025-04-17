@@ -38,43 +38,7 @@ const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env)
 Amplify.configure(resourceConfig, libraryOptions);
 
 
-async function invokeLambdaFunction(fileName: string, targetFilename: string, functionName: string, bucketName: string) {
-
-  const lambdaClient = new LambdaClient({});
-    const invokeParams = {
-      FunctionName: functionName,
-      InvocationType: 'RequestResponse' as const,
-      Payload: JSON.stringify({
-        fileName: fileName,
-        targetFilename: targetFilename,
-        bucket: bucketName
-      }),
-    };
-    
-    const response = await retry(async () => {
-      try {
-        const response = await lambdaClient.send(new InvokeCommand(invokeParams));
-        if (response.Payload) {
-          return JSON.parse(new TextDecoder().decode(response.Payload));
-        }
-        return undefined;
-      } catch (error) {
-        // Check if this is the specific exception we want to retry on
-        if (error instanceof Error && 
-            (error.name === 'CodeArtifactUserPendingException' || 
-             error.message.includes('CodeArtifactUserPendingException'))) {
-          throw new Error('CodeArtifactUserPendingException');
-        }
-        // For any other error, we don't want to retry, so rethrow it
-        throw error;
-      }
-    }, {
-      delay: 5000,
-      maxAttempts: 3,
-      handleError: (error: { message: string; }) => error.message === 'CodeArtifactUserPendingException',
-    });
-    return response;
-  }
+// This function has been moved to the rendering providers
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
@@ -93,7 +57,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     if(!conversationLlmDefinition)
     {
       console.log("conversationLLM not found");
-      return;
+      return null;
     }
     const conversationLLM = LLMAdapterFactory.initializeAdapter(conversationLlmDefinition);
     
@@ -272,7 +236,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("llmconfiguration not found");
-                  return;
+                  return null;
                 }
                 // create adapter from factory
                 const llmAdapter = LLMAdapterFactory.initializeAdapter(modelDefinition3DGenerator);
@@ -298,79 +262,61 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   tokenCost: llmResponse.tokensCost,
                 });
 
-                // create model using openscad
+                // Extract sections from LLM response
                 const sections = extractDocumentSections(llmResponse.content[0].text ? llmResponse.content[0].text : "");
 
                 const code = sections.code;
                 const plan = sections.plan;
                 const comment = sections.comment;
 
-                // write code to file and upload to s3 bucket
-                const nameOfS3Bucket = bucket;
-                console.log("nameOfS3Bucket: "+nameOfS3Bucket);
-                // upload code to s3 bucket and get uri
-                const fileName = messageId+".scad";
-                const key = "modelcreator/"+fileName;
-                const scadFileUri = "s3://"+nameOfS3Bucket+"/"+key;
-                console.log("scadFileUri: "+scadFileUri);
-                // write code to file and upload to s3 bucket
-                fs.writeFileSync("/tmp/code.scad", code);
-                const s3Client = new S3Client({});
-                const s3Params = {
-                    Bucket: nameOfS3Bucket,
-                    Key: key,
-                    Body: fs.createReadStream("/tmp/code.scad")
-                };
-                const s3Response = await s3Client.send(new PutObjectCommand(s3Params));
-                console.log("s3Response: "+JSON.stringify(s3Response));
+                // Use the rendering provider to generate source code file and upload to S3
+                const fileName = await renderingProvider.generateSourceCodeFile(code, messageId, bucket);
+                console.log("Generated source file: " + fileName);
 
-                // update message inside of newAssistantChatItem
-                messages.pop()
-                messages.push(
-                  {
+                // Update message inside of newAssistantChatItem to show pending state
+                messages.pop();
+                messages.push({
                     id: messageId,
                     itemType: "image",
                     text: comment,
                     state: "pending",
                     stateMessage: "creating 3D model...",
                     attachment: ""
-                  } as IChatMessage
-                );
-                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                  messages: JSON.stringify(messages)
-                  });  
-
-                // render final model file
-                const targetModelFilename = messageId+".3mf";
-                var scadExecutorResult = await invokeLambdaFunction(fileName, targetModelFilename, executorFunctionName, bucket);
-                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
-
-                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
-                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
-
-                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
-                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
-                {
-                  messages.pop();
-                  messages.pop();
-                  messages.push(
-                    {
-                      id: messageId,
-                      itemType: "errormessage",
-                      text: "There was a problem creating the model. Please try again later.",
-                      state: "error",
-                      stateMessage: "",
-                      attachment: ""
-                    } as IChatMessage
-                  );
-                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                } as IChatMessage);
+                
+                await dataClient.models.ChatItem.update({
+                    id: newAssistantChatItemId,
                     messages: JSON.stringify(messages)
-                    });  
-                  return scadExecutorResult?.body;
+                });
+
+                // Render the final model file using the appropriate rendering provider
+                const targetModelFilename = messageId + ".3mf";
+                const renderResult = await renderingProvider.renderModel(fileName, targetModelFilename, executorFunctionName, bucket);
+                console.log("Render result: " + JSON.stringify(renderResult));
+
+                if (!renderResult.success) {
+                    console.log("Error creating model: " + renderResult.errorMessage);
+                    
+                    // Handle error case
+                    messages.pop();
+                    messages.push({
+                        id: messageId,
+                        itemType: "errormessage",
+                        text: "There was a problem creating the model. Please try again later.",
+                        state: "error",
+                        stateMessage: "",
+                        attachment: ""
+                    } as IChatMessage);
+                    
+                    await dataClient.models.ChatItem.update({
+                        id: newAssistantChatItemId,
+                        messages: JSON.stringify(messages)
+                    });
+                    
+                    return renderResult.errorMessage || null;
                 }
 
-                const modelKey = "modelcreator/"+targetModelFilename;
-                messages.pop()
+                messages.pop();
                 messages.push(
                   {
                     id: messageId,
@@ -378,7 +324,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: comment,
                     state: "completed",
                     stateMessage: "",
-                    attachment: modelKey,
+                    attachment: renderResult.targetModelKey,
                     intputTokens: llmResponse.inputTokens,
                     outputTokens: llmResponse.outputTokens,
                     inputTokenCost: llmResponse.inputTokenCost,

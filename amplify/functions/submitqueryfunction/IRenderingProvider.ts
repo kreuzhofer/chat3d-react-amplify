@@ -1,3 +1,14 @@
+export interface RenderModelResult {
+    success: boolean;
+    errorMessage?: string;
+    targetModelKey?: string;
+    sourceCodeKey?: string;
+}
+
 export interface IRenderingProvider {
-    render(query: string): Promise<string>;
+    // Generate source code file and upload to S3
+    generateSourceCodeFile(code: string, messageId: string, bucket: string): Promise<string>;
+    
+    // Render the model using the source code file
+    renderModel(sourceFileName: string, targetFileName: string, executorFunctionName: string, bucket: string): Promise<RenderModelResult>;
 }

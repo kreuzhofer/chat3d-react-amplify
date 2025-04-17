@@ -179,7 +179,7 @@ function Chat()
                 query: query, 
                 newUserChatItemId: newUserChatItem.data?.id, 
                 newAssistantChatItemId: newAssistantChatItem.data?.id,
-                executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
+                openScadExecutorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
                 bucket: outputs.storage.bucket_name,
                 llmconfiguration: selectedLlmConfiguration.value
              });

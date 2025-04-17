@@ -10,5 +10,5 @@ export interface IRenderingProvider {
     generateSourceCodeFile(code: string, messageId: string, bucket: string): Promise<string>;
     
     // Render the model using the source code file
-    renderModel(sourceFileName: string, targetFileName: string, executorFunctionName: string, bucket: string): Promise<RenderModelResult>;
+    renderModel(sourceFileName: string, targetFileName: string, bucket: string): Promise<RenderModelResult>;
 }

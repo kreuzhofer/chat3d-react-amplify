@@ -41,7 +41,7 @@ const schema = a.schema({
       newUserChatItemId: a.id(),
       newAssistantChatItemId: a.id(),
       query: a.string(),
-      executorFunctionName: a.string(),
+      openScadExecutorFunctionName: a.string(),
       bucket: a.string(),
       llmconfiguration: a.string(),
     })

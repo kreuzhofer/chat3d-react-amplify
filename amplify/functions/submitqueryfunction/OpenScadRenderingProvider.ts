@@ -5,6 +5,12 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { retry } from './RetryUtils';
 
 export class OpenScadRenderingProvider implements IRenderingProvider {
+    private executorFunctionName: string;
+    
+    constructor(executorFunctionName: string) {
+        this.executorFunctionName = executorFunctionName;
+    }
+    
     async generateSourceCodeFile(code: string, messageId: string, bucket: string): Promise<string> {
         // Create a temporary file
         fs.writeFileSync("/tmp/code.scad", code);
@@ -23,8 +29,8 @@ export class OpenScadRenderingProvider implements IRenderingProvider {
         return fileName;
     }
     
-    async renderModel(sourceFileName: string, targetFileName: string, executorFunctionName: string, bucket: string): Promise<RenderModelResult> {
-        const response = await this.invokeLambdaFunction(sourceFileName, targetFileName, executorFunctionName, bucket);
+    async renderModel(sourceFileName: string, targetFileName: string, bucket: string): Promise<RenderModelResult> {
+        const response = await this.invokeLambdaFunction(sourceFileName, targetFileName, this.executorFunctionName, bucket);
         
         if ((response?.statusCode && response?.statusCode !== 200) || 
             (response?.errorMessage && response?.errorMessage !== "")) {

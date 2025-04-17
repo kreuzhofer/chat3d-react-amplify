@@ -42,8 +42,8 @@ Amplify.configure(resourceConfig, libraryOptions);
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
-    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, executorFunctionName, bucket, llmconfiguration } = event.arguments;
-    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !executorFunctionName || !bucket || !llmconfiguration) {
+    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, openScadExecutorFunctionName, bucket, llmconfiguration } = event.arguments;
+    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !openScadExecutorFunctionName || !bucket || !llmconfiguration) {
         throw new Error("Missing query parameter(s)");
     }
 
@@ -240,7 +240,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 }
                 // create adapter from factory
                 const llmAdapter = LLMAdapterFactory.initializeAdapter(modelDefinition3DGenerator);
-                const renderingProvider = RenderingProviderFactory.initializeProvider(modelDefinition3DGenerator.renderingProvider);
+                const renderingProvider = RenderingProviderFactory.initializeProvider(modelDefinition3DGenerator.renderingProvider, openScadExecutorFunctionName);
 
                 var context = OpenScadExamples.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
                 context += StaticDocuments.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
@@ -291,7 +291,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 // Render the final model file using the appropriate rendering provider
                 const targetModelFilename = messageId + ".3mf";
-                const renderResult = await renderingProvider.renderModel(fileName, targetModelFilename, executorFunctionName, bucket);
+                const renderResult = await renderingProvider.renderModel(fileName, targetModelFilename, bucket);
                 console.log("Render result: " + JSON.stringify(renderResult));
 
                 if (!renderResult.success) {

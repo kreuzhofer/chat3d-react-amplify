@@ -31,12 +31,14 @@ import { LLMAdapterFactory } from "./LLMAdapterFactory";
 import { extractDocumentSections } from "./Helpers";
 import { z } from "zod";
 import { StaticDocuments } from "./StaticDocuments";
+import { RenderingProviderFactory } from "./RenderingProviderFactory";
+import { retry } from './RetryUtils';
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 
 
-async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, functionName: string, bucketName: string) {
+async function invokeLambdaFunction(fileName: string, targetFilename: string, functionName: string, bucketName: string) {
 
   const lambdaClient = new LambdaClient({});
     const invokeParams = {
@@ -49,9 +51,29 @@ async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: 
       }),
     };
     
-    const response = await lambdaClient.send(new InvokeCommand(invokeParams));
-    if(response.Payload)
-        return JSON.parse(new TextDecoder().decode(response.Payload));
+    const response = await retry(async () => {
+      try {
+        const response = await lambdaClient.send(new InvokeCommand(invokeParams));
+        if (response.Payload) {
+          return JSON.parse(new TextDecoder().decode(response.Payload));
+        }
+        return undefined;
+      } catch (error) {
+        // Check if this is the specific exception we want to retry on
+        if (error instanceof Error && 
+            (error.name === 'CodeArtifactUserPendingException' || 
+             error.message.includes('CodeArtifactUserPendingException'))) {
+          throw new Error('CodeArtifactUserPendingException');
+        }
+        // For any other error, we don't want to retry, so rethrow it
+        throw error;
+      }
+    }, {
+      delay: 5000,
+      maxAttempts: 3,
+      handleError: (error: { message: string; }) => error.message === 'CodeArtifactUserPendingException',
+    });
+    return response;
   }
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
@@ -254,6 +276,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 }
                 // create adapter from factory
                 const llmAdapter = LLMAdapterFactory.initializeAdapter(modelDefinition3DGenerator);
+                const renderingProvider = RenderingProviderFactory.initializeProvider(modelDefinition3DGenerator.renderingProvider);
 
                 var context = OpenScadExamples.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
                 context += StaticDocuments.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
@@ -301,7 +324,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 const s3Response = await s3Client.send(new PutObjectCommand(s3Params));
                 console.log("s3Response: "+JSON.stringify(s3Response));
 
-                // show progress
+/*                 // show progress
                 messages.pop();
                 messages.push(
                   {
@@ -318,7 +341,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   });
 
                 const targetImagefilename = messageId+".png";
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetImagefilename, executorFunctionName, bucket);
+                var scadExecutorResult = await invokeLambdaFunction(fileName, targetImagefilename, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
 
                 if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
@@ -345,8 +368,9 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   return scadExecutorResult?.body;
                 }
                 
-                const modelImageKey = "modelcreator/"+targetImagefilename;
-                // update message inside of newAssistantChatItem with state completed
+                const modelImageKey = "modelcreator/"+targetImagefilename; */
+
+                // update message inside of newAssistantChatItem
                 messages.pop()
                 messages.push(
                   {
@@ -355,7 +379,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: comment,
                     state: "pending",
                     stateMessage: "creating 3D model...",
-                    attachment: modelImageKey
+                    attachment: ""
                   } as IChatMessage
                 );
                 await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
@@ -364,7 +388,15 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 // render final model file
                 const targetModelFilename = messageId+".3mf";
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetModelFilename, executorFunctionName, bucket);
+                var scadExecutorResult;
+                try {
+                  scadExecutorResult = await invokeLambdaFunction(fileName, targetModelFilename, executorFunctionName, bucket);
+                } catch (error) {
+                  scadExecutorResult = {
+                    errorMessage: error instanceof Error ? error.message : "An unknown error occurred",
+                    statusCode: 500,
+                  };
+                }
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
 
                 if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")

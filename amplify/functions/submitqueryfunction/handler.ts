@@ -324,52 +324,6 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 const s3Response = await s3Client.send(new PutObjectCommand(s3Params));
                 console.log("s3Response: "+JSON.stringify(s3Response));
 
-/*                 // show progress
-                messages.pop();
-                messages.push(
-                  {
-                    id: messageId,
-                    itemType: "image",
-                    text: "", 
-                    state: "pending",
-                    stateMessage: "creating preview image...",
-                    attachment: ""
-                  } as IChatMessage
-                );
-                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                  messages: JSON.stringify(messages)
-                  });
-
-                const targetImagefilename = messageId+".png";
-                var scadExecutorResult = await invokeLambdaFunction(fileName, targetImagefilename, executorFunctionName, bucket);
-                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
-
-                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
-                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
-
-                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
-                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
-                {
-                  messages.pop();
-                  messages.pop();
-                  messages.push(
-                    {
-                      id: messageId,
-                      itemType: "errormessage",
-                      text: "There was a problem creating the model. Please try again later.",
-                      state: "error",
-                      stateMessage: "",
-                      attachment: ""
-                    } as IChatMessage
-                  );
-                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                    messages: JSON.stringify(messages)
-                    });  
-                  return scadExecutorResult?.body;
-                }
-                
-                const modelImageKey = "modelcreator/"+targetImagefilename; */
-
                 // update message inside of newAssistantChatItem
                 messages.pop()
                 messages.push(
@@ -388,15 +342,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
 
                 // render final model file
                 const targetModelFilename = messageId+".3mf";
-                var scadExecutorResult;
-                try {
-                  scadExecutorResult = await invokeLambdaFunction(fileName, targetModelFilename, executorFunctionName, bucket);
-                } catch (error) {
-                  scadExecutorResult = {
-                    errorMessage: error instanceof Error ? error.message : "An unknown error occurred",
-                    statusCode: 500,
-                  };
-                }
+                var scadExecutorResult = await invokeLambdaFunction(fileName, targetModelFilename, executorFunctionName, bucket);
                 console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
 
                 if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")

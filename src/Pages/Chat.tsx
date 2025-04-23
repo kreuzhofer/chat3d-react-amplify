@@ -14,7 +14,7 @@ import { list, remove } from "aws-amplify/storage";
 import { LLMDefinitions } from "../../amplify/functions/submitqueryfunction/LLMDefinitions";
 
 const client = generateClient<Schema>();
-
+const isDev = import.meta.env.DEV;
 interface IModelOption {
     key: string;
     text: string;
@@ -50,7 +50,11 @@ function Chat()
         image: { avatar: false, src: "" },
     } as IModelOption));
 
-    const defaultLLMOption = "3dModelLLM_Claude3.7_examples";
+    var defaultLLMOption = "3dModelLLM_Claude3.7_examples";
+    if(isDev)
+    {
+        defaultLLMOption = "3dModelLLM_Claude3.7_Build123d";
+    }
     const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));

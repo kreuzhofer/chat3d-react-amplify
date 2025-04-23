@@ -39,8 +39,9 @@ export async function retry<T>(
         throw error;
       }
       
-      // Wait before the next attempt
-      await new Promise(resolve => setTimeout(resolve, delay));
+      // Wait before the next attempt with exponential backoff
+      const backoffDelay = delay * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, backoffDelay));
     }
   }
   

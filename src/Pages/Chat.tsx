@@ -482,7 +482,7 @@ function Chat()
                     {uploadVisible ? 
                         <Button icon="close" onClick={()=> setUploadVisible(false)} />
                         :
-                        <Button icon="plus" onClick={()=> setUploadVisible(true)} />
+                        isDev ? <Button icon="plus" onClick={()=> setUploadVisible(true)} /> : ""
                     }   
                     <Input
                         type="multiline" 

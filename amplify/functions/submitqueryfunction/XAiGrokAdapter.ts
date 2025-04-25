@@ -29,8 +29,7 @@ export class XAiGrokAdapter implements ILLMAdapter {
             ],
             model: this.modelDefinition.modelName,
             store: false,
-            //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            ...(this.modelDefinition.modelName.startsWith("grok-2") ? { response_format: zodResponseFormat(resultSchema, "response") } : {}), // temporary workaround for bug in grok-beta
+            ...(this.modelDefinition.modelName.startsWith("grok-2") ? { response_format: zodResponseFormat(resultSchema as any, "response") } : {}), // temporary workaround for bug in grok-beta
         });
         
         console.log(JSON.stringify(completion));

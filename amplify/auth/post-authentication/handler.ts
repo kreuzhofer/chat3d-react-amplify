@@ -1,5 +1,5 @@
 import type { PostAuthenticationTriggerHandler } from 'aws-lambda';
-import { env } from '$amplify/env/pre-sign-up';
+//import { env } from '$amplify/env/pre-sign-up';
 
 export const handler: PostAuthenticationTriggerHandler = async (event) => {
 //   const email = event.request.userAttributes['email'];

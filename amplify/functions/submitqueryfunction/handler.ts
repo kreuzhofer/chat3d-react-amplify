@@ -15,7 +15,7 @@ import { GetS3FileAsByteArrayAsync } from "./GetS3FileAsByteArrayAsync";
 import { Buffer } from 'buffer';
 
 import * as winston from "winston";
-import { ModelGeneratorPrompts } from "./LLMDefinitions";
+import { LLMDefinitions } from "./LLMDefinitions";
 const logger = winston.createLogger({
     transports: [new winston.transports.Console()],
   });
@@ -30,33 +30,20 @@ const tracker = mixpanel.init(env.MIXPANEL_TOKEN);
 import { LLMAdapterFactory } from "./LLMAdapterFactory";
 import { extractDocumentSections } from "./Helpers";
 import { z } from "zod";
+import { StaticDocuments } from "./StaticDocuments";
+import { RenderingProviderFactory } from "./RenderingProviderFactory";
+import { retry } from './RetryUtils';
 
 const { resourceConfig, libraryOptions } = await getAmplifyDataClientConfig(env);
 Amplify.configure(resourceConfig, libraryOptions);
 
 
-async function invokeOpenScadExecutorFunction(fileName: string, targetFilename: string, openscadExecutorFunctionName: string, bucketName: string) {
-
-  const lambdaClient = new LambdaClient({});
-    const invokeParams = {
-      FunctionName: openscadExecutorFunctionName,
-      InvocationType: 'RequestResponse' as const,
-      Payload: JSON.stringify({
-        fileName: fileName,
-        targetFilename: targetFilename,
-        bucket: bucketName
-      }),
-    };
-    
-    const response = await lambdaClient.send(new InvokeCommand(invokeParams));
-    if(response.Payload)
-        return JSON.parse(new TextDecoder().decode(response.Payload));
-  }
+// This function has been moved to the rendering providers
 
 export const handler: Schema["submitQuery"]["functionHandler"] = async (event) => {
     // arguments typed from `.arguments()`
-    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, executorFunctionName, bucket, llmconfiguration } = event.arguments;
-    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !executorFunctionName || !bucket || !llmconfiguration) {
+    const { chatContextId, newUserChatItemId, newAssistantChatItemId, query, openScadExecutorFunctionName, bucket, llmconfiguration } = event.arguments;
+    if (!query || !chatContextId || !newUserChatItemId || !newAssistantChatItemId || !openScadExecutorFunctionName || !bucket || !llmconfiguration) {
         throw new Error("Missing query parameter(s)");
     }
 
@@ -66,15 +53,17 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     const bedrockClient = new BedrockRuntimeClient({ region: "us-east-1" });
     const dataClient = generateClient<Schema>();
 
-    const conversationLLM = ModelGeneratorPrompts.find((item) => item.id === "conversationLLM");
-    if(!conversationLLM)
+    const conversationLlmDefinition = LLMDefinitions.find((item) => item.id === "conversationLLM");
+    if(!conversationLlmDefinition)
     {
       console.log("conversationLLM not found");
-      return;
+      return null;
     }
+    const conversationLLM = LLMAdapterFactory.initializeAdapter(conversationLlmDefinition);
+    
     // Set the model ID, e.g., Claude 3 Haiku.
-    const conversationModelId = conversationLLM.modelName;
-    const conversationSystemPrompt = conversationLLM.systemPrompt;
+    const conversationModelId = conversationLlmDefinition.modelName;
+    const conversationSystemPrompt = conversationLlmDefinition.systemPrompt;
 
     // load all conversation items for the chat context
     const chatContext = await dataClient.models.ChatContext.get({ id: chatContextId });
@@ -156,8 +145,8 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
     console.log("converse command response: "+response);
     const inputTokensConversation = response.usage?.inputTokens || 0;
     const outputTokensConversation = response.usage?.outputTokens || 0;
-    const inputTokenCost = conversationLLM.inputTokenCostPerMille * inputTokensConversation / 1000;
-    const outputTokenCost = conversationLLM.outputTokenCostPerMille * outputTokensConversation / 1000;
+    const inputTokenCost = conversationLlmDefinition.inputTokenCostPerMille * inputTokensConversation / 1000;
+    const outputTokenCost = conversationLlmDefinition.outputTokenCostPerMille * outputTokensConversation / 1000;
     const tokenCost = inputTokenCost + outputTokenCost;
     tracker.track('bedrock_conversation', {
       modelId: conversationModelId,
@@ -243,25 +232,27 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 });
                 console.log("generate3dmodelMessages: "+JSON.stringify(generate3dmodelMessages));
 
-                const modelDefinition3DGenerator = ModelGeneratorPrompts.find((item) => item.id === llmconfiguration);
+                const modelDefinition3DGenerator = LLMDefinitions.find((item) => item.id === llmconfiguration);
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("llmconfiguration not found");
-                  return;
+                  return null;
                 }
                 // create adapter from factory
-                const llmAdapter = LLMAdapterFactory.create(modelDefinition3DGenerator);
+                const llmAdapter = LLMAdapterFactory.initializeAdapter(modelDefinition3DGenerator);
+                const renderingProvider = RenderingProviderFactory.initializeProvider(modelDefinition3DGenerator.renderingProvider, openScadExecutorFunctionName);
 
-                const context = OpenScadExamples.map((item) => "<example>//Prompt: "+item.prompt+"\n"+item.code+"</example>").join("\n");
+                var context = OpenScadExamples.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
+                context += StaticDocuments.map((item) => "<example>//User: "+item.prompt+"\nAssistant: "+item.code+"</example>").join("\n");
 
-                const OpenScadResponse = z.object({
+                const CADDesignResponse = z.object({
                     plan: z.string(),
                     code: z.string(),
                     parameters: z.array(z.string()),
                     comment: z.string()
                 });
 
-                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context, OpenScadResponse);
+                const llmResponse = await llmAdapter.submitQuery(generate3dmodelMessages, context, CADDesignResponse);
                 tracker.track('bedrock_conversation', {
                   modelId: modelDefinition3DGenerator.modelName,
                   inputTokens: llmResponse.inputTokens,
@@ -271,124 +262,61 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                   tokenCost: llmResponse.tokensCost,
                 });
 
-                // create model using openscad
+                // Extract sections from LLM response
                 const sections = extractDocumentSections(llmResponse.content[0].text ? llmResponse.content[0].text : "");
 
                 const code = sections.code;
                 const plan = sections.plan;
                 const comment = sections.comment;
 
-                // write code to file and upload to s3 bucket
-                const nameOfS3Bucket = bucket;
-                console.log("nameOfS3Bucket: "+nameOfS3Bucket);
-                // upload code to s3 bucket and get uri
-                const fileName = messageId+".scad";
-                const key = "modelcreator/"+fileName;
-                const scadFileUri = "s3://"+nameOfS3Bucket+"/"+key;
-                console.log("scadFileUri: "+scadFileUri);
-                // write code to file and upload to s3 bucket
-                fs.writeFileSync("/tmp/code.scad", code);
-                const s3Client = new S3Client({});
-                const s3Params = {
-                    Bucket: nameOfS3Bucket,
-                    Key: key,
-                    Body: fs.createReadStream("/tmp/code.scad")
-                };
-                const s3Response = await s3Client.send(new PutObjectCommand(s3Params));
-                console.log("s3Response: "+JSON.stringify(s3Response));
+                // Use the rendering provider to generate source code file and upload to S3
+                const fileName = await renderingProvider.generateSourceCodeFile(code, messageId, bucket);
+                console.log("Generated source file: " + fileName);
 
-                // show progress
+                // Update message inside of newAssistantChatItem to show pending state
                 messages.pop();
-                messages.push(
-                  {
-                    id: messageId,
-                    itemType: "image",
-                    text: "", 
-                    state: "pending",
-                    stateMessage: "creating preview image...",
-                    attachment: ""
-                  } as IChatMessage
-                );
-                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                  messages: JSON.stringify(messages)
-                  });
-
-                const targetImagefilename = messageId+".png";
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetImagefilename, executorFunctionName, bucket);
-                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
-
-                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
-                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
-
-                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
-                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
-                {
-                  messages.pop();
-                  messages.pop();
-                  messages.push(
-                    {
-                      id: messageId,
-                      itemType: "errormessage",
-                      text: "There was a problem creating the model. Please try again later.",
-                      state: "error",
-                      stateMessage: "",
-                      attachment: ""
-                    } as IChatMessage
-                  );
-                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                    messages: JSON.stringify(messages)
-                    });  
-                  return scadExecutorResult?.body;
-                }
-                
-                const modelImageKey = "modelcreator/"+targetImagefilename;
-                // update message inside of newAssistantChatItem with state completed
-                messages.pop()
-                messages.push(
-                  {
+                messages.push({
                     id: messageId,
                     itemType: "image",
                     text: comment,
                     state: "pending",
                     stateMessage: "creating 3D model...",
-                    attachment: modelImageKey
-                  } as IChatMessage
-                );
-                await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
-                  messages: JSON.stringify(messages)
-                  });  
-
-                // render final model file
-                const targetModelFilename = messageId+".3mf";
-                var scadExecutorResult = await invokeOpenScadExecutorFunction(fileName, targetModelFilename, executorFunctionName, bucket);
-                console.log("scadExecutorResult: "+JSON.stringify(scadExecutorResult));
-
-                if(scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== "")
-                  console.log("Error creating model: "+scadExecutorResult?.errorMessage);
-
-                if((scadExecutorResult?.statusCode && scadExecutorResult?.statusCode !== 200) || 
-                (scadExecutorResult?.errorMessage && scadExecutorResult?.errorMessage !== ""))
-                {
-                  messages.pop();
-                  messages.pop();
-                  messages.push(
-                    {
-                      id: messageId,
-                      itemType: "errormessage",
-                      text: "There was a problem creating the model. Please try again later.",
-                      state: "error",
-                      stateMessage: "",
-                      attachment: ""
-                    } as IChatMessage
-                  );
-                  await dataClient.models.ChatItem.update({ id: newAssistantChatItemId, 
+                    attachment: ""
+                } as IChatMessage);
+                
+                await dataClient.models.ChatItem.update({
+                    id: newAssistantChatItemId,
                     messages: JSON.stringify(messages)
-                    });  
-                  return scadExecutorResult?.body;
+                });
+
+                // Render the final model file using the appropriate rendering provider
+                const targetModelFilename = messageId + ".3mf";
+                const renderResult = await renderingProvider.renderModel(fileName, targetModelFilename, bucket);
+                console.log("Render result: " + JSON.stringify(renderResult));
+
+                if (!renderResult.success) {
+                    console.log("Error creating model: " + renderResult.errorMessage);
+                    
+                    // Handle error case
+                    messages.pop();
+                    messages.push({
+                        id: messageId,
+                        itemType: "errormessage",
+                        text: "There was a problem creating the model. Please try again later.",
+                        state: "error",
+                        stateMessage: "",
+                        attachment: ""
+                    } as IChatMessage);
+                    
+                    await dataClient.models.ChatItem.update({
+                        id: newAssistantChatItemId,
+                        messages: JSON.stringify(messages)
+                    });
+                    
+                    return renderResult.errorMessage || null;
                 }
 
-                const modelKey = "modelcreator/"+targetModelFilename;
-                messages.pop()
+                messages.pop();
                 messages.push(
                   {
                     id: messageId,
@@ -396,7 +324,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                     text: comment,
                     state: "completed",
                     stateMessage: "",
-                    attachment: modelKey,
+                    attachment: renderResult.targetModelKey,
                     intputTokens: llmResponse.inputTokens,
                     outputTokens: llmResponse.outputTokens,
                     inputTokenCost: llmResponse.inputTokenCost,

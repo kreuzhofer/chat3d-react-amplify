@@ -11,10 +11,10 @@ import { useResponsiveness } from "react-responsiveness";
 import ChatContextComponent from "../Components/ChatContextComponent";
 import { FileUploader } from "@aws-amplify/ui-react-storage";
 import { list, remove } from "aws-amplify/storage";
-import { ModelGeneratorPrompts } from "../../amplify/functions/submitqueryfunction/LLMDefinitions";
+import { LLMDefinitions } from "../../amplify/functions/submitqueryfunction/LLMDefinitions";
 
 const client = generateClient<Schema>();
-
+const isDev = import.meta.env.DEV;
 interface IModelOption {
     key: string;
     text: string;
@@ -43,14 +43,19 @@ function Chat()
     const [uploadVisible, setUploadVisible] = useState<boolean>(false);
     const [files, setFiles] = useState<{ [key: string]: { status: string } }>({});
 
-    const modelOptions: IModelOption[] = ModelGeneratorPrompts.filter((def)=>def.enabled).map((definition) => ({
+    const modelOptions: IModelOption[] = LLMDefinitions.filter((def)=>def.enabled).map((definition) => ({
         key: definition.id,
         text: definition.name,
         value: definition.id,
         image: { avatar: false, src: "" },
     } as IModelOption));
 
-    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+    var defaultLLMOption = "3dModelLLM_Claude3.7_examples";
+    if(isDev)
+    {
+        defaultLLMOption = "3dModelLLM_Claude3.7_Build123d";
+    }
+    const [selectedLlmConfiguration, setSelectedLlmConfiguration] = useState<IModelOption>(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
 
     // console.log("Chat env: "+JSON.stringify(import.meta.env));
     // console.log("Chat vars: "+JSON.stringify(process.env));
@@ -178,7 +183,7 @@ function Chat()
                 query: query, 
                 newUserChatItemId: newUserChatItem.data?.id, 
                 newAssistantChatItemId: newAssistantChatItem.data?.id,
-                executorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
+                openScadExecutorFunctionName: outputs.custom.openscadExecutorFunctionWithImageName,
                 bucket: outputs.storage.bucket_name,
                 llmconfiguration: selectedLlmConfiguration.value
              });
@@ -234,7 +239,7 @@ function Chat()
             }
             else
             {
-                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+                setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
             }
             //console.log("Chat context auto loaded")
             handleScrollToBottom();
@@ -248,7 +253,7 @@ function Chat()
             chatIdRef.current = "";
             setChatMessages([]);
             setQuery("");
-            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === "3dModelLLM") || modelOptions[1]);
+            setSelectedLlmConfiguration(modelOptions.find((o)=>o.key === defaultLLMOption) || modelOptions[1]);
             navigate("/chat");
         }
 
@@ -344,11 +349,9 @@ function Chat()
                 >
 
                 <div className="top-menubar">
-                    <Popup hideOnScroll trigger={
-                        <div ref={minimizeButtonRef}>
+                    <div ref={minimizeButtonRef}>
                             <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
-                        </div>
-                    }>Close sidebar</Popup>
+                    </div>
                 </div>
                 <Menu vertical borderless fluid>
                     <MenuItem as={NavLink}
@@ -392,26 +395,22 @@ function Chat()
             <div className={sideOverlayVisible && currentScreenSize !== "xs" ? "chat-grid" : "chat-grid full-width"} ref={chatAreaRef}>
                 <div className="top-menubar">
                     <div className="chat-buttons-left" style={{display: !sideOverlayVisible ? "block" : "none"}}>
-                        <Popup hideOnScroll trigger={
-                            <Icon bordered link name="columns" 
-                                onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
-                        }>Open sidebar</Popup>
-                        <Popup trigger={
-                            <Icon bordered link name="edit" 
-                                onClick={() => navigate("/chat/new")} />
-                        }>New chat</Popup>
+                        <Icon bordered link name="columns" onClick={() => setSideOverlayVisible(!sideOverlayVisible)} />
+                        <Icon bordered link name="edit" onClick={() => navigate("/chat/new")} />
                     </div>
                     <img src="/images/chat3dlogo.png" height={30} width={30}/>
                     <div className="chat-title">
                         Chat3D
                     </div>
-                    <div className="chat-buttons-right">
-                        <Dropdown inline compact direction="left" icon={null} trigger={<Icon><Image src='/images/brain.svg'></Image></Icon>} options={modelOptions} value={selectedLlmConfiguration.value} onChange={(_e,v)=>{
-                            var selectedOption = modelOptions.find((option)=>option.value === v.value);
-                            if(selectedOption)
-                                setSelectedLlmConfiguration(selectedOption);
-                            }} />
-                    </div>
+                    {isDev && (
+                        <div className="chat-buttons-right">
+                            <Dropdown inline compact direction="left" icon={null} trigger={<Icon><Image src='/images/brain.svg'></Image></Icon>} options={modelOptions} value={selectedLlmConfiguration.value} onChange={(_e,v)=>{
+                                var selectedOption = modelOptions.find((option)=>option.value === v.value);
+                                if(selectedOption)
+                                    setSelectedLlmConfiguration(selectedOption);
+                                }} />
+                        </div>
+                    )}
                 </div>
                 <div className="chat-container" style={{display: chatIdRef.current === "" ? "none" : "block"}}>
                     {chatMessages.map((item) => (
@@ -428,7 +427,7 @@ function Chat()
                     <FileUploader
                         acceptedFileTypes={['image/*']}
                         path="upload/"
-                        maxFileCount={5}
+                        maxFileCount={1}
                         isResumable
                         maxFileSize={1000000}
                         onUploadSuccess={(event: { key?: string }) => {
@@ -483,7 +482,7 @@ function Chat()
                     {uploadVisible ? 
                         <Button icon="close" onClick={()=> setUploadVisible(false)} />
                         :
-                        <Button icon="plus" onClick={()=> setUploadVisible(true)} />
+                        isDev ? <Button icon="plus" onClick={()=> setUploadVisible(true)} /> : ""
                     }   
                     <Input
                         type="multiline" 

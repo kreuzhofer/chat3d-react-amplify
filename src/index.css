@@ -241,6 +241,7 @@ div.ui.left.sidebar {
 /* https://css-tricks.com/almanac/properties/t/text-overflow/ */
 .overflow {
   width: 12em;
+  height: 1.1em;
   /*outline: 1px solid #000;*/
   /*margin: 0 0 2em 0;*/
 

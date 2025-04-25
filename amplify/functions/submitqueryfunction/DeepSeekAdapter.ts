@@ -28,8 +28,7 @@ export class DeepSeekAdapter implements ILLMAdapter {
             ],
             model: this.modelDefinition.modelName,
             store: false,
-            //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            response_format: zodResponseFormat(resultSchema, "response")
+            response_format: zodResponseFormat(resultSchema as any, "response")
         });
         
         console.log(JSON.stringify(completion));

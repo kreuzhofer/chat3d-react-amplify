@@ -11,7 +11,7 @@ export class OpenAIAdapter implements ILLMAdapter {
     openai: OpenAI;
     constructor(modelDefinition: ILLMDefinition) {
         this.modelDefinition = modelDefinition;
-        console.log("OpenAI Key:"+env.OPENAI_API_KEY);
+        //console.log("OpenAI Key:"+env.OPENAI_API_KEY);
         this.openai = new OpenAI({ 
             apiKey: env.OPENAI_API_KEY,
             project: env.OPENAI_PROJECT_ID,
@@ -20,18 +20,22 @@ export class OpenAIAdapter implements ILLMAdapter {
     }
 
     async submitQuery(conversation: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
-        const completion = await this.openai.chat.completions.create({
-            messages: [
+        const response_format = zodResponseFormat(resultSchema as any, "response");
+
+        const messages: ChatCompletionMessageParam[] = [
             { role: "developer", content: this.modelDefinition.systemPrompt(context) },
             ...conversation.map((message) => ({
                 role: message.role,
                 content: message.content.map((content) => ({ type: content.type, text: content.text }))
             } as ChatCompletionMessageParam))
-            ],
+        ];
+
+        const completion = await this.openai.chat.completions.create({
+            messages: messages,
             model: this.modelDefinition.modelName,
             store: false,
             //...(this.modelDefinition.modelName.startsWith("gpt") ? { max_tokens: 4096 } : { max_completion_tokens: 4096 }),
-            response_format: zodResponseFormat(resultSchema, "response")
+            response_format: response_format
         });
         
         console.log(JSON.stringify(completion));

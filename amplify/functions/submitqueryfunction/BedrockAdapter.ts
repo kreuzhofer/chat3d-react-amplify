@@ -18,18 +18,33 @@ export class BedrockAdapter implements ILLMAdapter {
             content: message.content.map((content) => ({ type: content.type, text: content.text }) )
         } as Message));
 
+        const inferenceConfig = {
+            maxTokens: generate3dmodelId === "us.anthropic.claude-3-7-sonnet-20250219-v1:0" ? 131072 : 4096,
+            temperature: 1.0,
+            ...(generate3dmodelId !== "us.anthropic.claude-3-7-sonnet-20250219-v1:0" && { topP: 0.9 })
+        };
+
         const converse3DModelCommandInput = {
             modelId: generate3dmodelId,
             messages: generate3dmodelMessages as Message[],
-            inferenceConfig: { maxTokens: 4096, temperature: 1.0, topP: 0.9 },
+            inferenceConfig,
             system: [{
-                text: system_prompt_3d_generator(context)
-            }]
+            text: system_prompt_3d_generator(context)
+            }],
+            ...(this.modelDefinition.reasoning && {
+            additionalModelRequestFields: generate3dmodelId === "us.anthropic.claude-3-7-sonnet-20250219-v1:0" ? {
+                thinking: {
+                type: "enabled",
+                budget_tokens: 2000
+                }
+            } : undefined
+            })
         };
+        console.log("converse3DModelCommandInput: "+JSON.stringify(converse3DModelCommandInput));
 
         const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
         const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
-        console.log(converse3DModelReponse);
+        console.log("converse3DModelResponse: "+JSON.stringify(converse3DModelReponse));
 
         const inputTokens3DModel = converse3DModelReponse.usage?.inputTokens || 0;
         const outputTokens3DModel = converse3DModelReponse.usage?.outputTokens || 0;

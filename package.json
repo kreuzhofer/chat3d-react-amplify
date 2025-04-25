@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.11.0",
-    "@aws-amplify/ui-react-storage": "^3.10.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.787.0",
+    "@aws-amplify/ui-react": "^6.11.1",
+    "@aws-amplify/ui-react-storage": "^3.10.2",
+    "@aws-sdk/client-bedrock-runtime": "^3.796.0",
     "@dotenvx/dotenvx": "^1.41.0",
     "@types/mixpanel": "^2.14.9",
     "aws-amplify": "^6.14.3",
@@ -20,13 +20,13 @@
     "mixpanel": "^0.18.1",
     "mixpanel-browser": "^2.64.0",
     "ollama": "^0.5.15",
-    "openai": "^4.95.1",
+    "openai": "^4.96.0",
     "patreon": "^0.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-responsiveness": "^0.1.5",
-    "react-router": "^7.5.1",
+    "react-router": "^7.5.2",
     "remark-gfm": "^4.0.1",
     "semantic-ui-css": "^2.5.0",
     "semantic-ui-react": "^2.1.5",
@@ -37,19 +37,19 @@
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
-    "@aws-amplify/backend": "^1.15.0",
-    "@aws-amplify/backend-cli": "^1.5.0",
+    "@aws-amplify/backend": "^1.16.0",
+    "@aws-amplify/backend-cli": "^1.7.0",
     "@rollup/plugin-replace": "^6.0.2",
     "@types/aws-lambda": "^8.10.149",
     "@types/mixpanel-browser": "^2.54.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "@types/three": "^0.175.0",
+    "@types/three": "^0.176.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
     "@vitejs/plugin-react": "^4.4.1",
-    "aws-cdk": "^2.1010.0",
-    "aws-cdk-lib": "^2.191.0",
+    "aws-cdk": "^2.1012.0",
+    "aws-cdk-lib": "^2.192.0",
     "constructs": "^10.4.2",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
@@ -57,6 +57,6 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
-    "vite": "^6.3.2"
+    "vite": "^6.3.3"
   }
 }

@@ -194,11 +194,22 @@ function Chat()
     const getUser = async () => {
         const user = await getCurrentUser();
         if (user) setUser(user);
-        //console.log(user);
+        console.log(user);
         const attributes = await fetchUserAttributes();
         if(attributes) {
-            //console.log(attributes);
+            console.log(attributes);
             setUserAttributes(attributes);
+
+            // check patron status
+            if(attributes.email)
+            {
+                console.log("checking patreon status for: "+attributes.email);
+                const checkPatreonStatus = await client.queries.checkPatreonStatus({ patreonEmail: attributes.email });
+                if(checkPatreonStatus.errors)
+                    console.error(checkPatreonStatus.errors);
+                else
+                    console.log("checkPatreonStatus: "+checkPatreonStatus.data);
+            }
         }
     };
 

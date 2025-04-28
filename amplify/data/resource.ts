@@ -1,6 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
+import { checkPatreonStatusFunction } from "../functions/checkPatreonStatusFunction/resources";
 
 export interface IChatMessage {
   id: string;
@@ -71,6 +72,15 @@ const schema = a.schema({
     })
   )
   .authorization((allow) => [allow.authenticated()]),
+
+  checkPatreonStatus: a
+    .query()
+    .arguments({
+      patreonEmail: a.string(),
+    })
+    .returns(a.string())
+    .handler(a.handler.function(checkPatreonStatusFunction))
+    .authorization((allow) => [allow.authenticated()]),
 
 }).authorization((allow) => [allow.resource(submitQueryFunction)]);
 

@@ -11,6 +11,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Duration } from 'aws-cdk-lib';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { checkPatreonStatusFunction } from './functions/checkPatreonStatusFunction/resources';
 
 const backend = defineBackend({
   auth,
@@ -19,6 +20,7 @@ const backend = defineBackend({
   submitQueryFunction,
   claimPatreonBenefitsFunction,
   patreonOauthRequestHandlerFunction,
+  checkPatreonStatusFunction,
 });
 
 const submitQueryLambda = backend.submitQueryFunction.resources.lambda;
@@ -36,6 +38,20 @@ const statement = new iam.PolicyStatement({
 
 submitQueryLambda.addToRolePolicy(statement);
 
+// add permissions for checkPatreonStatusFunction to access DynamoDB in another region
+const checkPatreonStatusLambda = backend.checkPatreonStatusFunction.resources.lambda;
+const checkPatreonStatusStatement = new iam.PolicyStatement({
+  effect: iam.Effect.ALLOW,
+  actions: [
+    "dynamodb:PutItem",
+    "dynamodb:UpdateItem",
+    "dynamodb:GetItem",
+    "dynamodb:Scan",
+    "dynamodb:Query",
+  ],
+  resources: ['*'],
+});
+checkPatreonStatusLambda.addToRolePolicy(checkPatreonStatusStatement);
 
 const patreonOauthLambda = backend.patreonOauthRequestHandlerFunction.resources.lambda;
 const customResourceStack = backend.createStack('LambdaCustomResourceStack');

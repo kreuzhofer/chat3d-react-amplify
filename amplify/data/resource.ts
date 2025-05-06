@@ -2,6 +2,9 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { submitQueryFunction } from "../functions/submitqueryfunction/resources";
 import { claimPatreonBenefitsFunction } from "../functions/claimPatreonBenefitsFunction/resources";
 import { checkPatreonStatusFunction } from "../functions/checkPatreonStatusFunction/resources";
+import { preSignUp } from "../auth/pre-sign-up/resource";
+import { postConfirmation } from "../auth/post-confirmation/resources";
+import { postAuthentication } from "../auth/post-authentication/resource";
 
 export interface IChatMessage {
   id: string;
@@ -34,6 +37,12 @@ const schema = a.schema({
       messages: a.json(),
       rating: a.integer(), // -1 = thumbs down, 0 = no rating, 1 = thumbs up
     }).authorization((allow) => [allow.owner()]),
+  UserProfile: a
+    .model({
+      email: a.string(),
+      profileOwner: a.string(),
+      userCredits: a.string(),
+    }).authorization((allow) => [allow.ownerDefinedIn("profileOwner")]),
   
   submitQuery: a
     .query()
@@ -82,7 +91,12 @@ const schema = a.schema({
     .handler(a.handler.function(checkPatreonStatusFunction))
     .authorization((allow) => [allow.authenticated()]),
 
-}).authorization((allow) => [allow.resource(submitQueryFunction)]);
+}).authorization((allow) => [
+  allow.resource(submitQueryFunction), 
+  allow.resource(preSignUp), 
+  allow.resource(postConfirmation),
+  allow.resource(postAuthentication)
+]);
 
 export type Schema = ClientSchema<typeof schema>;
 

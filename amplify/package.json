@@ -4,5 +4,8 @@
     "@aws-amplify/backend": "^1.15.0",
     "@aws-sdk/client-bedrock-runtime": "^3.787.0",
     "patreon": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149"
   }
 }

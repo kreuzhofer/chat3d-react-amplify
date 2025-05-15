@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.11.1",
-    "@aws-amplify/ui-react-storage": "^3.10.2",
-    "@aws-sdk/client-bedrock-runtime": "^3.808.0",
+    "@aws-amplify/ui-react": "^6.11.2",
+    "@aws-amplify/ui-react-storage": "^3.10.3",
+    "@aws-sdk/client-bedrock-runtime": "^3.810.0",
     "@dotenvx/dotenvx": "^1.44.0",
     "@types/mixpanel": "^2.14.9",
     "aws-amplify": "^6.14.4",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@aws-amplify/backend": "^1.16.1",
-    "@aws-amplify/backend-cli": "^1.7.1",
+    "@aws-amplify/backend-cli": "^1.7.2",
     "@rollup/plugin-replace": "^6.0.2",
     "@types/aws-lambda": "^8.10.149",
     "@types/mixpanel-browser": "^2.60.0",
@@ -48,7 +48,7 @@
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
     "@vitejs/plugin-react": "^4.4.1",
-    "aws-cdk": "^2.1014.0",
+    "aws-cdk": "^2.1015.0",
     "aws-cdk-lib": "^2.195.0",
     "constructs": "^10.4.2",
     "esbuild": "^0.25.4",

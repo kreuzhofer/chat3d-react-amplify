@@ -1,4 +1,4 @@
-import { defineFunction, secret } from '@aws-amplify/backend';
+import { defineFunction } from '@aws-amplify/backend';
 
 export const checkPatreonStatusFunction = defineFunction({
   // optionally specify a name for the Function (defaults to directory name)

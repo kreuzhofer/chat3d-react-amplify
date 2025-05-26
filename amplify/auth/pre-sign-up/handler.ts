@@ -2,9 +2,7 @@ import type { PreSignUpTriggerHandler } from 'aws-lambda';
 //import { env } from '$amplify/env/pre-sign-up';
 
 const listOfPreviewEmails = [
-    "dkreuzh@gmail.com",
-    "daniel.kreuzhofer@gmail.com",
-    "amanksingh7777@gmail.com"
+    "sample@domain.com",
 ];
 
 export const handler: PreSignUpTriggerHandler = async (event) => {
@@ -16,12 +14,12 @@ export const handler: PreSignUpTriggerHandler = async (event) => {
     console.log(JSON.stringify(event));
     if(event.triggerSource ==="PreSignUp_ExternalProvider")
     {
-        if(listOfPreviewEmails.indexOf(event.request.userAttributes.email) === -1)
-        {
-            throw new Error("You cannot sign up at this time.");
-        }    
-
+        console.log("PreSignUp_ExternalProvider for email: " + event.request.userAttributes.email);
     }
+    if(listOfPreviewEmails.indexOf(event.request.userAttributes.email) === -1)
+    {
+        throw new Error("You cannot sign up at this time.");
+    } 
     return event;
     //throw new Error("You cannot sign up at this time.");
 };

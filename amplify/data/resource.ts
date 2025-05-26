@@ -41,8 +41,12 @@ const schema = a.schema({
     .model({
       email: a.string(),
       profileOwner: a.string(),
-      userCredits: a.string(),
+      userCredits: a.string().authorization(allow => [allow.owner().to(['read'])]),
     }).authorization((allow) => [allow.ownerDefinedIn("profileOwner")]),
+  WhiteListUserRegistrationItem: a
+    .model({
+      email: a.string(),
+    }).authorization((allow) => [allow.authenticated().to(['read'])]),
   
   submitQuery: a
     .query()

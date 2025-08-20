@@ -50,7 +50,7 @@ function Chat()
         image: { avatar: false, src: "" },
     } as IModelOption));
 
-    var defaultLLMOption = "3dModelLLM_Claude3.7_examples";
+    var defaultLLMOption = "3dModelLLM_Claude4.0";
     if(isDev)
     {
         defaultLLMOption = "3dModelLLM_Claude3.7_Build123d";

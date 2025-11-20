@@ -23,9 +23,11 @@ const backend = defineBackend({
   checkPatreonStatusFunction,
 });
 
+/* Rotating the api key, this is not needed for now
 backend.data.resources.cfnResources.cfnApiKey?.overrideLogicalId(
   `recoverApiKey${new Date().getTime()}`
 );
+*/
 
 const submitQueryLambda = backend.submitQueryFunction.resources.lambda;
 

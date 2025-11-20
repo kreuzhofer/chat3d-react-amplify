@@ -1,85 +1,46 @@
-body {
+@supports (height: 100dvh) {
+  html, body, #root {
+    min-height: 100dvh;
+    height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-device-pixel-ratio:2), (min-resolution: 192dpi), (min-resolution: 2dppx) {
+  :root {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+html, body {
   margin: 0;
-  background: linear-gradient(180deg, #d1caba, rgb(255, 255, 255));
-  display: flex;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  height: 100vh;
-  width: 100vw;
-  justify-content: center;
-  align-items: center;
-  min-height: 2000px;
-  padding-top: 54px;
-  -webkit-font-smoothing: antialiased;
-  -moz-font-smoothing: grayscale;
+  padding: 0;
+  height: 100dvh;
+  container-type: size;
 }
 
-main {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+#root {
+  height: var(--cqh-full, 100dvh);
+  max-height: 100dvh;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-  color: white;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+html
+{
+  font-size: 16px !important;
 }
 
-ul {
-  padding-inline-start: 0;
-  margin-block-start: 0;
-  margin-block-end: 0;
-  list-style-type: none;
-  display: flex;
-  flex-direction: column;
-  margin: 8px 0;
-  border: 1px solid black;
-  gap: 1px;
-  background-color: black;
-  border-radius: 8px;
-  overflow: auto;
+html body {
+  font-size: 16px !important;
+ }
+
+div.ui.container {
+  margin-left: 0px !important;
+  width: 100vw !important;
 }
 
-li {
-  background-color: white;
-  padding: 8px;
-}
-
-li:hover {
-  background: #dadbf9;
-}
-
-a {
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.ui.borderless.menu {
-  background-color: #f8f8f8;
-  box-shadow: none;
-  flex-wrap: wrap;
-  border: none;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.ui.borderless.menu .header.item {
-  font-size: 18px;
-  font-weight: 400;
+div.ui.left.sidebar {
+  width: 260px;
 }
 
 .ui.mobile.only.grid .ui.menu .ui.vertical.menu {
@@ -106,13 +67,6 @@ a {
   margin-top: 6px;
 }
 
-.ui.container > .ui.message {
-  background-color: rga(238, 238, 238);
-  box-shadow: none;
-  padding: 5rem 4rem;
-  margin-top: 1rem;
-}
-
 .ui.message h1.ui.header {
   font-size: 4.5rem;
 }
@@ -124,11 +78,29 @@ a {
   font-weight: 300;
 }
 
-.content-body {
+.chat-sidebar {
+  height: 100cqh;
+  width: 260px;
+  float: left;
+  background-color: #f8f8f8;
+}
+
+.chat-contexts {
+  height: calc(100cqh - 176px);
+  overflow: auto;
+}
+
+.chat-grid {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  padding-top: 54px;
+  align-items: stretch;
+  height: calc(100cqh);
+  width: auto;
+  margin-left: 260px;
+}
+
+.chat-grid.full-width {
+  margin-left: 0px;
 }
 
 .chat-container {
@@ -136,7 +108,16 @@ a {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto;
+  height: calc(100cqh - 80px);
+  overflow: auto;
+}
+
+.chat-welcome {
+  font-size: large;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 20px;
+  padding-top: calc(35vh);
 }
 .message {
   margin-bottom: 20px;
@@ -155,6 +136,10 @@ a {
 }
 .message.ai .content {
   background-color: #e0e1e2;
+  max-width: 80vw;
+}
+.message.ai.error .content {
+  background-color: #ff000036;
 }
 .input-container {
   display: flex;
@@ -173,13 +158,97 @@ a {
   cursor: pointer;
   margin-left: 10px;
 }
+.response-actions.ratingmsg {
+  font-size: 0.75em;
+}
 .response-3dmodel {
   display: flex;
-  justify-content: center;
+  justify-content: left;
   margin-top: 10px;
+}
+.response-3dmodel.tokencost {
+  font-size: 0.5em;
 }
 .response-image {
   max-width: calc(100% - 20px);
   margin: 0 10px;
 }
 
+/* For basic hover state changes */
+.ui.menu .item:hover {
+  background-color: #f0f0f0 !important;
+  color: #000 !important;
+}
+
+/* For showing/hiding content */
+.ui.menu .item .hover-content {
+  display: none;
+}
+
+.ui.menu .item:hover .hover-content {
+  display: block;
+}
+
+.ui.menu .item .default-content {
+  display: block;
+}
+
+.ui.menu .item:hover .default-content {
+  display: none;
+}
+
+.top-menubar {
+  height: 40px;
+  padding: 5px;
+  display: flex;
+  background-color: #d6d6d6;
+  align-items: center;
+}
+
+.footer-menubar {
+  height: 40px;
+  padding: 5px;
+  background-color: #d6d6d6;
+  display: flex;
+  align-items: center;
+}
+
+.chat-title {
+  padding-left: 10px;
+  font-size: 1.2rem;
+  flex: 1;
+}
+
+.chat-buttons-left {
+  flex: 1;
+}
+.chat-buttons-right {
+  font-size: 0.75em;
+}
+
+.footer-menubar .settings {
+  flex: 1;
+}
+
+.footer-menubar .spacer {
+  flex: 4;
+}
+
+.footer-menubar .user {
+  flex: 1;
+}
+
+/* https://css-tricks.com/almanac/properties/t/text-overflow/ */
+.overflow {
+  width: 12em;
+  height: 1.1em;
+  /*outline: 1px solid #000;*/
+  /*margin: 0 0 2em 0;*/
+
+/**
+ * Required properties to achieve text-overflow
+ */
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ellipsis { text-overflow: ellipsis; }

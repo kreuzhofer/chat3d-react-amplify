@@ -1,11 +1,9 @@
 function Home()
 {
     return (
-        <main>
-            <div>
-                <h1>Home</h1>
-            </div>
-        </main>
+        <div>
+            <h1>Coming Soon...</h1>
+        </div>
     );
 }
 

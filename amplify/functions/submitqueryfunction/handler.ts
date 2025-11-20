@@ -138,6 +138,7 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
         ],
       },
     }
+    console.log("converseCommandInput: "+JSON.stringify(converseCommandInput));
 
     // Create a command with the model ID, the message, and a basic configuration.
     const command = new ConverseCommand(converseCommandInput);
@@ -236,6 +237,22 @@ export const handler: Schema["submitQuery"]["functionHandler"] = async (event) =
                 if(!modelDefinition3DGenerator)
                 {
                   console.log("llmconfiguration not found");
+                  // Handle error case
+                  messages.pop();
+                  messages.push({
+                      id: messageId,
+                      itemType: "errormessage",
+                      text: "There was a problem creating the model. Please try again later.",
+                      state: "error",
+                      stateMessage: "",
+                      attachment: ""
+                  } as IChatMessage);
+                  
+                  await dataClient.models.ChatItem.update({
+                      id: newAssistantChatItemId,
+                      messages: JSON.stringify(messages)
+                  });
+
                   return null;
                 }
                 // create adapter from factory

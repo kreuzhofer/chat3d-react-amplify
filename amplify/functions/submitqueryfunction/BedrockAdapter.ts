@@ -1,4 +1,4 @@
-import { BedrockRuntimeClient, ConverseCommand, InvokeModelCommand, Message } from "@aws-sdk/client-bedrock-runtime";
+import { BedrockRuntimeClient, ConverseCommand, ConverseCommandOutput, InvokeModelCommand, Message } from "@aws-sdk/client-bedrock-runtime";
 import { ILLMAdapter, ILLMMessage, ILLMResponse } from "./ILLMAdapter";
 import { ILLMDefinition } from "./LLMDefinitions";
 import { ZodTypeAny } from "zod";
@@ -21,8 +21,10 @@ export class BedrockAdapter implements ILLMAdapter {
         const inferenceConfig = {
             maxTokens: generate3dmodelId === "us.anthropic.claude-3-7-sonnet-20250219-v1:0" ? 131072 : 4096,
             temperature: 1.0,
-            ...(generate3dmodelId !== "us.anthropic.claude-3-7-sonnet-20250219-v1:0" && { topP: 0.9 })
+            ...((generate3dmodelId !== "us.anthropic.claude-3-7-sonnet-20250219-v1:0" && 
+                generate3dmodelId!=="us.anthropic.claude-sonnet-4-5-20250929-v1:0") && { topP: 0.9 })
         };
+        console.log("inferenceConfig: "+JSON.stringify(inferenceConfig));
 
         const converse3DModelCommandInput = {
             modelId: generate3dmodelId,
@@ -43,16 +45,16 @@ export class BedrockAdapter implements ILLMAdapter {
         console.log("converse3DModelCommandInput: "+JSON.stringify(converse3DModelCommandInput));
 
         const converse3DModelCommand = new ConverseCommand(converse3DModelCommandInput);
-        const converse3DModelReponse = await bedrockClient.send(converse3DModelCommand);
-        console.log("converse3DModelResponse: "+JSON.stringify(converse3DModelReponse));
+        const converse3DModelResponse = await bedrockClient.send(converse3DModelCommand);
+        console.log("converse3DModelResponse: "+JSON.stringify(converse3DModelResponse));
 
-        const inputTokens3DModel = converse3DModelReponse.usage?.inputTokens || 0;
-        const outputTokens3DModel = converse3DModelReponse.usage?.outputTokens || 0;
+        const inputTokens3DModel = converse3DModelResponse.usage?.inputTokens || 0;
+        const outputTokens3DModel = converse3DModelResponse.usage?.outputTokens || 0;
         const inputTokenCost3DModel = this.modelDefinition.inputTokenCostPerMille * inputTokens3DModel / 1000;
         const outputTokenCost3DModel = this.modelDefinition.outputTokenCostPerMille * outputTokens3DModel / 1000;
         const tokens3DModelCost = inputTokenCost3DModel + outputTokenCost3DModel;
 
-        var converse3DModelAssistantMessages = converse3DModelReponse.output?.message?.content;
+        var converse3DModelAssistantMessages = converse3DModelResponse.output?.message?.content;
         console.log("converse3DModelAssistantMessages: "+JSON.stringify(converse3DModelAssistantMessages));
         var converse3DModelAssistantResponse = converse3DModelAssistantMessages?.find((item) => item.text);
 

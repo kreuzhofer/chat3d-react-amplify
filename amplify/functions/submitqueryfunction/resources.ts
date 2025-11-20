@@ -9,6 +9,8 @@ export const submitQueryFunction = defineFunction({
   environment: {
     // optionally specify environment variables
     MIXPANEL_TOKEN: process.env.MIXPANEL_TOKEN || '',
+    OLLAMA_BASEURL: process.env.OLLAMA_BASEURL || '',
+    OLLAMA_TOKEN: process.env.OLLAMA_TOKEN || '',
     OPENAI_API_KEY: secret("OPENAI_API_KEY"),
     OPENAI_PROJECT_ID: secret("OPENAI_PROJECT_ID"),
     OPENAI_ORGANIZATION_ID: secret("OPENAI_ORGANIZATION_ID"),

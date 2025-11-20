@@ -1,22 +1,37 @@
 import { ZodTypeAny } from 'zod';
 import {ILLMAdapter, ILLMMessage, ILLMResponse} from './ILLMAdapter';
 import { ILLMDefinition } from './LLMDefinitions';
-import ollama from 'ollama';
-
+import { env } from '$amplify/env/submitQueryFunction';
+import { Ollama } from 'ollama'
 export class OllamaAdapter implements ILLMAdapter {
     private modelDefinition: ILLMDefinition;
+    ollama: any;
     constructor(modelDefinition: ILLMDefinition) {
         this.modelDefinition = modelDefinition;
+        this.ollama = new Ollama({ 
+            host: env.OLLAMA_BASEURL, 
+            headers: { Authorization: "Bearer " + env.OLLAMA_TOKEN } 
+        })
     }
 
     async submitQuery(messages: ILLMMessage[], context: string, resultSchema: ZodTypeAny): Promise<ILLMResponse> {
         // Implement the submitQuery method
 
-        const response = await ollama.chat({
+        const ollamaMessages = [
+            { role: "user", content: this.modelDefinition.systemPrompt(context) },
+            ...messages.map((message) => ({
+                role: message.role,
+                content: message.content.map((content) => ({ type: content.type, text: content.text }))
+            }))
+        ];
+        console.log("Ollama Messages:"+JSON.stringify(ollamaMessages));
+
+        const response = await this.ollama.chat({
             model: this.modelDefinition.modelName,
-            messages: [{ role: 'user', content: 'Why is the sky blue?' }],
+            messages: ollamaMessages,
             stream: false
           })
+        console.log(response);
         console.log(response.message.content)
 
         return {

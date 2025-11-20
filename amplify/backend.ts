@@ -23,6 +23,10 @@ const backend = defineBackend({
   checkPatreonStatusFunction,
 });
 
+backend.data.resources.cfnResources.cfnApiKey?.overrideLogicalId(
+  `recoverApiKey${new Date().getTime()}`
+);
+
 const submitQueryLambda = backend.submitQueryFunction.resources.lambda;
 
 const statement = new iam.PolicyStatement({

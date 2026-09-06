@@ -25,6 +25,7 @@ def direction(r):
     q, s = r["qwen"], r["sonnet"]
     if q == "fail" and s == "pass": return "batch fails, Sonnet passes"
     if q == "pass" and s == "fail": return "batch passes, Sonnet fails"
+    if q == "uncertain": return f"batch uncertain, Sonnet {s}es"
     return f"Sonnet uncertain, batch {q}s"
 
 
@@ -32,7 +33,7 @@ def tally(items, verdict_of):
     """Counts under the bar's terms for the hard flips; verdict_of(item) -> R/C/N/None."""
     t = dict(qfp=0, sfp=0, qff=0, sff=0, n=0, undecided=0, hard=0)
     for r in items:
-        if r["sonnet"] not in ("pass", "fail"): continue
+        if r["sonnet"] not in ("pass", "fail") or r["qwen"] not in ("pass", "fail"): continue
         t["hard"] += 1
         v = verdict_of(r) or None
         if v is None: t["undecided"] += 1; continue
@@ -114,7 +115,15 @@ def page(views_dir, out_path):
               .replace("<h1>The 69 Disagreements</h1>", f"<h1>The Spot Check: {len(ITEMS)} Disagreements</h1>")
               .replace("qwen3.8-27b-nvfp4 vs Claude Sonnet 4.6, thinking off, the 125 under", f"the first re-rating batch (qwen3.8-27b-nvfp4, thinking off) vs Claude Sonnet 4.6 on {n_ex} sampled rows under")
               .replace("adjudication for #57", "adjudication for #63")
-              .replace('<span id="progTxt">0 of 69</span>', f'<span id="progTxt">0 of {len(ITEMS)}</span>'))
+              .replace('<span id="progTxt">0 of 69</span>', f'<span id="progTxt">0 of {len(ITEMS)}</span>')
+              .replace('const LS_KEY = "adjudication-57-verdicts";', 'const LS_KEY = "adjudication-63-verdicts";')
+              # one item has the batch uncertain and Sonnet passing: not a hard flip, its own direction, outside the tally
+              .replace('const dirKey = it => it.sonnet === "uncertain" ? "u" : (it.qwen === "fail" ? "fp" : "pf");',
+                       'const dirKey = it => (it.sonnet === "uncertain" || it.qwen === "uncertain") ? "u" : (it.qwen === "fail" ? "fp" : "pf");')
+              .replace('const dirLabel = it => dirKey(it) === "u" ? `Sonnet uncertain · qwen ${it.qwen}s` : (dirKey(it) === "fp" ? "qwen fails · Sonnet passes" : "qwen passes · Sonnet fails");',
+                       'const dirLabel = it => dirKey(it) === "u" ? (it.sonnet === "uncertain" ? `Sonnet uncertain · qwen ${it.qwen}s` : `qwen uncertain · Sonnet ${it.sonnet}es`) : (dirKey(it) === "fp" ? "qwen fails · Sonnet passes" : "qwen passes · Sonnet fails");')
+              .replace('    if (it.sonnet === "uncertain") continue;\n    t.hard++;', '    if (it.sonnet === "uncertain" || it.qwen === "uncertain") continue;\n    t.hard++;')
+              .replace('<button aria-pressed="false" data-val="u">Sonnet uncertain</button>', '<button aria-pressed="false" data-val="u">one side uncertain</button>'))
     doc = tpl.replace("/*__ITEMS__*/", json.dumps(items, ensure_ascii=False)).replace("/*__VIEWS__*/", json.dumps(view_data))
     open(out_path, "w").write(doc)
     print("page written:", out_path, f"{os.path.getsize(out_path) / 1e6:.1f} MB")

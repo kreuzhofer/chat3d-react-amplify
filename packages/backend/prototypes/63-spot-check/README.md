@@ -45,4 +45,30 @@ one request per replica that cannot co-batch; `gateway-poll.py` (prototypes/59-o
 
 ## Readings
 
-_(filled after the batch)_
+- **The batch:** 2,614 rows in 3 h 50 min (19:13–23:02 UTC, 2026-09-06) at concurrency 3, 0 failures, ~5.2 s per row.
+  Window audit: **0 other tenants** across 2,523 judge calls (`tenancy63.txt`), **0 two-on-one samples** across 20,439
+  gateway samples, max inflight 1 on every replica (`overlap63.txt`), 0 rows flagged. The alias row re-rated at 23:05.
+- **The corpus after it:** rated 2,527, current 2,527, Stale 0; export admitted 2,114 of 2,118 approved, provisional 0,
+  stale 4 (the #44 rows). 91 rows left the rated set: the re-evaluation short-circuits before the judge when assertions
+  fail (19) or code review rejects at 1–3 (72) — pending, no visual score, no instrument id, invisible to the status
+  endpoint's counts. Approved fell 2,304 → 2,111 among batch rows (81% vs 88% under the old-text Sonnet ratings).
+- **The sample:** frame 1,219 (batch rows with ≥ 3 items outside the held-out 125; 966 approved / 253 pending, 16
+  categories); seed 63 → 125 rows, 437 items, 101 approved / 24 pending, 13 categories (`sample63-draw.txt`).
+- **The Sonnet arm:** experiment `09411bc4`, run `4d899046`, 23:05–23:14 UTC, 125/125, 13.2 s per example, 0 residual
+  uncertain, all six completeness counts zero.
+- **The screen** (`screen-batch-vs-sonnet.txt`): identity PASS both sides; completeness PASS (batch: 437 items, 1
+  residual uncertain); **94.1% identical, 25 hard flips (5.7%)**, raw false passes 8 of 18 reference fails, raw false
+  fails 17 of 419 reference passes; item gate 91.2% agree (false accepts 5 / rejects 6, approves 112 vs 113); scores
+  same 17.6%, mean abs Δ 1.016 (batch 9.25 vs Sonnet 8.57). Dump: **26 items on 17 examples** (`disagreements-batch-vs-sonnet.md`).
+- **The third opinion** (`third-opinion63.md`, `items63.json`): R 17 / C 8 / N 1. On the 25 hard flips: **batch false
+  passes 4 vs Sonnet 5 (holds); batch false fails 12 vs Sonnet 3, allowance 6 (fails as read)**. The batch's false fails
+  are misreadings of large visible features — an open, shelled box read as a solid block (×2), a U-channel read as a
+  block, a channel + plate read as one plate (×2), a pointed blade tip read as rounded (×2), a bowl's opening read as a
+  floor — plus three orientation items on a flat-lying plate (the key holder: 'bottom edge' read as the upper face).
+  Sonnet's errors: five false passes by leniency on wrong models (a block with all vertical edges filleted ×2, a box
+  with the whole top perimeter rounded, pockets on the wrong side of a torus, a tooth wider at the tip) and three
+  false fails, two of them a zoom to an angle that could not show the feature (an edge-on torus, a cap's closed top).
+- **Five items decide the term:** the key holder's three (frame-dependent wording; N would make them drop out → 9 vs 6),
+  the gear sketch's arc (a straight outer edge; low confidence) and the L-profile's face count (N as read; C would
+  raise Sonnet's false fails). Daniel's verdicts land in the page's store: *The Spot Check*
+  (https://claude.ai/code/artifact/7f7f7f9b-f3f5-45aa-a179-962d6d041f1d), collection `verdicts`.

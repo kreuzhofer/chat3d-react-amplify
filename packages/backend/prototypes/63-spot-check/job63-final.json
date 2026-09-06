@@ -1,0 +1,1 @@
+{"jobId":"job-1788721989011-2","type":"batch-re-rate-stale","categoryId":"*","categoryName":"Stale ratings (all categories)","status":"completed","total":2614,"completed":2614,"failed":0,"skipped":0,"currentPromptId":null,"currentPromptText":null,"exampleId":null,"error":null,"createdAt":"2026-09-06T19:13:09.011Z","finishedAt":"2026-09-06T23:02:47.805Z","concurrency":3}

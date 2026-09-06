@@ -1,0 +1,6 @@
+instrument production@22e0f10b0505; window 2026-09-06T19:13:08Z → 2026-09-06T23:03:05Z; candidates 1219, excluded 0, frame 1219
+seed 63, sample 125 → /Users/daniel/src/github/kreuzhofer/chat3d-app/packages/backend/prototypes/63-spot-check/sample63.txt
+frame by category:  {'Missing Examples': 526, 'Boolean Operations': 101, 'Extrusions and Revolutions': 77, 'Arrays and Patterns': 75, 'Surface Modifications': 69, 'Sketch Operations': 52, 'Primitives': 51, 'PCB Cases': 50, 'Generic Enclosures': 47, 'Simple Everyday Objects': 45, 'Electronic Components': 45, 'Mechanical Components': 34, 'bd_warehouse Examples': 27, 'Hinges': 15, 'Gridfinity Storage': 4, 'User Generated Models': 1}
+sample by category: {'Missing Examples': 47, 'Boolean Operations': 12, 'Surface Modifications': 10, 'Primitives': 10, 'Extrusions and Revolutions': 8, 'Sketch Operations': 8, 'Electronic Components': 7, 'Simple Everyday Objects': 6, 'PCB Cases': 5, 'Arrays and Patterns': 5, 'Generic Enclosures': 3, 'Mechanical Components': 3, 'bd_warehouse Examples': 1}
+frame by status:    {'auto_approved': 966, 'pending': 253} | sample: {'auto_approved': 101, 'pending': 24}
+items in sample:    437 | judges: {'vllm-dgx-14/qwen3.8-27b-nvfp4': 125}

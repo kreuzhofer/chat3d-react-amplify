@@ -1,0 +1,5 @@
+window 2026-09-06T19:13:08Z → 2026-09-06T23:03:05Z: 20439 member-samples, 0 poll errors, max inflight per node {'dgx-spark-04': 1, 'dgx-spark-02': 1, 'dgx-spark-03': 1}
+two-on-one samples: 0
+batch judge calls in window: 2523 on 2523 examples
+judge calls overlapping a two-on-one sample: 0 on 0 examples
+flagged example ids → /Users/daniel/src/github/kreuzhofer/chat3d-app/packages/backend/prototypes/63-spot-check/overlap63-flagged.txt

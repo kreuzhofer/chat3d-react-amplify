@@ -18,14 +18,19 @@ workbenchInstrumentRouter.get("/instrument", async (_req, res) => {
 
 workbenchInstrumentRouter.post("/re-rate-stale/batch", async (req, res) => {
   try {
-    const body = (req.body ?? {}) as { limit?: unknown; categoryId?: unknown };
+    const body = (req.body ?? {}) as { limit?: unknown; categoryId?: unknown; concurrency?: unknown };
     const limit = body.limit === undefined ? undefined : Number(body.limit);
     if (limit !== undefined && !Number.isFinite(limit)) {
       res.status(400).json({ error: "limit must be a number" });
       return;
     }
+    const concurrency = body.concurrency === undefined ? undefined : Number(body.concurrency);
+    if (concurrency !== undefined && !Number.isFinite(concurrency)) {
+      res.status(400).json({ error: "concurrency must be a number" });
+      return;
+    }
     const categoryId = typeof body.categoryId === "string" && body.categoryId ? body.categoryId : undefined;
-    const job = await startBatchReRateStale({ limit, categoryId });
+    const job = await startBatchReRateStale({ limit, categoryId, concurrency });
     res.status(202).json(job);
   } catch (error) {
     const statusCode = (error as { statusCode?: number }).statusCode;

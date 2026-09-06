@@ -29,6 +29,8 @@ const APPROVED = ["auto_approved", "human_approved"];
 const JUDGE_DERIVED_STATUSES = ["auto_approved", "pending"];
 const DEFAULT_BATCH_LIMIT = 250;
 const MAX_BATCH_LIMIT = 5000;
+/** The same ceiling as `global.vlm_experiment_concurrency`: the pool never has more replicas than this. */
+const MAX_BATCH_CONCURRENCY = 8;
 
 /** Production rows that carry a visual rating at all. */
 const RATED: Prisma.WorkbenchExampleWhereInput = {
@@ -92,6 +94,12 @@ export interface ReRateStaleOptions {
   limit?: number;
   /** Restrict the batch to one category. */
   categoryId?: string;
+  /**
+   * Rows in flight at once (default 1). Above 1 only when the judge is
+   * served by that many replicas: one request per replica keeps sole
+   * tenancy (ADR 0004), more would co-batch the judge with itself (#63).
+   */
+  concurrency?: number;
 }
 
 /**
@@ -107,6 +115,7 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     throw err;
   }
   const limit = Math.min(Math.max(1, Math.floor(opts.limit ?? DEFAULT_BATCH_LIMIT)), MAX_BATCH_LIMIT);
+  const concurrency = Math.min(Math.max(1, Math.floor(opts.concurrency ?? 1)), MAX_BATCH_CONCURRENCY);
   const instrumentId = await currentInstrumentId();
 
   const rows = await prisma.workbenchExample.findMany({
@@ -144,14 +153,15 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     error: null,
     createdAt: new Date().toISOString(),
     finishedAt: null,
+    concurrency,
     pendingPromptIds: new Set(),
     userId: null,
     abortController: new AbortController(),
   };
   jobs.set(jobId, job);
 
-  void runBatchReEvaluate(job, rows);
+  void runBatchReEvaluate(job, rows, concurrency);
 
-  logger.info({ jobId, instrumentId, total: rows.length, limit, categoryId: opts.categoryId ?? null }, "stale re-rating batch started");
+  logger.info({ jobId, instrumentId, total: rows.length, limit, concurrency, categoryId: opts.categoryId ?? null }, "stale re-rating batch started");
   return toSummary(job);
 }

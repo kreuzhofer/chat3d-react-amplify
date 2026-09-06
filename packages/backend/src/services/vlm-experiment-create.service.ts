@@ -90,29 +90,72 @@ export function planVlmRuns(models: ModelForRun[], variants: JudgePromptVariantI
 
 export interface CreateVlmExperimentInput {
   name: string;
-  categoryIds: string[];
-  exampleCount: number;
+  /** A seeded draw: `exampleCount` examples from these categories. */
+  categoryIds?: string[];
+  exampleCount?: number;
   exampleSeed?: number;
+  /**
+   * A fixed selection instead of a draw, judged in this order (#63: the
+   * spot check's sample from a re-rating batch). Excludes the three above;
+   * the experiment records the categories the examples span, seed 0.
+   */
+  exampleIds?: string[];
   modelIds: string[];
   /** Optional instruments to judge under; omitted = production's (issue #35). */
   judgePromptVariants?: JudgePromptVariantInput[];
   createdBy: string;
 }
 
-export async function createVlmExperiment(input: CreateVlmExperimentInput) {
-  const { name, categoryIds, exampleCount, exampleSeed = 42, modelIds, judgePromptVariants, createdBy } = input;
+interface ResolvedSelection { categoryIds: string[]; selectedIds: string[]; exampleCount: number; exampleSeed: number }
 
+/** A fixed list: every id must exist and be judgeable (screenshots stored). */
+async function resolveFixedSelection(exampleIds: string[]): Promise<ResolvedSelection> {
+  if (exampleIds.length === 0) throw new ExperimentError("exampleIds must name at least one example", 400);
+  if (new Set(exampleIds).size !== exampleIds.length) throw new ExperimentError("exampleIds must not repeat an example", 400);
+  const rows = await prisma.workbenchExample.findMany({
+    where: { id: { in: exampleIds } },
+    select: { id: true, screenshotFront: true, promptRef: { select: { categoryId: true } } },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const missing = exampleIds.filter((id) => !byId.has(id));
+  if (missing.length > 0) throw new ExperimentError(`Examples not found: ${missing.join(", ")}`, 404);
+  const unjudgeable = exampleIds.filter((id) => !byId.get(id)!.screenshotFront);
+  if (unjudgeable.length > 0) throw new ExperimentError(`Examples without screenshots: ${unjudgeable.join(", ")}`, 400);
+  const categoryIds = [...new Set(exampleIds.map((id) => byId.get(id)!.promptRef.categoryId))];
+  return { categoryIds, selectedIds: exampleIds, exampleCount: exampleIds.length, exampleSeed: 0 };
+}
+
+/** The seeded draw from categories, as before. */
+async function resolveSeededSelection(categoryIds: string[], exampleCount: number, exampleSeed: number): Promise<ResolvedSelection> {
   await validateCategories(categoryIds);
-  const { models, uniqueIds } = await validateModels(modelIds);
-  if (judgePromptVariants !== undefined) validateJudgePromptVariants(judgePromptVariants);
-
   const allExampleIds = await queryEligibleExamples(categoryIds);
   if (allExampleIds.length === 0) throw new ExperimentError("Selected categories have no examples with screenshots", 400);
   if (exampleCount > allExampleIds.length) {
     throw new ExperimentError(`Requested ${exampleCount} examples but only ${allExampleIds.length} eligible`, 400);
   }
+  return { categoryIds, selectedIds: selectIds(allExampleIds, exampleCount, exampleSeed), exampleCount, exampleSeed };
+}
 
-  const selectedIds = selectIds(allExampleIds, exampleCount, exampleSeed);
+async function resolveSelection(input: CreateVlmExperimentInput): Promise<ResolvedSelection> {
+  if (input.exampleIds !== undefined) {
+    if (input.categoryIds !== undefined || input.exampleCount !== undefined || input.exampleSeed !== undefined) {
+      throw new ExperimentError("Give exampleIds or categoryIds + exampleCount (+ exampleSeed), not both", 400);
+    }
+    return resolveFixedSelection(input.exampleIds);
+  }
+  if (!Array.isArray(input.categoryIds) || typeof input.exampleCount !== "number") {
+    throw new ExperimentError("categoryIds and exampleCount are required unless exampleIds is given", 400);
+  }
+  return resolveSeededSelection(input.categoryIds, input.exampleCount, input.exampleSeed ?? 42);
+}
+
+export async function createVlmExperiment(input: CreateVlmExperimentInput) {
+  const { name, modelIds, judgePromptVariants, createdBy } = input;
+
+  const { categoryIds, selectedIds, exampleCount, exampleSeed } = await resolveSelection(input);
+  const { models, uniqueIds } = await validateModels(modelIds);
+  if (judgePromptVariants !== undefined) validateJudgePromptVariants(judgePromptVariants);
+
   const orderedModels = uniqueIds.map((id) => models.find((m) => m.id === id)!);
   const plannedRuns = planVlmRuns(orderedModels, judgePromptVariants);
 

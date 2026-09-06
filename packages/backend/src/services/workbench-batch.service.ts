@@ -15,6 +15,7 @@ import { generateForPrompt, reRenderForExample, type GenerateResult, type Progre
 import { embedAndStorePrompt } from "./workbench-embeddings.service.js";
 import { cleanupExamplesForPrompt, type CleanupPreview } from "./workbench-examples.service.js";
 import { createLogger } from "../utils/logger.js";
+import { runWithConcurrency } from "../utils/worker-pool.js";
 import { sseService } from "./sse.service.js";
 
 const logger = createLogger("workbench-batch");
@@ -41,6 +42,8 @@ export interface BatchJob {
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
+  /** Rows in flight at once; set by the re-evaluation batches, one otherwise (#63). */
+  concurrency?: number;
   /** Prompt IDs still pending processing (batch jobs only). */
   pendingPromptIds: Set<string>;
   /** Admin user ID for SSE progress events. */
@@ -77,6 +80,7 @@ export interface BatchJobSummary {
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
+  concurrency?: number;
 }
 
 // ── In-memory job store ──────────────────────────────────────────────
@@ -605,6 +609,7 @@ export function toSummary(job: BatchJob): BatchJobSummary {
     error: job.error,
     createdAt: job.createdAt,
     finishedAt: job.finishedAt,
+    concurrency: job.concurrency,
   };
 }
 
@@ -942,14 +947,21 @@ async function runBatchReRender(
 
 // ── Batch Re-Evaluate ────────────────────────────────────────────────
 
+/**
+ * Re-evaluate the rows with at most `concurrency` in flight. One at a time
+ * by default; above that only when the judge is served by as many replicas
+ * (one request per replica keeps the judge's sole tenancy, ADR 0004). A
+ * cancelled job stops pulling rows; the rows in flight finish and count.
+ */
 export async function runBatchReEvaluate(
   job: BatchJob,
   examples: Array<{ id: string; promptId: string; promptRef: { prompt: string } }>,
+  concurrency = 1,
 ): Promise<void> {
   const { reEvaluateExample } = await import("./workbench-reeval.service.js");
 
-  for (const example of examples) {
-    if (job.status === "cancelled") break;
+  await runWithConcurrency(examples, concurrency, async (example) => {
+    if (job.status === "cancelled") return;
 
     job.currentPromptId = example.promptId;
     job.currentPromptText = example.promptRef.prompt;
@@ -980,7 +992,7 @@ export async function runBatchReEvaluate(
       });
       logger.error({ err: error, exampleId: example.id }, "batch re-evaluate failed for example");
     }
-  }
+  }, job.abortController.signal);
 
   job.currentPromptId = null;
   job.currentPromptText = null;
@@ -989,7 +1001,7 @@ export async function runBatchReEvaluate(
   job.finishedAt = new Date().toISOString();
 
   logger.info(
-    { jobId: job.jobId, status: job.status, completed: job.completed, failed: job.failed },
+    { jobId: job.jobId, status: job.status, completed: job.completed, failed: job.failed, concurrency },
     "batch re-evaluate finished",
   );
 }

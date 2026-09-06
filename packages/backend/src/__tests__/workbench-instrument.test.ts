@@ -20,7 +20,7 @@ vi.mock("../services/visual-eval-qualified-judges.js", () => ({
 vi.mock("../services/workbench-batch.service.js", () => ({
   jobs,
   generateJobId: (t: string) => `${t}-1`,
-  toSummary: (j: Record<string, unknown>) => ({ jobId: j.jobId, type: j.type, total: j.total, status: j.status }),
+  toSummary: (j: Record<string, unknown>) => ({ jobId: j.jobId, type: j.type, total: j.total, status: j.status, concurrency: j.concurrency }),
   runBatchReEvaluate: (...a: unknown[]) => runBatchReEvaluate(...a),
 }));
 
@@ -71,8 +71,21 @@ describe("startBatchReRateStale", () => {
     expect(args.where.promptRef).toEqual({ categoryId: "cat1" });
     expect(args.take).toBe(40);
     expect(args.orderBy[0]).toEqual({ updatedAt: "asc" });
-    expect(summary).toMatchObject({ jobId: "batch-re-rate-stale-1", type: "batch-re-rate-stale", total: 1, status: "running" });
-    expect(runBatchReEvaluate).toHaveBeenCalledWith(expect.objectContaining({ jobId: "batch-re-rate-stale-1" }), [row]);
+    expect(summary).toMatchObject({ jobId: "batch-re-rate-stale-1", type: "batch-re-rate-stale", total: 1, status: "running", concurrency: 1 });
+    expect(runBatchReEvaluate).toHaveBeenCalledWith(expect.objectContaining({ jobId: "batch-re-rate-stale-1" }), [row], 1);
+  });
+
+  it("runs one row at a time unless told otherwise, and clamps the concurrency to the pool's range", async () => {
+    findMany.mockResolvedValue([row]);
+    const summary = await startBatchReRateStale({ concurrency: 3 });
+    expect(summary).toMatchObject({ concurrency: 3 });
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.objectContaining({ concurrency: 3 }), [row], 3);
+    jobs.clear();
+    await startBatchReRateStale({ concurrency: 0 });
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 1);
+    jobs.clear();
+    await startBatchReRateStale({ concurrency: 99 });
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 8);
   });
 
   it("defaults and clamps the limit", async () => {

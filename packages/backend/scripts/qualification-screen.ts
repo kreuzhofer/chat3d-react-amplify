@@ -12,6 +12,12 @@
  * experiment's selections. With two candidate runs the stability pair is
  * screened (arm 2 against arm 1); with one, stability is reported as not
  * run. The corpus size for hours-per-pass defaults to the rated corpus.
+ *
+ * The spot check (ADR 0004, #63) screens the corpus's own ratings instead
+ * of an experiment run: `--candidate-production <experiment id>` reads, for
+ * that experiment's selections, what the re-rating batch wrote to
+ * `workbench_examples`, and the reference is the run of that experiment.
+ * Production rows carry no durations, so throughput is not reported.
  */
 import { writeFileSync } from "node:fs";
 import { prisma } from "../src/db/prisma.js";
@@ -33,19 +39,21 @@ import {
 } from "../src/services/qualification-screen.service.js";
 import { disagreements, renderDisagreementDump } from "../src/services/qualification-screen-dump.js";
 
-interface Args { candidates: string[]; reference: string; dump?: string; corpus?: number }
+interface Args { candidates: string[]; production?: string; reference: string; dump?: string; corpus?: number }
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { candidates: [], reference: "" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = argv[i + 1];
     if (a === "--candidate") { args.candidates.push(v); i++; }
+    else if (a === "--candidate-production") { args.production = v; i++; }
     else if (a === "--reference") { args.reference = v; i++; }
     else if (a === "--dump") { args.dump = v; i++; }
     else if (a === "--corpus") { args.corpus = Number(v); i++; }
     else throw new Error(`Unknown argument ${a}`);
   }
-  if (args.candidates.length < 1 || args.candidates.length > 2) throw new Error("Give one or two --candidate run ids");
+  if (args.production && args.candidates.length > 0) throw new Error("--candidate-production stands alone: the corpus's rating has no second arm");
+  if (!args.production && (args.candidates.length < 1 || args.candidates.length > 2)) throw new Error("Give one or two --candidate run ids, or --candidate-production");
   if (!args.reference) throw new Error("--reference is required");
   return args;
 }
@@ -81,6 +89,38 @@ async function loadRun(runId: string): Promise<LoadedRun> {
   return { runId, label: run.modelLabel, rows, experimentId: run.experimentId, wallClockMs };
 }
 
+/**
+ * The corpus's own ratings for an experiment's selections (#63): the rows
+ * the re-rating batch wrote, read as if they were a run. Labelled by the
+ * judge(s) that produced them; identity then checks there was one.
+ */
+async function loadProductionRun(experimentId: string): Promise<LoadedRun> {
+  const selected = await prisma.vlmExperimentExampleSelection.findMany({
+    where: { experimentId }, orderBy: { selectionOrder: "asc" }, select: { exampleId: true },
+  });
+  if (selected.length === 0) throw new Error(`Experiment ${experimentId} has no example selections`);
+  const examples = await prisma.workbenchExample.findMany({
+    where: { id: { in: selected.map((s) => s.exampleId) } },
+    select: {
+      id: true, visualScore: true, evalChecklistResults: true, evalIssues: true,
+      vlmModel: true, vlmInstrumentId: true, vlmThinkingEffort: true,
+    },
+  });
+  const judges = [...new Set(examples.map((e) => `${e.vlmModel ?? "?"} (${e.vlmThinkingEffort ?? "?"})`))].sort();
+  const rows: ScreenResultRow[] = examples.map((e) => ({
+    exampleId: e.id,
+    visualScore: e.visualScore == null ? null : Number(e.visualScore),
+    checklistResults: Array.isArray(e.evalChecklistResults) ? (e.evalChecklistResults as StoredChecklistItem[]) : null,
+    error: null,
+    issues: Array.isArray(e.evalIssues) ? (e.evalIssues as unknown[]).map(String) : [],
+    instrumentId: e.vlmInstrumentId,
+    thinkingEffort: e.vlmThinkingEffort,
+    durationMs: null,
+    completionTokens: null,
+  }));
+  return { runId: `production:${experimentId.slice(0, 8)}`, label: `production rating by ${judges.join(" | ")}`, rows, experimentId, wallClockMs: null };
+}
+
 const pct = (x: number) => `${(100 * x).toFixed(1)}%`;
 const mark = (pass: boolean) => (pass ? "PASS" : "FAIL");
 
@@ -106,7 +146,7 @@ function printAgreement(label: string, a: AgreementTerms): void {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  const [arm1, arm2] = await Promise.all(args.candidates.map(loadRun));
+  const [arm1, arm2] = args.production ? [await loadProductionRun(args.production)] : await Promise.all(args.candidates.map(loadRun));
   const ref = await loadRun(args.reference);
   const selected = (await prisma.vlmExperimentExampleSelection.findMany({
     where: { experimentId: arm1.experimentId }, orderBy: { selectionOrder: "asc" }, select: { exampleId: true },
@@ -154,6 +194,7 @@ async function main(): Promise<void> {
 
   console.log(`\n## THROUGHPUT — recorded, not gating`);
   for (const r of [arm1, arm2, ref].filter((x): x is LoadedRun => !!x)) {
+    if (r.rows.every((row) => row.durationMs == null)) { console.log(`  ${r.label}: not recorded (production rows carry no durations)`); continue; }
     const t = throughput(r, corpus, r.wallClockMs ?? undefined);
     console.log(`  ${r.label}: ${t.secondsPerExample.toFixed(1)} s per example, ${t.outputTokensPerExample.toFixed(0)} output tokens | ` +
       `wall clock ${t.wallClockMinutes?.toFixed(1) ?? "?"} min for ${t.examples} | corpus pass ${t.hoursPerCorpusSequential.toFixed(1)} h sequential` +

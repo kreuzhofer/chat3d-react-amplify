@@ -1,0 +1,24 @@
+
+
+═══ CANDIDATE: qwen3.8-27b-nvfp4 (thinking off, 3-node pool)
+paired items 578 · zoomed before 16 · zoomed after 17
+
+1. CONFINEMENT — items that went to no follow-up either way: 561
+   moved: 0 (0.0%) — qwen is deterministic as sole tenant; anything but 0 means the revision leaked
+
+2. COVERAGE — zoomed items carrying a deciding-view label: 5
+   a deciding view was sent: 4 (80.0%)
+     BROKEN 8d2ec9e8-3e54-46ff-9075-a34a711d204c#5 fail→pass (truth fail)
+     FIXED  4187966c-35d8-46ef-b318-d339edcbd0f0#5 fail→pass (truth pass)
+     FIXED  d7270e36-4802-4a72-8d63-83429e213ae5#3 uncertain→pass (truth pass)
+
+3. CORRECTNESS — zoomed items with a known truth: n=5 (small; do not over-read)
+   fixed 2 · broken 1 · held 2 · still wrong 0
+
+4. DIRECTION — over the 17 items zoomed either way
+   fail→pass 3 · pass→fail 0
+   resolved (not left uncertain): 16 → 17
+
+5. LABELS CREATED — the follow-up names the view it answered from
+   details naming a view: 17 of 17 (100.0%)
+   which view answered: {"ortho_45":11,"ortho_45_bottom":6}

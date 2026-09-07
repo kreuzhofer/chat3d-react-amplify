@@ -1,0 +1,118 @@
+
+# parts-inventory-v1 on the adjudicated items
+experiment 1668b1c0-4c5b-4c3b-8ea9-633617486186 — 2 runs, variant parts-inventory-v2
+
+95 adjudicated items, 84 with a truth (N excluded: 11)
+
+## candidate: qwen3.8-27b-nvfp4 (thinking off, 3-node pool) (completed)
+
+### the 69 (#57) — 62 graded
+  fixed 14 · broken 15 · held 24 · still wrong 9
+  FIXED   230a3336 i3 fail→pass (truth pass) Does the bottom have a raised stacking/nesting profile (Gridfinity bas
+  FIXED   3069c73d i2 fail→pass (truth pass) Is the case body oriented with its open cavity facing upward?
+  FIXED   4187966c i2 fail→pass (truth pass) Is there a cylindrical pin projecting downward from the center of the 
+  FIXED   4187966c i5 fail→pass (truth pass) Is the pin visually smaller in diameter than the surrounding top plate
+  BROKEN  4890e064 i3 fail→pass (truth fail) Is a pivot pin visible at the axis connecting the two halves?
+  BROKEN  4963f2df i2 fail→pass (truth fail) Is there a central barrel/link assembly connecting the two leaves betw
+  BROKEN  676fd7b2 i1 fail→pass (truth fail) Does the model show exactly two separate parts side by side?
+  BROKEN  676fd7b2 i6 fail→pass (truth fail) Is there a visible gap between the two parts?
+  BROKEN  698b0276 i5 fail→pass (truth fail) Is the interior of the bin hollow and open at the top?
+  BROKEN  8d2ec9e8 i2 fail→pass (truth fail) Is there a raised stacking lip around the top perimeter of the bin?
+  BROKEN  8d2ec9e8 i3 fail→pass (truth fail) Is the footprint 5 units wide and 1 unit deep (roughly 5× longer than 
+  BROKEN  8d2ec9e8 i5 fail→pass (truth fail) Does each compartment have a label ledge or angled front cutout?
+  BROKEN  91288207 i1 fail→pass (truth fail) Is the case a rectangular open-top box (open side facing upward)?
+  FIXED   92977023 i3 fail→pass (truth pass) Is a pivot pin visible at the axis connecting the two halves?
+  BROKEN  92977023 i5 fail→pass (truth fail) Do the two halves form a complete cylinder when mated together?
+  BROKEN  b0fbb05d i2 fail→pass (truth fail) Are there exactly 2 internal dividers creating 3 column compartments?
+  BROKEN  b0fbb05d i3 fail→pass (truth fail) Is there a label slot or scoop on the front face of each of the 3 comp
+  BROKEN  b86a0f72 i2 fail→pass (truth fail) Is the case body oriented with its open cavity facing upward?
+  FIXED   b86a0f72 i3 fail→pass (truth pass) Is the lid placed upside down (flat top face against the ground, rim/l
+  FIXED   bd78cd78 i3 fail→pass (truth pass) Is the strap leaf visibly tapered (wider near the barrel, narrower at 
+  FIXED   c7185bf2 i2 fail→pass (truth pass) Are there exactly 3 cutout slots visible on the walls?
+  FIXED   e49fe4ea i2 fail→pass (truth pass) Is there a cylindrical pin projecting downward from the center of the 
+  FIXED   e49fe4ea i3 fail→pass (truth pass) Does the bottom plate have a single central bore visible on its face?
+  FIXED   efce5923 i3 fail→pass (truth pass) Is there a rectangular cutout on the bottom short-end wall for USB-C?
+  FIXED   efce5923 i5 fail→pass (truth pass) Does the model appear to be a hollow shell/case rather than a solid bl
+  BROKEN  f06eafd6 i5 fail→pass (truth fail) Are the two parts separated by a visible gap on the same flat surface?
+  FIXED   f1f0a16c i1 fail→pass (truth pass) Is the box open on the top (no top face)?
+  FIXED   f1f0a16c i4 fail→pass (truth pass) Does the model appear to have uniform wall thickness on all closed fac
+  BROKEN  f4d6cff1 i3 fail→pass (truth fail) Is the lid a separate flat rectangular piece placed next to the box?
+
+### the 26 (#63) — 22 graded
+  fixed 10 · broken 5 · held 4 · still wrong 3
+  FIXED   6b30228e i2 fail→pass (truth pass) Is the main body open along the full top face (U-channel shape)?
+  FIXED   6c9f8897 i3 fail→pass (truth pass) Bottom of the bowl is open (no solid floor, annular bottom edge only)
+  BROKEN  8d81a4b9 i1 fail→pass (truth fail) The profile outline passes through the point (0, 0) as a sharp cusp — 
+  BROKEN  931f5865 i4 fail→pass (truth fail) Do the pockets appear to sit on the top/outer surface of the torus cro
+  FIXED   9ea7e0ca i1 fail→pass (truth pass) Two completely separate, non-touching solid bodies are present in the 
+  FIXED   9ea7e0ca i2 fail→pass (truth pass) First part is a U-shaped open-top channel with uniform side and bottom
+  FIXED   a1133fbd i1 fail→pass (truth pass) Are there exactly five cylindrical hooks projecting forward from the b
+  FIXED   a1133fbd i2 fail→pass (truth pass) Are the five hooks evenly spaced along the bottom edge?
+  FIXED   a1133fbd i3 fail→pass (truth pass) Are there exactly two mounting holes near the top of the plate?
+  BROKEN  b1a1a823 i1 fail→pass (truth fail) The profile outline passes through the point (0, 0) as a sharp cusp — 
+  BROKEN  c33b466e i2 fail→pass (truth fail) Top face is a flat rectangle with sharp right-angle corners
+  BROKEN  c33b466e i3 fail→pass (truth fail) Bottom face is a flat rectangle with sharp right-angle corners
+  FIXED   d7270e36 i1 fail→pass (truth pass) Is the top of the box fully open (no lid or roof)?
+  FIXED   d7270e36 i2 fail→pass (truth pass) Does the box appear hollow when viewed from above?
+  FIXED   d7270e36 i3 uncertain→pass (truth pass) Do all four sides and the bottom appear to have equal wall thickness?
+
+## reference: Claude Sonnet 4.6 (Anthropic API, thinking off) (completed)
+
+### the 69 (#57) — 62 graded
+  fixed 9 · broken 4 · held 19 · still wrong 30
+  FIXED   239c0c78 i2 fail→pass (truth pass) Are there raised lips/walls on exactly three sides?
+  FIXED   239c0c78 i4 uncertain→pass (truth pass) Are there at least two clip tabs on the fourth edge?
+  FIXED   239c0c78 i5 uncertain→pass (truth pass) Does the overall shape resemble a U-channel cover when viewed from the
+  FIXED   59a6c7e3 i4 uncertain→fail (truth fail) Does each leaf have exactly six countersunk holes along its length?
+  FIXED   59a6c7e3 i5 uncertain→fail (truth fail) Do the knuckles from each leaf interleave (one leaf 4 knuckles, the ot
+  BROKEN  698b0276 i2 pass→fail (truth pass) Is there a stacking lip visible around the top perimeter of the bin?
+  FIXED   71dcf0e4 i2 fail→pass (truth pass) Are there exactly 4 circular holes visible on the panel?
+  BROKEN  aeca37d7 i3 fail→pass (truth fail) Is there a visible raised stacking lip around the top perimeter?
+  BROKEN  aeca37d7 i5 fail→pass (truth fail) Is the overall height roughly equal to the width (i.e., relatively tal
+  FIXED   b0fbb05d i3 pass→fail (truth fail) Is there a label slot or scoop on the front face of each of the 3 comp
+  BROKEN  b86a0f72 i3 pass→fail (truth pass) Is the lid placed upside down (flat top face against the ground, rim/l
+  FIXED   c7185bf2 i4 fail→pass (truth pass) Is the camera ribbon slot visibly wider than the HDMI and USB slots?
+  FIXED   c7557c3a i2 pass→fail (truth fail) Is there a rectangular cutout on one of the short-end walls of the bot
+
+### the 26 (#63) — 22 graded
+  fixed 5 · broken 1 · held 12 · still wrong 4
+  BROKEN  7f1f456f i5 fail→pass (truth fail) Do the bolt holes appear to pass fully through the flange disc?
+  FIXED   8d81a4b9 i1 pass→fail (truth fail) The profile outline passes through the point (0, 0) as a sharp cusp — 
+  FIXED   a8a73230 i3 fail→pass (truth pass) Are the four holes roughly evenly spaced and aligned horizontally on t
+  FIXED   b1a1a823 i1 pass→fail (truth fail) The profile outline passes through the point (0, 0) as a sharp cusp — 
+  FIXED   c33b466e i2 pass→fail (truth fail) Top face is a flat rectangle with sharp right-angle corners
+  FIXED   c33b466e i3 pass→fail (truth fail) Bottom face is a flat rectangle with sharp right-angle corners
+
+## ADR 0004 terms, recomputed on the re-answered items
+
+### the 69 (#57)
+  confirmed false passes  candidate 20 vs reference 19 — FAILS
+  confirmed false fails   candidate 4 vs allowance 30 (reference 15) — holds
+
+### the 26 (#63)
+  confirmed false passes  candidate 7 vs reference 2 — FAILS
+  confirmed false fails   candidate 1 vs allowance 6 (reference 3) — holds
+
+## Cost: every item on the 57 examples, variant vs the stored control
+
+### candidate: qwen3.8-27b-nvfp4 (thinking off, 3-node pool) (completed) vs control qwen3.8-27b-nvfp4 (thinking off, 3-node pool) (completed)
+  paired items 278 (control-only 300)
+  identical 213 (76.6%) · hard pass↔fail flips 64 (23.0%) · uncertain moves 1
+  of the hard flips, 15 are on items no one has adjudicated
+
+### reference: Claude Sonnet 4.6 (Anthropic API, thinking off) (completed) vs control Claude Sonnet 4.6 (Anthropic API, thinking off) (completed)
+  paired items 278 (control-only 670)
+  identical 247 (88.8%) · hard pass↔fail flips 27 (9.7%) · uncertain moves 4
+  of the hard flips, 10 are on items no one has adjudicated
+
+## The inventory itself
+
+### candidate: qwen3.8-27b-nvfp4 (thinking off, 3-node pool) (completed)
+  inventories written 56 of 56 rows read
+  bodyCount histogram {"1":31,"2":18,"3":4,"6":3}
+  examples naming a part ABSENT: 15 · calling a body hollow/open: 51
+
+### reference: Claude Sonnet 4.6 (Anthropic API, thinking off) (completed)
+  inventories written 57 of 57 rows read
+  bodyCount histogram {"1":28,"2":19,"3":5,"4":1,"5":1,"6":3}
+  examples naming a part ABSENT: 8 · calling a body hollow/open: 52

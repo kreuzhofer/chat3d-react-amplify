@@ -69,3 +69,57 @@ npx tsx prototypes/66-parts-inventory/direction66.ts
 ```
 
 Outputs on the branch: `grade66.txt`, `direction66.txt`.
+
+---
+
+# v2 — the inventory as evidence for absence only
+
+Daniel's call after v1. One rule changed, nothing else: the inventory may take an item **away** but never grant
+it; an item passes only on what the views show, and the judge is told in so many words to contradict its own
+inventory when they disagree. Experiment `1668b1c0`, same 57 examples, same judges, sole tenant.
+
+| 278 items | v1 | **v2** | control |
+|---|---|---|---|
+| candidate identical | 75.5% | **76.6%** | floor 0% |
+| candidate fail→pass · pass→fail | 61 · 6 | **60 · 4** | — |
+| candidate pass rate | 82.7% | **83.1%** | 62.6% |
+| reference identical | 86.3% | **88.8%** | floor 1.6–2.9% |
+| reference fail→pass · pass→fail | 12 · 22 | **10 · 17** | — |
+| reference pass rate | 70.1% | **71.2%** | 73.0% |
+
+ADR 0004 recomputed: the 69 — candidate false passes **20 vs the reference's 19, FAILS** (false fails 4, allowance
+30); the 26 — **7 vs 2, FAILS** (false fails 1, allowance 6). Slightly *worse* on the term that matters than v1.
+
+**The rule did not reach the candidate.** Governing what the judge may *do* with the inventory moved 1 item in 278.
+
+## What v2 proves, and how it corrects v1's reading
+
+v1's reading — "the inventory launders a perception error into a premise" — is **wrong**, and v2 is the
+experiment that shows it. On `698b0276`, the bin adjudicated as a solid block, under v2:
+
+> `"openings": "Main bin: hollow, open at the top (visible in top view and 45° down view showing the interior
+> cavity and floor)."`
+> item 5 · **pass** · `"Top view and 45° down view both show the interior cavity of the bin with a visible floor,
+> confirming the bin is hollow and open at the top."`
+
+The item obeys v2 exactly: its evidence names the views, not the inventory. And it is still wrong. The inventory
+and the item are not premise and conclusion — they are **two expressions of one misreading**. Cutting the link
+between them changes nothing because the link was never load-bearing.
+
+What the inventory *does* do to this judge is shift it ~20 points toward pass whatever it is then allowed to do
+with it (v1 +56 net passes, v2 +57). Asking it to take stock of structure primes it to assert structure.
+
+## The verdict
+
+**Not adopted, either version.** The candidate's residual errors are perception on large, plainly visible
+features, and a prompt-side instrument cannot reach perception — #57 concluded this from the error classes; #66
+measures it twice, the second time with the procedural channel removed. The prompt lever for this judge is
+exhausted, and this is the evidence.
+
+The reference moved the other way under both versions — stricter, its confirmed false passes on the 26 falling
+5 → 1 (v1) and 5 → 2 (v2), both named false passes on the missing-lid case flipping to fail. A parts inventory is
+a real lever **for a judge whose errors are about parts that are not there**. Re-making the reference is its own
+ticket (the map: a reference change needs its own self-pair), not this one.
+
+What remains for qualification is a lever that changes what the judge **sees**, not what it is told — which is
+what [#67](https://github.com/kreuzhofer/chat3d-app/issues/67) is: the zoom follow-up's angle pick.

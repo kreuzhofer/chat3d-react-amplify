@@ -14,7 +14,9 @@ async function corpusItems(ids:string[]){const rows=await prisma.workbenchExampl
   const m=new Map<string,A>();for(const r of rows){const l=Array.isArray(r.evalChecklistResults)?r.evalChecklistResults as any[]:[];l.forEach((it,i)=>m.set(`${r.id}#${i+1}`,ans(it?.pass)));}return m;}
 async function main(){
 const ex63=readFileSync(new URL("./ex63.txt", import.meta.url).pathname,"utf8").trim().split("\n");
-const variantRuns=await prisma.experimentRun.findMany({where:{experimentId:"b5fae9a5-ffd5-4819-922b-c26a804775ea"},select:{id:true,modelLabel:true}});
+const experimentId=process.argv[2];
+if(!experimentId) throw new Error("give the variant experiment id");
+const variantRuns=await prisma.experimentRun.findMany({where:{experimentId},select:{id:true,modelLabel:true}});
 for(const vr of variantRuns){
   const isRef=/sonnet/i.test(vr.modelLabel);
   const v=await runItems(vr.id);

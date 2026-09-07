@@ -1,0 +1,10 @@
+
+CANDIDATE qwen3.8-27b-nvfp4 (thinking off, 3-node pool)
+  paired 278 · identical 213 (76.6%)
+  fail→pass 60 · pass→fail 4 · uncertain moves 1
+  pass rate 62.6% → 83.1%  (net +57 passes)
+
+REFERENCE Claude Sonnet 4.6 (Anthropic API, thinking off)
+  paired 278 · identical 247 (88.8%)
+  fail→pass 10 · pass→fail 17 · uncertain moves 4
+  pass rate 73.0% → 71.2%  (net +-5 passes)

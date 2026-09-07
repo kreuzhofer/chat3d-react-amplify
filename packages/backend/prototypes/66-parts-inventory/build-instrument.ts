@@ -45,6 +45,33 @@ Then answer the checklist against this inventory. If an item asks about a part t
 found ABSENT, or about a feature of such a part, the item FAILS — a feature of a part that is
 not in the scene cannot be correct.`;
 
+/**
+ * v2 (Daniel's call after v1's measurement). v1 moved the candidate 24.1% of
+ * items with fail→pass running 61 to 6 and its pass rate 62.6% → 82.7%: it
+ * did not fix perception, it wrote the same misreading down FIRST and then
+ * believed it ("hollow, open at the top" of a body that is a solid block), so
+ * every item about the cavity passed. The reference, whose errors are about
+ * parts that are not there rather than about seeing, moved the other way.
+ *
+ * One change: the inventory may take an item AWAY but never grant it. An item
+ * may cite it for absence, never for presence, and the judge is told in so
+ * many words that it may contradict its own inventory — the escape hatch v1
+ * did not give it.
+ */
+const V2_RULE = `Then answer the checklist. The inventory can only ever take an item AWAY, never grant it:
+
+- If an item asks about a part the inventory found ABSENT, or about a feature of such a part, the
+  item FAILS — a feature of a part that is not in the scene cannot be correct.
+- Otherwise the inventory is NOT evidence. An item passes only on what you can see in the views at
+  that location, named in its "detail" as always. Never cite the inventory to pass an item: having
+  written "hollow", "open" or "present" above does not make a feature correct. If the views at that
+  location do not show it, the inventory was wrong — say so in the detail and answer the item from
+  the views.`;
+
+const V1_RULE = `Then answer the checklist against this inventory. If an item asks about a part the inventory
+found ABSENT, or about a feature of such a part, the item FAILS — a feature of a part that is
+not in the scene cannot be correct.`;
+
 const PRODUCTION_JSON_BLOCK = `Return JSON only:
 {
   "score": <integer 1–10>,
@@ -76,14 +103,15 @@ Return JSON only:
 if (!PRODUCTION_INSTRUMENT_TEMPLATE.includes(PRODUCTION_JSON_BLOCK)) {
   throw new Error("production's JSON block has moved; the variant must be rebuilt against it");
 }
-const variant = PRODUCTION_INSTRUMENT_TEMPLATE.replace(PRODUCTION_JSON_BLOCK, VARIANT_JSON_BLOCK);
-
-const errors = validateInstrumentTemplate(variant);
-if (errors.length > 0) throw new Error(`variant is not a valid instrument: ${errors.join("; ")}`);
+const v1 = PRODUCTION_INSTRUMENT_TEMPLATE.replace(PRODUCTION_JSON_BLOCK, VARIANT_JSON_BLOCK);
+if (!v1.includes(V1_RULE)) throw new Error("v1's rule is not in the built variant");
+const v2 = v1.replace(V1_RULE, V2_RULE);
 
 const here = new URL(".", import.meta.url).pathname;
-writeFileSync(`${here}instrument.txt`, variant);
+for (const [name, text] of [["instrument.txt", v1], ["instrument-v2.txt", v2]] as const) {
+  const errors = validateInstrumentTemplate(text);
+  if (errors.length > 0) throw new Error(`${name} is not a valid instrument: ${errors.join("; ")}`);
+  writeFileSync(`${here}${name}`, text);
+  process.stdout.write(`${name}: ${text.length} chars (production ${PRODUCTION_INSTRUMENT_TEMPLATE.length}, +${text.length - PRODUCTION_INSTRUMENT_TEMPLATE.length})\n`);
+}
 writeFileSync(`${here}instrument.production.txt`, PRODUCTION_INSTRUMENT_TEMPLATE);
-process.stdout.write(
-  `variant written: ${variant.length} chars (production ${PRODUCTION_INSTRUMENT_TEMPLATE.length}, +${variant.length - PRODUCTION_INSTRUMENT_TEMPLATE.length})\n`,
-);

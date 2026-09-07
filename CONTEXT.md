@@ -54,9 +54,17 @@ _Avoid_: production judge (a role assignment, not a status), approved model, tru
 A rating produced under the current Instrument id by a Judge that has not cleared Qualification. Kept and gate-derived as usual, excluded from the fine-tuning filter until its Judge qualifies, then admitted without re-rating. Distinct from Stale, which needs re-rating.
 _Avoid_: untrusted, temporary, draft
 
+**Uncontended serving**:
+The condition under which a Judge's answers reproduce: no replica of its pool handles more than one request at a time for the whole of a run — requests in flight at or below serving replicas. Necessary always; measured sufficient for the qwen judge on our prompts, never a general guarantee. Two things break it — another tenant on the pool, and the pool losing a replica — so it is secured from two sides: Sole tenancy by rule, Serving provenance by record.
+_Avoid_: determinism (a stronger claim than this buys), isolation (implies a separate deployment), quiet hours
+
 **Sole tenancy**:
-The condition under which a Judge's stability is measured and its admitted ratings are produced: nothing but the judge's own calls on its served name, one request in flight per replica. A judge sharing a replica with other traffic is not the judge that qualified — the batch composition changes its arithmetic. On a shared pool it is a rule kept by hand and verified from the usage log after the run, not a property of the deployment.
+The operator-side half of Uncontended serving: while a judge run is on, nothing but the judge's own calls are submitted to its served name. A judge sharing a replica with other traffic is not the judge that qualified — the batch composition changes its arithmetic. It is a rule kept by hand and verified from the usage log after the run; it cannot cover the pool shrinking under the run, which no rule can catch.
 _Avoid_: quiet hours, maintenance window (about people, not the pool), isolation (implies a separate deployment)
+
+**Serving provenance**:
+What a stored evaluation records about the pool that produced it: the judge's published name, the serving replica count, the driver's own concurrency, and the highest per-replica requests in flight seen at the time. Stamped per judge call, so a rating can be checked against Uncontended serving long after the run. Absent on calls taken before it was recorded, which read as unknown rather than as satisfied.
+_Avoid_: pool health, load (about the cluster's wellbeing, not the rating's provenance)
 
 **Fine-tuning filter**:
 The rule that decides which approved workbench rows the training export reads. A row is admitted on one of two grounds: a human decided its status, or a Judge did under the current Instrument id while Qualified under it. Stale and Provisional rows wait outside it; a human's verdict is admitted whatever rating sits beside it, because the verdict is the human's and not derived from that rating.

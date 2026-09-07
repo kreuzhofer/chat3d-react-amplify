@@ -105,7 +105,7 @@ export async function cancelVlmExperiment(experimentId: string): Promise<void> {
 
 interface VlmExpWithRelations {
   id: string;
-  runs: Array<{ id: string; modelId: string; modelLabel: string; runOrder: number; status: string; judgePromptVariantId: string | null; judgePromptTemplate: string | null }>;
+  runs: Array<{ id: string; modelId: string; modelLabel: string; runOrder: number; status: string; judgePromptVariantId: string | null; judgePromptTemplate: string | null; judgeResponseShape: string | null }>;
   vlmExampleSelections: Array<{ exampleId: string; selectionOrder: number }>;
 }
 
@@ -166,6 +166,8 @@ interface RunInfo {
   /** The run's instrument (issue #35); both null = production's. */
   judgePromptVariantId: string | null;
   judgePromptTemplate: string | null;
+  /** The answer shape that instrument asks for (issue #66); null = production's. */
+  judgeResponseShape: string | null;
 }
 
 async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSignal): Promise<void> {
@@ -260,12 +262,22 @@ async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSi
  * The instrument a run judges under: its variant, named by the variant id so
  * the Instrument id reads `<variant>@<hash>`; undefined = production's.
  */
-function runInstrument(run: Pick<RunInfo, "judgePromptVariantId" | "judgePromptTemplate">): JudgeInstrument | undefined {
+function runInstrument(
+  run: Pick<RunInfo, "judgePromptVariantId" | "judgePromptTemplate" | "judgeResponseShape">,
+): JudgeInstrument | undefined {
   if (!run.judgePromptTemplate) return undefined;
   if (!run.judgePromptVariantId) {
     throw new Error("Experiment run carries an instrument template without a variant id");
   }
-  return { name: run.judgePromptVariantId, template: run.judgePromptTemplate };
+  const shape = run.judgeResponseShape;
+  if (shape !== null && shape !== "production" && shape !== "inventory") {
+    throw new Error(`Experiment run carries an unknown judge response shape "${shape}"`);
+  }
+  return {
+    name: run.judgePromptVariantId,
+    template: run.judgePromptTemplate,
+    ...(shape ? { responseShape: shape } : {}),
+  };
 }
 
 async function evaluateExample(

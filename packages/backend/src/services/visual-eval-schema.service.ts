@@ -28,6 +28,28 @@ export interface EvaluationResponse {
   issues: string[];
   suggestions: string[];
   checklist?: Array<{ question: string; pass: boolean | null; detail: string }>;
+  inventory?: PartsInventory;
+}
+
+/**
+ * The answer shapes an instrument may ask for.
+ *
+ * `production` is score + issues + suggestions + checklist. `inventory`
+ * prepends a parts inventory (issue #66): under guided decoding the schema's
+ * key order is the generation order, so an inventory declared before the
+ * checklist is written first and every item is answered with it already in
+ * the judge's own context. That is the whole mechanism — the judge takes
+ * stock of what is in the scene before it is asked whether a feature of it
+ * is correct.
+ */
+export type ResponseShape = "production" | "inventory";
+
+/** The parts inventory an `inventory`-shaped instrument answers first (issue #66). */
+export interface PartsInventory {
+  bodyCount: number;
+  bodies: string;
+  partsNamed: string;
+  openings: string;
 }
 
 /** The zoom follow-up's answer to one uncertain item (issue #56). */
@@ -43,18 +65,45 @@ export const FOLLOW_UP_OUTPUT_NAME = "follow_up";
 const SCORE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 /**
+ * The inventory's own shape: a body count that can be checked against the
+ * images without reading prose, and three sentences of evidence. No numeric
+ * range on the count — the schema sticks to what every vLLM structured-output
+ * backend accepts.
+ */
+const PARTS_INVENTORY_SCHEMA: JSONSchema7 = {
+  type: "object",
+  properties: {
+    bodyCount: { type: "integer" },
+    bodies: { type: "string" },
+    partsNamed: { type: "string" },
+    openings: { type: "string" },
+  },
+  required: ["bodyCount", "bodies", "partsNamed", "openings"],
+  additionalProperties: false,
+};
+
+/**
  * The evaluation answer as a JSON schema. `checklistCount` is the number of
  * non-blank questions the judge was asked: the checklist array is pinned to
  * exactly that length so reconciliation is positional, never fuzzy. With no
  * question asked there is no checklist property at all.
  */
-export function buildEvaluationResponseSchema(checklistCount: number): JSONSchema7 {
-  const properties: Record<string, JSONSchema7> = {
+export function buildEvaluationResponseSchema(
+  checklistCount: number,
+  shape: ResponseShape = "production",
+): JSONSchema7 {
+  const properties: Record<string, JSONSchema7> = {};
+  // Declared first on purpose: the grammar emits keys in this order, so the
+  // inventory is written before any item is answered (issue #66).
+  if (shape === "inventory") properties.inventory = PARTS_INVENTORY_SCHEMA;
+  Object.assign(properties, {
     score: { type: "integer", enum: SCORE_VALUES },
     issues: { type: "array", items: { type: "string" } },
     suggestions: { type: "array", items: { type: "string" } },
-  };
-  const required = ["score", "issues", "suggestions"];
+  } satisfies Record<string, JSONSchema7>);
+  const required = shape === "inventory"
+    ? ["inventory", "score", "issues", "suggestions"]
+    : ["score", "issues", "suggestions"];
 
   if (checklistCount > 0) {
     properties.checklist = {

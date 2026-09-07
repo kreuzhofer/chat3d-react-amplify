@@ -68,7 +68,14 @@ one request per replica that cannot co-batch; `gateway-poll.py` (prototypes/59-o
   Sonnet's errors: five false passes by leniency on wrong models (a block with all vertical edges filleted ×2, a box
   with the whole top perimeter rounded, pockets on the wrong side of a torus, a tooth wider at the tip) and three
   false fails, two of them a zoom to an angle that could not show the feature (an edge-on torus, a cap's closed top).
-- **Five items decide the term:** the key holder's three (frame-dependent wording; N would make them drop out → 9 vs 6),
+- **Daniel's verdicts (2026-09-07, `adjudicated63.json`, read from the page's store):** all 26; agrees with the third
+  opinion on 19, overrules 7 (both paddle tips to C — not a true cusp; the XIAO standoffs to C; the sphere-corner box's
+  sides to R; the gear sketch's three items to N — "orientation is the culprit", and two tooth-like parts, so both judges
+  wrong; the L-profile N — "an L profile has 8 faces by definition"). On the 25 hard flips: **batch false passes 2 vs
+  Sonnet 5 — holds; batch false fails 10 vs Sonnet 4, allowance 8 — fails**, by two items; 4 N. **The qualification is
+  not confirmed:** the pair is revoked in `visual-eval-qualified-judges.ts` (its ratings Provisional again, the export's
+  admitted 2,114 → 0) until the judge re-qualifies under the next instrument revision (#66, then #67).
+- **Five items decided the term as read (before the verdicts):** the key holder's three (frame-dependent wording; N would make them drop out → 9 vs 6),
   the gear sketch's arc (a straight outer edge; low confidence) and the L-profile's face count (N as read; C would
   raise Sonnet's false fails). Daniel's verdicts land in the page's store: *The Spot Check*
   (https://claude.ai/code/artifact/7f7f7f9b-f3f5-45aa-a179-962d6d041f1d), collection `verdicts`.

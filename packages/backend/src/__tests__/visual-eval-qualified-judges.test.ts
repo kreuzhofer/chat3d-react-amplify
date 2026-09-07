@@ -9,8 +9,8 @@ import { describe, it, expect } from "vitest";
 import { QUALIFIED_JUDGES } from "../services/visual-eval-qualified-judges.js";
 
 describe("QUALIFIED_JUDGES", () => {
-  it("records qwen3.8-27b-nvfp4 (thinking off) under production@22e0f10b0505 — qualified on the 125 (#57), provisional until #63", () => {
-    expect(QUALIFIED_JUDGES).toContainEqual(expect.objectContaining({
+  it("no longer records qwen3.8-27b-nvfp4 (thinking off) under production@22e0f10b0505 — qualified on the 125 (#57), revoked by the spot check (#63)", () => {
+    expect(QUALIFIED_JUDGES).not.toContainEqual(expect.objectContaining({
       model: "vllm-dgx-14/qwen3.8-27b-nvfp4",
       thinkingEffort: "off",
       instrumentId: "production@22e0f10b0505",
@@ -18,7 +18,6 @@ describe("QUALIFIED_JUDGES", () => {
   });
 
   it("names every judge as stamped, under a well-formed instrument id, with its qualification run and adjudication sheet linked", () => {
-    expect(QUALIFIED_JUDGES.length).toBeGreaterThan(0);
     for (const judge of QUALIFIED_JUDGES) {
       expect(judge.model).toMatch(/^[^\s/]+\/\S+$/);
       expect(judge.thinkingEffort).toMatch(/^(off|low|medium|high|max)$/);

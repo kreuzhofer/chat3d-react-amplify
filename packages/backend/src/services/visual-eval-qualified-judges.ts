@@ -30,20 +30,18 @@ export interface QualifiedJudge {
 }
 
 export const QUALIFIED_JUDGES: readonly QualifiedJudge[] = [
-  {
-    // Qualified on the 125 (issue #57, 2026-09-06); provisional until the
-    // first re-rating batch's spot check (issue #63). Model row 98d284fe
-    // "qwen3.8-27b-nvfp4 (thinking off, 3-node pool)".
-    model: "vllm-dgx-14/qwen3.8-27b-nvfp4",
-    thinkingEffort: "off",
-    instrumentId: "production@22e0f10b0505",
-    qualifiedOn: "2026-09-06",
-    evidence: [
-      // The screen: completeness and stability PASS as the pool's sole tenant (runs 62b4fa58, 043c80fd).
-      "https://github.com/kreuzhofer/chat3d-app/issues/61#issuecomment-5559823696",
-      // The adjudication of the 69 disagreements against the reference (run 6f6bb5c0): false passes 5 vs 19, false fails 18 vs 16.
-      "https://github.com/kreuzhofer/chat3d-app/issues/57#issuecomment-5560474019",
-      "packages/backend/prototypes/57-adjudication/",
-    ],
-  },
+  // No judge is qualified under production@22e0f10b0505.
+  //
+  // qwen3.8-27b-nvfp4 (thinking off; model row 98d284fe, the pooled
+  // served name) qualified on the 125 on 2026-09-06 (issue #57: false
+  // passes 5 vs the reference's 19, false fails 18 vs 16) and was
+  // REVOKED on 2026-09-07 by the first re-rating batch's spot check
+  // (issue #63, ADR 0004): on 125 sampled corpus rows against the
+  // reference once under the same id, Daniel's adjudication of the 25
+  // hard flips gave batch false passes 2 vs 5 (holds) and batch false
+  // fails 10 vs 4, allowance 8 (fails). Its ratings are Provisional
+  // again — kept, gate-derived, outside the training export — until it
+  // re-qualifies under the next instrument revision.
+  //   https://github.com/kreuzhofer/chat3d-app/issues/63
+  //   packages/backend/prototypes/63-spot-check/
 ];

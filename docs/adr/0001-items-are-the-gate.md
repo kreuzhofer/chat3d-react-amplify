@@ -17,6 +17,7 @@ The visual judge emits a 0–10 score and answers a checklist. The approval gate
 
 - Uncertain triggers a zoom follow-up; still uncertain afterwards, the item fails.
 - Fewer than three items: the example is not gate-eligible and stays pending (292 examples, 21%, had one-item checklists; 251 were approved on that single answer).
+  - *Amended 2026-09-08 (#44):* the zero-item case landed first, on its own — with no stored items there is no verdict to derive, whether the prompt asked nothing, the judge did not answer, or the answers were lost, so the row stays pending; before this the gate approved such rows on score alone. A failed render is likewise never gate-eligible, and every caller now says whether its render succeeded. The one-to-two-item rule and the gate version stamp follow with the gate itself (#88).
 - Code review answers the code-routed items as pass/fail rather than contributing a blended score.
 - Any failed code assertion rejects, unconditionally, outside the item logic.
 - `issues` and `suggestions` stay as diagnostics for the fix loop; an issue matching no item is logged as a coverage signal. Nothing is optional: a badly phrased criterion is fixed in coverage, not routed around in the gate.

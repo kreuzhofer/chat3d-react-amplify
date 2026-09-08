@@ -98,6 +98,10 @@ _Avoid_: check, question, criterion (the source, not the question)
 The rule that turns Checklist item answers into a Verdict for an example. Items are the unit: every item must pass, across whichever evaluators answered them. A judge's emitted score is never the gate; at most a temporary backstop beside it.
 _Avoid_: threshold, auto-approve, scoring
 
+**Gate-eligible**:
+An example the Gate can decide at all: its render succeeded and it holds the stored Checklist item answers the rule needs. An example that is not gate-eligible has no Verdict to derive and stays pending — it is never approved because the check could not be performed, and never rejected for it either.
+_Avoid_: skipped (implies the gate ran and stood aside), no-gate, bypass
+
 **Verdict**:
 The Gate's decision for an example: approved, pending, or rejected. A verdict is derived, never emitted by a judge, and is re-derivable whenever the gate rule or the item answers change.
 _Avoid_: approval status, rating, score

@@ -127,7 +127,8 @@ export async function reEvaluateExample(exampleId: string): Promise<ReEvalResult
   const mergedIssues = [...evalResult.vlmIssues, ...evalResult.codeIssues];
   const approved = evalResult.assertionsFailed
     ? false
-    : shouldAutoApprove(score, autoApproveThreshold, evalResult.checklistResults);
+    // The render was checked above: a row that is not `success` never reaches here.
+    : shouldAutoApprove(score, autoApproveThreshold, evalResult.checklistResults, true);
 
   if (!approved && score !== null && score >= autoApproveThreshold) {
     const clResults = evalResult.checklistResults ?? [];
@@ -139,6 +140,7 @@ export async function reEvaluateExample(exampleId: string): Promise<ReEvalResult
       assertionsFailed: evalResult.assertionsFailed,
       checklistCount: clResults.length,
       checklistPassRate: clPassRate,
+      checklistState: evalResult.evalChecklistState ?? null,
       checklistFails: clResults.filter((r) => !r.pass).map((r) => r.question?.slice(0, 80)),
     }, "high-scoring example NOT auto-approved — debugging approval gate");
   }

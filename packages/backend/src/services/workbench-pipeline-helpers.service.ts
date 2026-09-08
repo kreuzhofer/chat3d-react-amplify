@@ -88,15 +88,25 @@ export async function resolveCodegenModel(): Promise<{ model: any; label: string
 
 // ── Approval logic ───────────────────────────────────────────────────
 
+/**
+ * The gate's verdict from its inputs (issue #44, ADR 0001).
+ *
+ * A gate that could not be performed is not a gate that passed: with no
+ * stored items — the prompt asked nothing, the judge did not answer, or the
+ * answers were lost — there is no verdict to derive, and the row stays
+ * pending. `renderSuccess` is required rather than optional because a guard
+ * on a field the caller may omit is not a guard; every caller knows whether
+ * its render succeeded.
+ */
 export function shouldAutoApprove(
   score: number | null,
   threshold: number,
-  checklistResults?: Array<{ pass: boolean | null }> | null,
-  renderSuccess?: boolean,
+  checklistResults: Array<{ pass: boolean | null }> | null | undefined,
+  renderSuccess: boolean,
 ): boolean {
-  if (renderSuccess === false) return false;
+  if (!renderSuccess) return false;
   if (score === null || score < threshold) return false;
-  if (!checklistResults || checklistResults.length === 0) return true;
+  if (!checklistResults || checklistResults.length === 0) return false;
   // Uncertain (null) counts as not-passing for approval purposes
   const passRate = checklistResults.filter(r => r.pass === true).length / checklistResults.length;
   // When both evaluators strongly agree (composite ≥ threshold + 1.5),

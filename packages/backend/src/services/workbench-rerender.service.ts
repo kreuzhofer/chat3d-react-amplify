@@ -165,7 +165,8 @@ export async function reRenderForExample(
     ? false
     : evalResult?.assertionsFailed
       ? false
-      : shouldAutoApprove(score, rrAutoApprove, evalResult?.checklistResults);
+      // The render error paths returned above; this is the success path.
+      : shouldAutoApprove(score, rrAutoApprove, evalResult?.checklistResults, true);
   if (screenshotFailed) {
     logger.warn({ exampleId }, "screenshots failed, VLM eval skipped — blocking auto-approval");
   }

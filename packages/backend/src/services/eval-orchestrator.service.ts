@@ -426,6 +426,17 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
         }
       }
 
+      // The gate has no inputs if a real checklist came back unanswered. Under
+      // guided JSON on vLLM this cannot happen, so an occurrence is a signal
+      // (a judge on another path omitting the block, or a parse loss); the row
+      // stays pending either way (issue #44).
+      if (evalChecklistState === "real" && (!checklistResults || checklistResults.length === 0)) {
+        logger.warn(
+          { vlmModel, vlmInstrumentId, checklistState: evalChecklistState, asked: effectiveChecklist.length },
+          "judge was asked a checklist and returned no items — the approval gate has no inputs",
+        );
+      }
+
       {
         let vlmCost = 0;
         try {

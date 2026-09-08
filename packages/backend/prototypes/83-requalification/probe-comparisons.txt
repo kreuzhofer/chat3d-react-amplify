@@ -1,4 +1,8 @@
+# Issue #86 replica probe — all comparisons (40 examples, 136 items, N=1, pinned at :8000, gateway bypassed)
+# pair | items | same verdict | hard flips | identical detail
 02a vs 02b|136|136|0|136
-ERROR:  cannot extract elements from a scalar
 02a vs 04|136|126|10|5
-ERROR:  cannot extract elements from a scalar
+01 vs 02c|136|129|7|12
+02c vs 02d|136|136|0|136
+01b vs 02c|136|129|7|12
+01 vs 01b|136|136|0|136

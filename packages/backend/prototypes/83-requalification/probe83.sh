@@ -17,12 +17,12 @@ case "$1" in
 arm)
   NAME=$2
   case "$NAME" in
-    02a|02b|02c) MODEL=e581e03d-7cb7-49b3-887c-7a81107609fa; NODE=spark-02 ;;
+    02a|02b|02c|02d) MODEL=e581e03d-7cb7-49b3-887c-7a81107609fa; NODE=spark-02 ;;
     03)      MODEL=25d01f5a-34e3-4aef-bbde-b00be1b029a4; NODE=spark-03 ;;
     04)      MODEL=c7bd148d-f786-4b4d-bdb2-21fb040d2658; NODE=spark-04 ;;
     # Issue #86 stage 2: spark-01 publishes a DISTINCT name (qwen38-nvfp4-cachetest) so the
     # test deployment does not join the production pool. Same recipe, same TP, shared autotune cache.
-    01)      MODEL=6b3bb6a6-b7c7-428c-b97e-b6d6e12d1271; NODE=spark-01-cachetest ;;
+    01|01b)  MODEL=6b3bb6a6-b7c7-428c-b97e-b6d6e12d1271; NODE=spark-01-cachetest ;;
     *) echo "arm must be 01 | 02a | 02b | 02c | 03 | 04"; exit 1 ;;
   esac
   BODY=$(python3 -c "

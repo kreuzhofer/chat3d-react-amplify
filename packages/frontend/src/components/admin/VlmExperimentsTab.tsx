@@ -148,7 +148,7 @@ export function VlmExperimentsTab({ token, selectedExperimentId }: Props) {
                     <Badge variant={STATUS_COLORS[exp.status] ?? "outline"}>{exp.status}</Badge>
                   </td>
                   <td className="whitespace-nowrap p-2">
-                    {exp.status !== "running" && (exp.status === "created" || exp.runs.some((r) => r.status === "pending")) && (
+                    {exp.status !== "running" && (exp.status === "created" || exp.runs.some((r) => r.status === "pending" || r.status === "halted")) && (
                       <Button size="sm" variant="default" onClick={() => handleStart(exp.id)} className="mr-1">
                         {exp.status === "created" ? "Start" : "Continue"}
                       </Button>
@@ -156,7 +156,7 @@ export function VlmExperimentsTab({ token, selectedExperimentId }: Props) {
                     {exp.status === "running" && (
                       <Button size="sm" variant="outline" onClick={() => handleCancel(exp.id)} className="mr-1">Cancel</Button>
                     )}
-                    {["completed", "failed", "cancelled"].includes(exp.status) && (
+                    {["completed", "failed", "cancelled", "halted"].includes(exp.status) && (
                       <Button size="sm" variant="outline" onClick={() => handleRerun(exp.id)} className="mr-1">Re-run</Button>
                     )}
                     {exp.status !== "running" && (

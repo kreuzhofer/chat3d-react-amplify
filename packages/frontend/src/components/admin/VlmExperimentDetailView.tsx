@@ -197,7 +197,7 @@ function VlmExperimentHeader({ experiment, status, token, onRefresh, setError, o
   const canEdit = experiment.status !== "running";
   const canStart = experiment.status === "created";
   const canCancel = experiment.status === "running";
-  const canRerun = ["completed", "failed", "cancelled"].includes(experiment.status);
+  const canRerun = ["completed", "failed", "cancelled", "halted"].includes(experiment.status);
   const canDelete = experiment.status !== "running";
 
   return (

@@ -20,6 +20,7 @@
  * Production rows carry no durations, so throughput is not reported.
  */
 import { writeFileSync } from "node:fs";
+import { pairRefusal } from "../src/services/serving-gate.service.js";
 import { prisma } from "../src/db/prisma.js";
 import { getInstrumentStatus } from "../src/services/workbench-instrument.service.js";
 import {
@@ -63,10 +64,17 @@ interface LoadedRun extends ScreenRun { experimentId: string; wallClockMs: numbe
 async function loadRun(runId: string): Promise<LoadedRun> {
   const run = await prisma.experimentRun.findUnique({
     where: { id: runId },
-    select: { id: true, modelLabel: true, experimentId: true, startedAt: true, completedAt: true, status: true },
+    select: {
+      id: true, modelLabel: true, experimentId: true, startedAt: true, completedAt: true, status: true,
+      servingViolation: true,
+    },
   });
   if (!run) throw new Error(`Run ${runId} not found`);
   if (run.status !== "completed") throw new Error(`Run ${runId} is ${run.status}, not completed`);
+  // The screen decides qualification, so it is the last place a marked run
+  // may slip into a comparison (ADR 0006).
+  const refusal = pairRefusal(run);
+  if (refusal) throw new Error(`Run ${runId} — ${refusal}`);
   const results = await prisma.vlmExperimentResult.findMany({
     where: { runId },
     select: {

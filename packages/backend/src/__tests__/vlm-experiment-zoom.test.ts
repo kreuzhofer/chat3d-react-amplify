@@ -15,7 +15,7 @@ vi.mock("../services/visual-eval-zoom.service.js", async (orig) => ({
   runZoomFollowUp: (...args: unknown[]) => runZoomFollowUp(...args),
 }));
 
-import { applyZoomFollowUp, buildExperimentEvalInput } from "../services/vlm-experiment-execution.service.js";
+import { applyZoomFollowUp, buildExperimentEvalInput } from "../services/vlm-experiment-evaluate.service.js";
 import type { EvaluationResult, EvaluateModelInput } from "../services/visual-eval.service.js";
 import type { LlmModelConfig } from "../services/llm-config.service.js";
 

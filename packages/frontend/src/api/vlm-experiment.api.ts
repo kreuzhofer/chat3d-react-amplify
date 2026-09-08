@@ -95,6 +95,10 @@ export interface VlmRunMetrics {
   totalPromptTokens: number;
   totalCompletionTokens: number;
   avgDurationMs: number | null;
+  /** Why the serving gate halted this run (ADR 0006); null = the condition held. */
+  servingViolation: string | null;
+  /** Dispatches the gate held for headroom — throughput that degraded quietly. */
+  servingBackoffs: number;
 }
 
 export interface VlmExampleComparisonRun {
@@ -126,6 +130,8 @@ export interface InterRaterPair {
   meanAbsDifference: number | null;
   agreementCount: number;
   totalPaired: number;
+  /** Why this pair carries no numbers: a run the serving gate marked (ADR 0006). */
+  refused: string | null;
 }
 
 export interface PreviewExample {

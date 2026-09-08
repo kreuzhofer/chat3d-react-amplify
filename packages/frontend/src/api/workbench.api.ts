@@ -124,7 +124,7 @@ export interface BatchJobSummary {
   type: JobType;
   categoryId: string;
   categoryName: string;
-  status: "running" | "completed" | "failed" | "cancelled";
+  status: "running" | "completed" | "failed" | "cancelled" | "halted";
   total: number;
   completed: number;
   failed: number;
@@ -135,6 +135,10 @@ export interface BatchJobSummary {
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
+  /** Dispatches the serving gate held for headroom (ADR 0006). */
+  servingBackoffs?: number;
+  /** Why the serving gate stopped the batch, or null if it never did. */
+  servingHalt?: string | null;
 }
 
 export interface CleanupPreviewExample {

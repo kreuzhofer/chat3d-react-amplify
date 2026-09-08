@@ -11,7 +11,7 @@
  * criteria shape that the affected corpus actually holds.
  */
 import { describe, it, expect } from "vitest";
-import { buildExperimentEvalInput } from "../services/vlm-experiment-execution.service.js";
+import { buildExperimentEvalInput } from "../services/vlm-experiment-evaluate.service.js";
 
 const images = [{ angle: "front", base64: "AAA" }];
 

@@ -39,6 +39,9 @@ export function VlmInterRaterTable({ pairs }: Props) {
               <tr key={i} className="border-b border-[hsl(var(--border)_/_0.4)]">
                 <td className="p-2 text-[hsl(var(--foreground))]">{pair.runA.label.split("/").pop()}</td>
                 <td className="p-2 text-[hsl(var(--foreground))]">{pair.runB.label.split("/").pop()}</td>
+                {pair.refused ? (
+                  <td className="p-2 text-[hsl(var(--muted-foreground))]" colSpan={4}>{pair.refused}</td>
+                ) : (<>
                 <td className={`p-2 text-right font-mono font-medium ${corrBgColor(pair.spearmanCorrelation)}`}>
                   {pair.spearmanCorrelation != null ? pair.spearmanCorrelation.toFixed(3) : "—"}
                 </td>
@@ -51,6 +54,7 @@ export function VlmInterRaterTable({ pairs }: Props) {
                     : "—"}
                 </td>
                 <td className="p-2 text-right text-[hsl(var(--muted-foreground))]">{pair.totalPaired}</td>
+                </>)}
               </tr>
             ))}
           </tbody>

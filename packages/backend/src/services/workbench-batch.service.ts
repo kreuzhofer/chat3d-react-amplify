@@ -17,6 +17,7 @@ import { cleanupExamplesForPrompt, type CleanupPreview } from "./workbench-examp
 import { createLogger } from "../utils/logger.js";
 import { runWithConcurrency } from "../utils/worker-pool.js";
 import { runWithUsageContext } from "./usage-tracking.service.js";
+import { ServingHaltError, type ServingGate } from "./serving-gate.service.js";
 import { sseService } from "./sse.service.js";
 
 const logger = createLogger("workbench-batch");
@@ -30,7 +31,7 @@ export interface BatchJob {
   type: JobType;
   categoryId: string;
   categoryName: string;
-  status: "running" | "completed" | "failed" | "cancelled";
+  status: "running" | "completed" | "failed" | "cancelled" | "halted";
   total: number;
   completed: number;
   failed: number;
@@ -45,6 +46,13 @@ export interface BatchJob {
   finishedAt: string | null;
   /** Rows in flight at once; set by the re-evaluation batches, one otherwise (#63). */
   concurrency?: number;
+  /**
+   * Dispatches the serving gate held for headroom (ADR 0006). Throughput can
+   * degrade quietly under back-off, so the count is reported, not only logged.
+   */
+  servingBackoffs?: number;
+  /** Why the serving gate stopped the batch, or null if it never did. */
+  servingHalt?: string | null;
   /** Prompt IDs still pending processing (batch jobs only). */
   pendingPromptIds: Set<string>;
   /** Admin user ID for SSE progress events. */
@@ -82,6 +90,10 @@ export interface BatchJobSummary {
   createdAt: string;
   finishedAt: string | null;
   concurrency?: number;
+  /** Dispatches the serving gate held for headroom (ADR 0006). */
+  servingBackoffs?: number;
+  /** Why the serving gate stopped the batch, or null if it never did. */
+  servingHalt?: string | null;
 }
 
 // ── In-memory job store ──────────────────────────────────────────────
@@ -611,6 +623,8 @@ export function toSummary(job: BatchJob): BatchJobSummary {
     createdAt: job.createdAt,
     finishedAt: job.finishedAt,
     concurrency: job.concurrency,
+    servingBackoffs: job.servingBackoffs,
+    servingHalt: job.servingHalt ?? null,
   };
 }
 
@@ -958,6 +972,7 @@ export async function runBatchReEvaluate(
   job: BatchJob,
   examples: Array<{ id: string; promptId: string; promptRef: { prompt: string } }>,
   concurrency = 1,
+  gate?: ServingGate,
 ): Promise<void> {
   const { reEvaluateExample } = await import("./workbench-reeval.service.js");
 
@@ -966,7 +981,29 @@ export async function runBatchReEvaluate(
   // context merges over it on the way down.
   await runWithUsageContext({ driverConcurrency: concurrency }, () =>
   runWithConcurrency(examples, concurrency, async (example) => {
-    if (job.status === "cancelled") return;
+    if (job.status !== "running") return;
+
+    // The serving condition, before the dispatch rather than after it (ADR
+    // 0006). A rating taken under a violated condition would be an untrusted
+    // assertion about the corpus, so it is not taken at all: the row stays
+    // Stale and the resumed batch re-rates it once the pool is fixed.
+    if (gate) {
+      try {
+        await gate.admit();
+      } catch (err) {
+        if (!(err instanceof ServingHaltError)) throw err;
+        job.status = "halted";
+        job.servingHalt = err.reason;
+        job.servingBackoffs = gate.backoffs;
+        job.abortController.abort();
+        logger.error(
+          { jobId: job.jobId, reason: err.reason, completed: job.completed, remaining: job.total - job.completed },
+          "serving condition violated — batch halted, remaining rows stay Stale",
+        );
+        return;
+      }
+      job.servingBackoffs = gate.backoffs;
+    }
 
     job.currentPromptId = example.promptId;
     job.currentPromptText = example.promptRef.prompt;
@@ -1006,7 +1043,10 @@ export async function runBatchReEvaluate(
   job.finishedAt = new Date().toISOString();
 
   logger.info(
-    { jobId: job.jobId, status: job.status, completed: job.completed, failed: job.failed, concurrency },
+    {
+      jobId: job.jobId, status: job.status, completed: job.completed, failed: job.failed,
+      concurrency, servingBackoffs: job.servingBackoffs ?? 0, servingHalt: job.servingHalt ?? null,
+    },
     "batch re-evaluate finished",
   );
 }

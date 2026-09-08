@@ -6,7 +6,7 @@
  * can be re-run on (the eight views stored) and whose verdict the judge
  * derived; it never overturns a human's decision.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const CURRENT = "production@0123456789ab";
 const { count, findMany, runBatchReEvaluate, jobs } = vi.hoisted(() => ({
@@ -17,6 +17,9 @@ vi.mock("../services/visual-eval-instrument-id.service.js", () => ({ currentInst
 vi.mock("../services/visual-eval-qualified-judges.js", () => ({
   QUALIFIED_JUDGES: [{ model: "vllm-x/qwen", thinkingEffort: "off", instrumentId: "production@0123456789ab", qualifiedOn: "2026-09-06", evidence: ["run", "sheet"] }],
 }));
+vi.mock("../services/llm-config.service.js", () => ({
+  getModelForPurpose: vi.fn(async () => ({ endpointUrl: "http://192.168.44.14:4000/v1/", modelName: "qwen3.8-27b-nvfp4", label: "vllm-dgx-14/qwen3.8-27b-nvfp4" })),
+}));
 vi.mock("../services/workbench-batch.service.js", () => ({
   jobs,
   generateJobId: (t: string) => `${t}-1`,
@@ -25,8 +28,29 @@ vi.mock("../services/workbench-batch.service.js", () => ({
 }));
 
 import { staleRatingWhere, getInstrumentStatus, startBatchReRateStale } from "../services/workbench-instrument.service.js";
+import { resetServingSnapshotCache } from "../services/serving-provenance.service.js";
 
-beforeEach(() => { count.mockReset(); findMany.mockReset(); runBatchReEvaluate.mockReset(); jobs.clear(); });
+/** The judge's pool as the gateway reports it, with `serving` replicas up. */
+function pool(serving: number, inflight = 0) {
+  return {
+    pools: [{
+      publishedName: "qwen3.8-27b-nvfp4",
+      servingCount: serving,
+      members: Array.from({ length: serving }, (_, i) => ({ node: `dgx-spark-0${i + 2}`, inflight, serving: true })),
+    }],
+  };
+}
+
+function servePool(serving: number, inflight = 0) {
+  resetServingSnapshotCache();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => pool(serving, inflight) }));
+}
+
+beforeEach(() => {
+  count.mockReset(); findMany.mockReset(); runBatchReEvaluate.mockReset(); jobs.clear();
+  servePool(3);
+});
+afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("staleRatingWhere", () => {
   it("selects rated production rows under another id or under none", () => {
@@ -72,20 +96,21 @@ describe("startBatchReRateStale", () => {
     expect(args.take).toBe(40);
     expect(args.orderBy[0]).toEqual({ updatedAt: "asc" });
     expect(summary).toMatchObject({ jobId: "batch-re-rate-stale-1", type: "batch-re-rate-stale", total: 1, status: "running", concurrency: 1 });
-    expect(runBatchReEvaluate).toHaveBeenCalledWith(expect.objectContaining({ jobId: "batch-re-rate-stale-1" }), [row], 1);
+    expect(runBatchReEvaluate).toHaveBeenCalledWith(expect.objectContaining({ jobId: "batch-re-rate-stale-1" }), [row], 1, expect.anything());
   });
 
   it("runs one row at a time unless told otherwise, and clamps the concurrency to the pool's range", async () => {
     findMany.mockResolvedValue([row]);
     const summary = await startBatchReRateStale({ concurrency: 3 });
     expect(summary).toMatchObject({ concurrency: 3 });
-    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.objectContaining({ concurrency: 3 }), [row], 3);
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.objectContaining({ concurrency: 3 }), [row], 3, expect.anything());
     jobs.clear();
     await startBatchReRateStale({ concurrency: 0 });
-    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 1);
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 1, expect.anything());
     jobs.clear();
+    // Eight is the setting's ceiling; three replicas are what is actually there.
     await startBatchReRateStale({ concurrency: 99 });
-    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 8);
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 3, expect.anything());
   });
 
   it("defaults and clamps the limit", async () => {
@@ -103,5 +128,38 @@ describe("startBatchReRateStale", () => {
     findMany.mockResolvedValue([row]);
     await startBatchReRateStale();
     await expect(startBatchReRateStale()).rejects.toMatchObject({ statusCode: 409 });
+  });
+});
+
+describe("the batch's pre-flight (ADR 0006)", () => {
+  const row = { id: "ex1", promptId: "p1", promptRef: { prompt: "a bracket" } };
+
+  it("runs at the replica count when the operator asked for more", async () => {
+    // 2026-09-07: the pool fell to two while the setting still said three.
+    servePool(2);
+    findMany.mockResolvedValue([row]);
+
+    const summary = await startBatchReRateStale({ concurrency: 3 });
+
+    expect(summary).toMatchObject({ concurrency: 2 });
+    expect(runBatchReEvaluate).toHaveBeenLastCalledWith(expect.anything(), [row], 2, expect.anything());
+  });
+
+  it("refuses to start an overnight batch against an empty pool", async () => {
+    servePool(0);
+    findMany.mockResolvedValue([row]);
+
+    await expect(startBatchReRateStale({ concurrency: 3 })).rejects.toMatchObject({ statusCode: 503 });
+  });
+
+  it("runs at the configured concurrency when the judge has no gateway to ask", async () => {
+    // An Anthropic judge: unknown R, recorded as unknown, not clamped to one.
+    const { getModelForPurpose } = await import("../services/llm-config.service.js");
+    vi.mocked(getModelForPurpose).mockResolvedValueOnce({ endpointUrl: null, modelName: "claude-sonnet-4-6" } as never);
+    findMany.mockResolvedValue([row]);
+
+    const summary = await startBatchReRateStale({ concurrency: 3 });
+
+    expect(summary).toMatchObject({ concurrency: 3 });
   });
 });

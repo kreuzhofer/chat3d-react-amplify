@@ -8,6 +8,7 @@
 import { prisma } from "../db/prisma.js";
 import { ExperimentError } from "./experiment.service.js";
 import { createLogger } from "../utils/logger.js";
+import { pairRefusal } from "./serving-gate.service.js";
 
 const logger = createLogger("vlm-experiment-compare");
 
@@ -40,6 +41,10 @@ export interface VlmRunMetrics {
   totalPromptTokens: number;
   totalCompletionTokens: number;
   avgDurationMs: number | null;
+  /** Why the serving gate halted this run (ADR 0006); null = the condition held. */
+  servingViolation: string | null;
+  /** Dispatches the gate held for headroom — throughput that degraded quietly. */
+  servingBackoffs: number;
 }
 
 export interface VlmExampleComparison {
@@ -69,6 +74,11 @@ export interface InterRaterPair {
   meanAbsDifference: number | null;
   agreementCount: number;
   totalPaired: number;
+  /**
+   * Why this pair carries no numbers (ADR 0006), or null when it does. A run
+   * the serving gate marked is evidence about the pool, never a term in a pair.
+   */
+  refused: string | null;
 }
 
 // ── Spearman rank correlation ───────────────────────────────────────
@@ -118,7 +128,7 @@ export async function getVlmComparison(experimentId: string): Promise<{ runs: Vl
 
   const runs = await prisma.experimentRun.findMany({
     where: { experimentId },
-    select: { id: true, modelLabel: true, runOrder: true, judgePromptVariantId: true },
+    select: { id: true, modelLabel: true, runOrder: true, judgePromptVariantId: true, servingViolation: true, servingBackoffs: true },
     orderBy: { runOrder: "asc" },
   });
 
@@ -221,6 +231,8 @@ export async function getVlmComparison(experimentId: string): Promise<{ runs: Vl
       avgDurationMs: scores.length > 0
         ? Math.round(runResults.filter((r) => r.durationMs != null).reduce((s, r) => s + r.durationMs!, 0) / scores.length)
         : null,
+      servingViolation: run.servingViolation,
+      servingBackoffs: run.servingBackoffs,
     };
   });
 
@@ -311,7 +323,7 @@ export async function getVlmInterRaterAgreement(experimentId: string): Promise<{
 
   const runs = await prisma.experimentRun.findMany({
     where: { experimentId },
-    select: { id: true, modelLabel: true },
+    select: { id: true, modelLabel: true, servingViolation: true },
     orderBy: { runOrder: "asc" },
   });
 
@@ -331,6 +343,20 @@ export async function getVlmInterRaterAgreement(experimentId: string): Promise<{
   const pairs: InterRaterPair[] = [];
   for (let i = 0; i < runs.length; i++) {
     for (let j = i + 1; j < runs.length; j++) {
+      // A run the serving gate marked is evidence about the pool, not a term
+      // in a pair (ADR 0006). The pair is listed with its reason rather than
+      // dropped: a row that quietly goes missing is how #67 got past us.
+      const refused = pairRefusal(runs[i]) ?? pairRefusal(runs[j]);
+      if (refused) {
+        pairs.push({
+          runA: { id: runs[i].id, label: runs[i].modelLabel },
+          runB: { id: runs[j].id, label: runs[j].modelLabel },
+          spearmanCorrelation: null, meanAbsDifference: null,
+          agreementCount: 0, totalPaired: 0, refused,
+        });
+        continue;
+      }
+
       const mapA = scoresByRun.get(runs[i].id) ?? new Map();
       const mapB = scoresByRun.get(runs[j].id) ?? new Map();
 
@@ -359,6 +385,7 @@ export async function getVlmInterRaterAgreement(experimentId: string): Promise<{
         meanAbsDifference: meanAbsDiff,
         agreementCount,
         totalPaired,
+        refused: null,
       });
     }
   }

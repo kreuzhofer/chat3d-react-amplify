@@ -13,6 +13,8 @@ import { prisma } from "../db/prisma.js";
 import { createLogger } from "../utils/logger.js";
 import { currentInstrumentId } from "./visual-eval-instrument-id.service.js";
 import { getExportAdmission, type ExportAdmission } from "./training-export/admission.js";
+import { getModelForPurpose } from "./llm-config.service.js";
+import { openServingGate } from "./serving-gate.service.js";
 import {
   jobs, generateJobId, toSummary, runBatchReEvaluate,
   type BatchJob, type BatchJobSummary,
@@ -115,7 +117,20 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     throw err;
   }
   const limit = Math.min(Math.max(1, Math.floor(opts.limit ?? DEFAULT_BATCH_LIMIT)), MAX_BATCH_LIMIT);
-  const concurrency = Math.min(Math.max(1, Math.floor(opts.concurrency ?? 1)), MAX_BATCH_CONCURRENCY);
+  const requested = Math.min(Math.max(1, Math.floor(opts.concurrency ?? 1)), MAX_BATCH_CONCURRENCY);
+
+  // N ≤ R before the first row, not after forty (ADR 0006). The number the
+  // caller passes is a ceiling; the pool decides what is actually run, and the
+  // gate the pre-flight returns is asked again before every dispatch.
+  const judge = await getModelForPurpose("vlm_eval");
+  const gate = await openServingGate({
+    endpointUrl: judge.endpointUrl,
+    publishedName: judge.modelName,
+    configuredConcurrency: requested,
+    label: "stale re-rating batch",
+  });
+  const concurrency = gate.concurrency;
+
   const instrumentId = await currentInstrumentId();
 
   const rows = await prisma.workbenchExample.findMany({
@@ -154,14 +169,16 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     createdAt: new Date().toISOString(),
     finishedAt: null,
     concurrency,
+    servingBackoffs: 0,
+    servingHalt: null,
     pendingPromptIds: new Set(),
     userId: null,
     abortController: new AbortController(),
   };
   jobs.set(jobId, job);
 
-  void runBatchReEvaluate(job, rows, concurrency);
+  void runBatchReEvaluate(job, rows, concurrency, gate);
 
-  logger.info({ jobId, instrumentId, total: rows.length, limit, concurrency, categoryId: opts.categoryId ?? null }, "stale re-rating batch started");
+  logger.info({ jobId, instrumentId, total: rows.length, limit, requested, concurrency, categoryId: opts.categoryId ?? null }, "stale re-rating batch started");
   return toSummary(job);
 }

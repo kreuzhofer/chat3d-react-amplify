@@ -7,11 +7,8 @@
 import { prisma } from "../db/prisma.js";
 import { createLogger } from "../utils/logger.js";
 import { ExperimentError } from "./experiment.service.js";
-import { resolveModelConfigById, type LlmModelConfig } from "./llm-config.service.js";
-import { evaluateModelWithConfig, type LabeledImage, type EvaluationResult } from "./visual-eval.service.js";
-import { runZoomFollowUp } from "./visual-eval-zoom.service.js";
-import { isUncertain } from "./visual-eval-parser.service.js";
-import { readStorageFile, storageFileExists } from "./file-storage.service.js";
+import { resolveModelConfigById } from "./llm-config.service.js";
+import { evaluateExample } from "./vlm-experiment-evaluate.service.js";
 import {
   acquireExperimentLock,
   releaseExperimentLock,
@@ -19,26 +16,13 @@ import {
   cancelRunningExperiment,
 } from "./experiment-lock.service.js";
 import { runWithUsageContext } from "./usage-tracking.service.js";
-import { deriveVisualChecklist } from "../utils/verification-criteria.js";
 import { runWithConcurrency } from "../utils/worker-pool.js";
 import { getVlmExperimentConcurrency } from "./generation-settings.service.js";
-import type { EvaluateModelInput } from "./visual-eval.service.js";
+import { openServingGate, ServingHaltError, type ServingGate } from "./serving-gate.service.js";
 import type { JudgeInstrument } from "./visual-eval-instrument-id.service.js";
 
 const logger = createLogger("vlm-experiment-exec");
 
-// ── Screenshot angle mapping ────────────────────────────────────────
-
-const SCREENSHOT_FIELDS: Array<{ angle: string; field: string }> = [
-  { angle: "front", field: "screenshotFront" },
-  { angle: "back", field: "screenshotBack" },
-  { angle: "left", field: "screenshotLeft" },
-  { angle: "right", field: "screenshotRight" },
-  { angle: "top", field: "screenshotTop" },
-  { angle: "bottom", field: "screenshotBottom" },
-  { angle: "ortho_45", field: "screenshotOrtho45" },
-  { angle: "ortho_45_bottom", field: "screenshotOrtho45Bottom" },
-];
 
 // ── Startup recovery ────────────────────────────────────────────────
 
@@ -79,7 +63,11 @@ export async function startVlmExperiment(experimentId: string): Promise<void> {
   });
   if (!exp || exp.type !== "vlm_comparison") throw new ExperimentError("VLM experiment not found", 404);
   if (exp.status === "running") throw new ExperimentError("Already running", 409);
-  if (!exp.runs.some((r) => r.status === "pending")) throw new ExperimentError("No pending runs", 409);
+  // A halted run is resumable: the gate stopped it before a dispatch, and
+  // resuming is the operator's call once the pool is fixed (ADR 0006).
+  if (!exp.runs.some((r) => r.status === "pending" || r.status === "halted")) {
+    throw new ExperimentError("No pending runs", 409);
+  }
 
   await prisma.experiment.update({
     where: { id: experimentId },
@@ -105,13 +93,18 @@ export async function cancelVlmExperiment(experimentId: string): Promise<void> {
 
 interface VlmExpWithRelations {
   id: string;
-  runs: Array<{ id: string; modelId: string; modelLabel: string; runOrder: number; status: string; judgePromptVariantId: string | null; judgePromptTemplate: string | null }>;
+  runs: Array<{
+    id: string; modelId: string; modelLabel: string; runOrder: number; status: string;
+    judgePromptVariantId: string | null; judgePromptTemplate: string | null;
+    servingViolation: string | null; servingBackoffs: number;
+  }>;
   vlmExampleSelections: Array<{ exampleId: string; selectionOrder: number }>;
 }
 
 async function executeVlmExperiment(exp: VlmExpWithRelations, abortController: AbortController): Promise<void> {
   const exampleIds = exp.vlmExampleSelections.map((s) => s.exampleId);
   let allSucceeded = true;
+  let halted = false;
 
   try {
     for (const run of exp.runs) {
@@ -130,7 +123,14 @@ async function executeVlmExperiment(exp: VlmExpWithRelations, abortController: A
       }
 
       try {
-        await executeVlmRun(run, exampleIds, abortController.signal);
+        const outcome = await executeVlmRun(run, exampleIds, abortController.signal);
+        if (outcome.halted) {
+          // The pool is broken, not this run: starting the next arm on it
+          // would only produce a second set of numbers nobody can compare.
+          halted = true;
+          allSucceeded = false;
+          break;
+        }
       } catch (err) {
         logger.error({ err, runId: run.id }, "VLM run failed");
         await prisma.experimentRun.update({
@@ -141,7 +141,7 @@ async function executeVlmExperiment(exp: VlmExpWithRelations, abortController: A
       }
     }
 
-    const finalStatus = abortController.signal.aborted ? "cancelled" : allSucceeded ? "completed" : "failed";
+    const finalStatus = halted ? "halted" : abortController.signal.aborted ? "cancelled" : allSucceeded ? "completed" : "failed";
     await prisma.experiment.update({
       where: { id: exp.id },
       data: { status: finalStatus, completedAt: new Date() },
@@ -166,9 +166,16 @@ interface RunInfo {
   /** The run's instrument (issue #35); both null = production's. */
   judgePromptVariantId: string | null;
   judgePromptTemplate: string | null;
+  /** A mark from an earlier attempt (ADR 0006); a resume never clears it. */
+  servingViolation: string | null;
+  servingBackoffs: number;
 }
 
-async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSignal): Promise<void> {
+async function executeVlmRun(
+  run: RunInfo,
+  exampleIds: string[],
+  signal: AbortSignal,
+): Promise<{ halted: boolean }> {
   // Find already-evaluated examples for resume support
   const completed = await prisma.vlmExperimentResult.findMany({
     where: { runId: run.id },
@@ -187,7 +194,7 @@ async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSi
       where: { id: run.id },
       data: { status: "completed", completedAt: new Date() },
     });
-    return;
+    return { halted: false };
   }
 
   const updateData: { status: string; startedAt?: Date } = { status: "running" };
@@ -199,10 +206,33 @@ async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSi
   // serves several replicas behind one name; the provider semaphore still
   // caps the calls, and each example's zoom follow-up stays inside its own
   // evaluation. Read once per run so a run is one setting throughout.
-  const concurrency = await getVlmExperimentConcurrency();
-  logger.info({ runId: run.id, concurrency, providerMaxConcurrent: modelConfig.maxConcurrent }, "VLM run concurrency");
+  const configured = await getVlmExperimentConcurrency();
+  // N <= R before the first example (ADR 0006): the setting is a ceiling the
+  // operator sets, not a claim about how many replicas are actually up.
+  const gate = await openServingGate({
+    endpointUrl: modelConfig.endpointUrl,
+    publishedName: modelConfig.modelName,
+    configuredConcurrency: configured,
+    label: `VLM run ${run.modelLabel}`,
+  });
+  const concurrency = gate.concurrency;
+  logger.info({ runId: run.id, configured, concurrency, providerMaxConcurrent: modelConfig.maxConcurrent }, "VLM run concurrency");
+
+  const haltController = new AbortController();
+  const gatedSignal = AbortSignal.any([signal, haltController.signal]);
 
   await runWithConcurrency(remaining, concurrency, async (exampleId) => {
+    // The condition before the dispatch. Unlike the batch, a result already
+    // written stays: it is an observation about the pool, and the run carries
+    // the mark that keeps it out of any pair.
+    try {
+      await gate.admit();
+    } catch (err) {
+      if (!(err instanceof ServingHaltError)) throw err;
+      haltController.abort();
+      return;
+    }
+
     const startMs = Date.now();
     try {
       const result = await runWithUsageContext(
@@ -250,17 +280,30 @@ async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSi
       });
       logger.warn({ err: errorMsg, runId: run.id, exampleId }, "VLM eval failed for example");
     }
-  }, signal);
+  }, gatedSignal);
 
-  const status = signal.aborted ? "cancelled" : "completed";
+  const halted = gate.violation !== null;
+  const status = halted ? "halted" : signal.aborted ? "cancelled" : "completed";
   await prisma.experimentRun.update({
     where: { id: run.id },
-    data: { status, completedAt: new Date() },
+    data: {
+      status,
+      completedAt: new Date(),
+      // The mark is sticky across a resume: the calls in flight when a
+      // replica went away still completed and were written, so the run holds
+      // results taken across the drop however cleanly its second half runs.
+      servingViolation: gate.violation ?? run.servingViolation,
+      servingBackoffs: run.servingBackoffs + gate.backoffs,
+    },
   });
-  logger.info({ runId: run.id, model: run.modelLabel, status }, "VLM run finished");
+  logger.info(
+    { runId: run.id, model: run.modelLabel, status, servingViolation: gate.violation, servingBackoffs: gate.backoffs },
+    halted ? "VLM run halted on the serving condition — resume once the pool is back" : "VLM run finished",
+  );
+  return { halted };
 }
 
-// ── Load example and evaluate ───────────────────────────────────────
+// ── The instrument a run judges under ───────────────────────────────
 
 /**
  * The instrument a run judges under: its variant, named by the variant id so
@@ -272,154 +315,4 @@ function runInstrument(run: Pick<RunInfo, "judgePromptVariantId" | "judgePromptT
     throw new Error("Experiment run carries an instrument template without a variant id");
   }
   return { name: run.judgePromptVariantId, template: run.judgePromptTemplate };
-}
-
-async function evaluateExample(
-  exampleId: string,
-  modelConfig: Awaited<ReturnType<typeof resolveModelConfigById>>,
-  instrument: JudgeInstrument | undefined,
-) {
-  const example = await prisma.workbenchExample.findUnique({
-    where: { id: exampleId },
-    include: {
-      promptRef: {
-        select: {
-          prompt: true,
-          constructionSpec: true,
-          verificationChecklist: true,
-          verificationCriteria: true,
-          category: { select: { name: true, complexity: true } },
-        },
-      },
-    },
-  });
-  if (!example) throw new Error(`Example ${exampleId} not found`);
-
-  // Load screenshots as base64
-  const images: LabeledImage[] = [];
-  const exRecord = example as Record<string, unknown>;
-  for (const { angle, field } of SCREENSHOT_FIELDS) {
-    const path = exRecord[field] as string | null;
-    if (!path) continue;
-    // Handle both file paths and inline base64
-    if (path.startsWith("data:") || path.length > 500) {
-      // Inline base64 — strip data URI prefix if present
-      const b64 = path.replace(/^data:image\/\w+;base64,/, "");
-      images.push({ angle, base64: b64 });
-    } else if (await storageFileExists(path)) {
-      const buf = await readStorageFile({ relativePath: path });
-      images.push({ angle, base64: buf.toString("base64") });
-    }
-  }
-
-  if (images.length === 0) throw new Error(`No screenshots available for example ${exampleId}`);
-
-  const stlBase64 = await loadStlBase64(example.stlPath);
-  const input = {
-    ...buildExperimentEvalInput(example, images, stlBase64),
-    ...(instrument ? { instrument } : {}),
-  };
-  const firstPass = await evaluateModelWithConfig(input, modelConfig);
-  return applyZoomFollowUp(firstPass, input, modelConfig);
-}
-
-/** The example's STL, for the zoom follow-up's high-res render. Undefined when the file is gone. */
-async function loadStlBase64(stlPath: string | null): Promise<string | undefined> {
-  if (!stlPath || !(await storageFileExists(stlPath))) return undefined;
-  return (await readStorageFile({ relativePath: stlPath })).toString("base64");
-}
-
-/**
- * Production's zoom follow-up on the experiment's first pass (issue #54).
- *
- * Mirrors eval-orchestrator: the follow-up runs only when the judge left
- * items uncertain and the STL is available, behind the same `global.zoom_*`
- * settings, and its tokens are added to the evaluation's. The one deliberate
- * difference is the judge — the follow-up must be answered by the run's model,
- * not the production `vlm_eval` model, or the experiment scores a hybrid.
- * A failed follow-up keeps the uncertain items, as production does.
- */
-export async function applyZoomFollowUp(
-  result: EvaluationResult,
-  input: EvaluateModelInput,
-  vlmConfig: LlmModelConfig,
-): Promise<EvaluationResult> {
-  const checklist = result.checklistResults;
-  if (!checklist || !checklist.some((c) => isUncertain(c))) return result;
-
-  if (!input.stlBase64) {
-    logger.warn(
-      { uncertainCount: checklist.filter((c) => isUncertain(c)).length },
-      "no STL for this example — zoom follow-up skipped, uncertain items kept",
-    );
-    return result;
-  }
-
-  try {
-    const zoom = await runZoomFollowUp({
-      checklist,
-      stlBase64: input.stlBase64,
-      modelFormat: input.modelFormat ?? "stl",
-      constructionSpec: input.constructionSpec,
-      vlmConfig,
-    });
-    if (!zoom) return result;
-
-    logger.info({ followUpCount: zoom.followUpCount, model: vlmConfig.label }, "zoom follow-ups completed");
-    return {
-      ...result,
-      checklistResults: zoom.resolvedChecklist,
-      promptTokens: result.promptTokens + zoom.promptTokens,
-      completionTokens: result.completionTokens + zoom.completionTokens,
-    };
-  } catch (err) {
-    logger.warn(
-      { err: err instanceof Error ? err.message : String(err), model: vlmConfig.label },
-      "zoom follow-up failed, keeping uncertain results",
-    );
-    return result;
-  }
-}
-
-/**
- * The judge input for one experiment evaluation.
- *
- * Kept identical to what eval-orchestrator builds for a production run: the
- * checklist goes through `deriveVisualChecklist`, which owns the visibility and
- * dimension filters and tolerates the legacy bare-string criteria shape that
- * most of the stored corpus holds (issue #33). Passing anything else here means
- * the experiment scores a judge on a prompt production never sends, which is
- * the whole point of the comparison.
- *
- * `stlBase64` is the example's model for the zoom follow-up's high-res render;
- * without it the follow-up is skipped, exactly as production skips it.
- */
-export function buildExperimentEvalInput(
-  example: {
-    promptRef: {
-      prompt: string;
-      constructionSpec?: string | null;
-      verificationChecklist?: unknown;
-      verificationCriteria?: unknown;
-      /** Ignored: the judge no longer sees the eval plan (ADR 0003). */
-      evalPlan?: unknown;
-      category: { name: string; complexity: number };
-    };
-  },
-  images: LabeledImage[],
-  stlBase64?: string,
-): EvaluateModelInput {
-  const { promptRef } = example;
-  return {
-    userPrompt: promptRef.prompt,
-    categoryName: promptRef.category.name,
-    complexity: promptRef.category.complexity,
-    images,
-    ...(stlBase64 ? { stlBase64, modelFormat: "stl" as const } : {}),
-    constructionSpec: promptRef.constructionSpec ?? undefined,
-    verificationChecklist: deriveVisualChecklist(
-      promptRef.verificationCriteria,
-      (promptRef.verificationChecklist as string[] | null) ?? undefined,
-    ),
-  };
 }

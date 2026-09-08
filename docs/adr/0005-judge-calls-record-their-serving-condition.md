@@ -27,5 +27,7 @@ The Serving provenance is **not** part of the Instrument id. The replica count i
 
 - The backend gains its first knowledge of the serving gateway. It is derived from provider configuration and treated as an optional capability, so a provider without one is supported and says `unknown`; but the dependency is real and did not exist before this decision.
 - Nothing is gated on the recorded condition here. A run under a broken condition still completes and still stores ratings — now labelled. What the harness *does* about a violation (refuse to start, clamp concurrency, or invalidate the affected rows) is #70's decision, and it builds on this feed.
+  - *Answered 2026-09-08 (#70, ADR 0006):* the harness gates before each dispatch on this snapshot — concurrency clamped to the serving replica count, a co-tenant backed off, a lost replica halting a run that is then resumed. The feed stays the record; the gate is a predicate over it.
 - Whether the fine-tuning filter gains a third admission term beside current-instrument and qualified-judge is left open until #70 decides. Until then, a rating's serving condition is readable but not load-bearing.
+  - *Answered 2026-09-08 (#70, ADR 0006):* it does not. A production rating whose dispatch would violate the condition is never written, so no row arrives in a state needing a third name; the filter keeps its two grounds.
 - ADR 0004's stability term is amended to name uncontended serving, so a qualification run that cannot show its condition is not evidence of stability.

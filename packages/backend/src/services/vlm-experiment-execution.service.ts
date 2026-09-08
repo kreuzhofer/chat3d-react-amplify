@@ -206,7 +206,13 @@ async function executeVlmRun(run: RunInfo, exampleIds: string[], signal: AbortSi
     const startMs = Date.now();
     try {
       const result = await runWithUsageContext(
-        { source: "experiment", experimentId: run.id, experimentRunId: run.id, sourceLabel: `VLM Experiment: ${run.modelLabel}` },
+        {
+          source: "experiment", experimentId: run.id, experimentRunId: run.id,
+          sourceLabel: `VLM Experiment: ${run.modelLabel}`,
+          // N for this run's judge calls (ADR 0005): read once per run, so
+          // every row of the run reports the same configured concurrency.
+          driverConcurrency: concurrency,
+        },
         () => evaluateExample(exampleId, modelConfig, runInstrument(run)),
       );
       const durationMs = Date.now() - startMs;

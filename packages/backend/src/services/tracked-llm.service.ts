@@ -11,6 +11,7 @@
 import { generateText, streamText, embed, embedMany, type TextStreamPart } from "ai";
 import { calculateCostUsd, type LlmModelConfig } from "./llm-config.service.js";
 import { recordUsageEvent, type LlmPurpose } from "./usage-tracking.service.js";
+import { readServingSnapshot, type ServingSnapshot } from "./serving-provenance.service.js";
 import { createLogger } from "../utils/logger.js";
 import {
   estimateTokensFromChars,
@@ -29,6 +30,32 @@ export interface TrackingMeta {
   modelName: string;
   modelConfig: { costPer1mInput: number; costPer1mOutput: number };
   generationAttempt?: number;
+  /**
+   * The provider's configured endpoint, from which the serving gateway is
+   * derived (ADR 0005). Set by the judge's call sites; anything else records
+   * no serving condition.
+   */
+  endpointUrl?: string | null;
+}
+
+// ── Serving provenance ─────────────────────────────────────────────
+
+/**
+ * The calls whose serving condition is recorded: the judge's (ADR 0005). The
+ * gateway is read per provider, so widening this set is a decision about what
+ * the corpus needs, not a technical limit.
+ */
+const SERVING_STAMPED_PURPOSES = new Set<LlmPurpose>(["vlm_evaluation"]);
+
+/**
+ * Sample the serving condition **at dispatch**, before the call goes out —
+ * which is the moment #72's gate evaluates, and the only moment that describes
+ * the conditions the answer was produced under. The promise is awaited once
+ * the call finishes, so sampling never delays the dispatch itself.
+ */
+function captureServing(tracking: TrackingMeta): Promise<ServingSnapshot | null> {
+  if (!SERVING_STAMPED_PURPOSES.has(tracking.purpose)) return Promise.resolve(null);
+  return readServingSnapshot(tracking.endpointUrl, tracking.modelName);
 }
 
 // ── Token extraction helpers ───────────────────────────────────────
@@ -132,6 +159,7 @@ export async function trackedGenerateText(
 
   try {
     const start = Date.now();
+    const serving = captureServing(tracking);
     const result = await generateText({
       ...options,
       timeout: options.timeout ?? timeout,
@@ -183,6 +211,7 @@ export async function trackedGenerateText(
       generationAttempt: tracking.generationAttempt,
       outputTokensPerSecond: computeOutputTps(usage.outputTokens, durationMs),
       reasoningText: reasoningText || undefined,
+      serving: await serving,
     });
 
     return result;
@@ -225,6 +254,7 @@ export function trackedStreamText(
     : hardTimeoutController.signal;
 
   const start = Date.now();
+  const serving = captureServing(tracking);
   const userOnFinish = options.onFinish;
   const userOnError = options.onError;
 
@@ -340,6 +370,7 @@ export function trackedStreamText(
         generationAttempt: tracking.generationAttempt,
         outputTokensPerSecond: computeOutputTps(effectiveOutputTokens, durationMs),
         reasoningText: reasoningText || undefined,
+        serving: await serving,
       });
 
       await userOnFinish?.(event);

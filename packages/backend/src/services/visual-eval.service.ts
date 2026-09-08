@@ -180,6 +180,8 @@ export async function evaluateModelWithConfig(
     modelId: vlmConfig.id,
     modelName: vlmConfig.modelName,
     modelConfig: { costPer1mInput: vlmConfig.costPer1mInput, costPer1mOutput: vlmConfig.costPer1mOutput },
+    // The judge's serving condition is read from this provider's gateway (ADR 0005).
+    endpointUrl: vlmConfig.endpointUrl,
   };
 
   // Wrap evaluation (including retries) with per-provider semaphore

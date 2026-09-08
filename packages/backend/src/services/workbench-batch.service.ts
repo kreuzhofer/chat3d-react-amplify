@@ -16,6 +16,7 @@ import { embedAndStorePrompt } from "./workbench-embeddings.service.js";
 import { cleanupExamplesForPrompt, type CleanupPreview } from "./workbench-examples.service.js";
 import { createLogger } from "../utils/logger.js";
 import { runWithConcurrency } from "../utils/worker-pool.js";
+import { runWithUsageContext } from "./usage-tracking.service.js";
 import { sseService } from "./sse.service.js";
 
 const logger = createLogger("workbench-batch");
@@ -960,7 +961,11 @@ export async function runBatchReEvaluate(
 ): Promise<void> {
   const { reEvaluateExample } = await import("./workbench-reeval.service.js");
 
-  await runWithConcurrency(examples, concurrency, async (example) => {
+  // N for every judge call this batch makes (ADR 0005). Set around the whole
+  // pool rather than per row: the number is the batch's, and each row's own
+  // context merges over it on the way down.
+  await runWithUsageContext({ driverConcurrency: concurrency }, () =>
+  runWithConcurrency(examples, concurrency, async (example) => {
     if (job.status === "cancelled") return;
 
     job.currentPromptId = example.promptId;
@@ -992,7 +997,7 @@ export async function runBatchReEvaluate(
       });
       logger.error({ err: error, exampleId: example.id }, "batch re-evaluate failed for example");
     }
-  }, job.abortController.signal);
+  }, job.abortController.signal));
 
   job.currentPromptId = null;
   job.currentPromptText = null;

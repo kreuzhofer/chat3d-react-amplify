@@ -9,6 +9,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { prisma } from "../db/prisma.js";
 import { createLogger } from "../utils/logger.js";
+import type { ServingSnapshot } from "./serving-provenance.service.js";
 
 const logger = createLogger("usage-tracking");
 
@@ -23,6 +24,14 @@ export interface UsageTrackingContext {
   experimentRunId?: string;
   source?: "workbench" | "chat" | "experiment" | "system";
   sourceLabel?: string;
+  /**
+   * N: the concurrency the driver scheduling this call configured for itself
+   * (ADR 0005). Set by the experiment executor and the stale re-rating batch,
+   * which are the only two things that schedule judge calls in parallel; unset
+   * on production `vlm_eval` and chat, where nothing schedules and the
+   * per-replica inflight reading is the whole story.
+   */
+  driverConcurrency?: number;
 }
 
 const store = new AsyncLocalStorage<UsageTrackingContext>();
@@ -32,7 +41,10 @@ const store = new AsyncLocalStorage<UsageTrackingContext>();
  * Nested calls inherit the outer context; explicit fields override.
  */
 export function runWithUsageContext<T>(ctx: UsageTrackingContext, fn: () => T): T {
-  return store.run(ctx, fn);
+  // Merge, don't replace: a driver sets its concurrency once around a whole
+  // batch, and the inner per-example context must not drop it on the way to
+  // the judge call.
+  return store.run({ ...store.getStore(), ...ctx }, fn);
 }
 
 /** Get the current usage tracking context (empty object if none set). */
@@ -90,6 +102,13 @@ export interface UsageEventParams {
    * may pass it; it'll be dropped to keep storage small.
    */
   reasoningText?: string;
+  /**
+   * The serving condition this call was dispatched under (ADR 0005). Absent
+   * for every call that is not a judge call, and for a judge whose provider
+   * has no gateway to ask — both of which store NULL and read as *unknown*,
+   * never as a satisfied condition.
+   */
+  serving?: ServingSnapshot | null;
 }
 
 /**
@@ -117,7 +136,9 @@ export function recordUsageEvent(params: UsageEventParams): void {
     experimentRunId: ctx.experimentRunId,
     source: ctx.source,
     sourceLabel: ctx.sourceLabel,
+    driverConcurrency: ctx.driverConcurrency,
   };
+  const serving = params.serving ?? null;
 
   // Fire-and-forget
   prisma.llmUsageEvent
@@ -150,6 +171,13 @@ export function recordUsageEvent(params: UsageEventParams): void {
           params.reasoningText && REASONING_TEXT_PERSIST_PURPOSES.has(params.purpose)
             ? params.reasoningText
             : null,
+        // All five stay NULL unless the call actually read a gateway: an
+        // unrecorded condition and a satisfied one must not look alike.
+        servingName: serving?.publishedName ?? null,
+        servingReplicas: serving?.servingCount ?? null,
+        servingMaxInflight: serving?.maxInflight ?? null,
+        driverConcurrency: serving ? merged.driverConcurrency ?? null : null,
+        servingSource: serving?.source ?? null,
       },
     })
     .catch((err: unknown) => {

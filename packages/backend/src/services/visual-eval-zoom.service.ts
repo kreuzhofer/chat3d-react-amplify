@@ -270,6 +270,9 @@ async function runSingleFollowUp(
       modelId: vlmConfig.id,
       modelName: vlmConfig.modelName,
       modelConfig: { costPer1mInput: vlmConfig.costPer1mInput, costPer1mOutput: vlmConfig.costPer1mOutput },
+      // The follow-up is a judge call like any other, and #67 made it the one
+      // whose views decide the answer — it records its condition too (ADR 0005).
+      endpointUrl: vlmConfig.endpointUrl,
     }),
   );
   } catch (err) {

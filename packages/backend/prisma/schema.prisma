@@ -861,6 +861,14 @@ model LlmUsageEvent {
   sourceLabel        String?   @map("source_label") @db.VarChar(255)
   reasoningText      String?   @map("reasoning_text") @db.Text
 
+  // Serving provenance (ADR 0005, #71). NULL throughout = the condition was
+  // never checked, which is not the same as a satisfied one.
+  servingName        String?   @map("serving_name") @db.VarChar(255)
+  servingReplicas    Int?      @map("serving_replicas")
+  servingMaxInflight Int?      @map("serving_max_inflight")
+  driverConcurrency  Int?      @map("driver_concurrency")
+  servingSource      String?   @map("serving_source") @db.VarChar(20)
+
   // Relations — no FK for experiment/source fields (ledger must survive deletions)
   user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   chatContext ChatContext? @relation(fields: [chatContextId], references: [id], onDelete: SetNull, onUpdate: NoAction)
@@ -874,6 +882,7 @@ model LlmUsageEvent {
   @@index([chatContextId], map: "idx_usage_events_context")
   @@index([source, createdAt], map: "idx_usage_events_source")
   @@index([experimentId], map: "idx_usage_events_experiment")
+  @@index([servingName, createdAt], map: "idx_usage_events_serving")
   @@map("llm_usage_events")
 }
 

@@ -11,6 +11,7 @@ import { prisma } from "../db/prisma.js";
 import { createLogger } from "../utils/logger.js";
 import { ExperimentError } from "./experiment.service.js";
 import { validateInstrumentTemplate } from "./visual-eval-instrument.service.js";
+import type { ResponseShape } from "./visual-eval-schema.service.js";
 import {
   getVlmExperiment,
   queryEligibleExamples,
@@ -28,9 +29,17 @@ export interface JudgePromptVariantInput {
   id: string;
   /** The instrument: a template over the specimen slots. */
   template: string;
+  /**
+   * The answer shape the variant asks for; production's when omitted. A
+   * variant that asks for something production's schema has no room for —
+   * the parts inventory of issue #66 — must say so, because the schema is
+   * the decoding grammar on vLLM and the template alone cannot widen it.
+   */
+  responseShape?: ResponseShape;
 }
 
 const VARIANT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+const RESPONSE_SHAPES: ResponseShape[] = ["production", "inventory"];
 
 /** Rejects (400) anything that would produce an ambiguous or unrenderable run. */
 export function validateJudgePromptVariants(variants: JudgePromptVariantInput[]): void {
@@ -48,6 +57,12 @@ export function validateJudgePromptVariants(variants: JudgePromptVariantInput[])
     if (errors.length > 0) {
       throw new ExperimentError(`Variant "${v.id}" is not a valid instrument: ${errors.join("; ")}`, 400);
     }
+    if (v.responseShape !== undefined && !RESPONSE_SHAPES.includes(v.responseShape)) {
+      throw new ExperimentError(
+        `Variant "${v.id}" has responseShape ${JSON.stringify(v.responseShape)}; known shapes: ${RESPONSE_SHAPES.join(", ")}`,
+        400,
+      );
+    }
   }
 }
 
@@ -59,6 +74,7 @@ export interface PlannedRun {
   runOrder: number;
   judgePromptVariantId: string | null;
   judgePromptTemplate: string | null;
+  judgeResponseShape: string | null;
 }
 
 interface ModelForRun {
@@ -80,6 +96,7 @@ export function planVlmRuns(models: ModelForRun[], variants: JudgePromptVariantI
         runOrder: runs.length + 1,
         judgePromptVariantId: variant?.id ?? null,
         judgePromptTemplate: variant?.template ?? null,
+        judgeResponseShape: variant?.responseShape ?? null,
       });
     }
   }

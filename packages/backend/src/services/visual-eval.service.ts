@@ -172,7 +172,7 @@ export async function evaluateModelWithConfig(
   // the call below is byte-for-byte what it was.
   const guidedOutput = resolveGuidedJsonOutput(
     vlmConfig,
-    buildEvaluationResponseSchema(askedChecklist.length),
+    buildEvaluationResponseSchema(askedChecklist.length, instrument.responseShape ?? "production"),
   );
   const trackingMeta: TrackingMeta = {
     purpose: "vlm_evaluation",

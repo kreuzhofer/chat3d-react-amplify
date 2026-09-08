@@ -34,6 +34,15 @@ describe("computeInstrumentId", () => {
     expect(ids.size).toBe(1);
   });
 
+  it("changes with the answer shape — a variant that asks for a parts inventory is another instrument (#66)", () => {
+    const template = PRODUCTION_INSTRUMENT.template;
+    const production = computeInstrumentId({ name: "v", template }, zoom);
+    const inventory = computeInstrumentId({ name: "v", template, responseShape: "inventory" }, zoom);
+    expect(inventory).not.toBe(production);
+    // Spelling the default out changes nothing.
+    expect(computeInstrumentId({ name: "v", template, responseShape: "production" }, zoom)).toBe(production);
+  });
+
   it("changes with the template", () => {
     const edited = { ...PRODUCTION_INSTRUMENT, template: PRODUCTION_INSTRUMENT.template + "\nBe strict." };
     expect(computeInstrumentId(edited, zoom)).not.toBe(computeInstrumentId(PRODUCTION_INSTRUMENT, zoom));

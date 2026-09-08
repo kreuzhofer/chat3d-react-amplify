@@ -30,6 +30,7 @@ import {
 import {
   buildEvaluationResponseSchema,
   buildFollowUpResponseSchema,
+  type ResponseShape,
 } from "./visual-eval-schema.service.js";
 
 export type { ZoomSettings } from "./generation-settings.service.js";
@@ -41,6 +42,12 @@ export interface JudgeInstrument {
   /** The name half of the id: `production`, or an experiment variant's id. */
   name: string;
   template: string;
+  /**
+   * The answer shape this instrument asks for; production's when omitted.
+   * Part of the procedure, so it is hashed: two variants that differ only in
+   * the shape of the answer are two instruments (issue #66).
+   */
+  responseShape?: ResponseShape;
 }
 
 export const PRODUCTION_INSTRUMENT: JudgeInstrument = {
@@ -56,7 +63,10 @@ const SCHEMA_SENTINEL_CHECKLIST_COUNT = 1;
 export function computeInstrumentId(instrument: JudgeInstrument, zoom: ZoomSettings): string {
   const procedure = {
     template: instrument.template,
-    evaluationSchema: buildEvaluationResponseSchema(SCHEMA_SENTINEL_CHECKLIST_COUNT),
+    evaluationSchema: buildEvaluationResponseSchema(
+      SCHEMA_SENTINEL_CHECKLIST_COUNT,
+      instrument.responseShape ?? "production",
+    ),
     followUpTemplate: FOLLOW_UP_INSTRUMENT_TEMPLATE,
     followUpSchema: buildFollowUpResponseSchema(),
     // Which views the follow-up is shown is part of the procedure, not a

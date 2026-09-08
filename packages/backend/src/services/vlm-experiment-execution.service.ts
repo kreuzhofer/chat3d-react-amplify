@@ -96,6 +96,7 @@ interface VlmExpWithRelations {
   runs: Array<{
     id: string; modelId: string; modelLabel: string; runOrder: number; status: string;
     judgePromptVariantId: string | null; judgePromptTemplate: string | null;
+    judgeResponseShape: string | null;
     servingViolation: string | null; servingBackoffs: number;
   }>;
   vlmExampleSelections: Array<{ exampleId: string; selectionOrder: number }>;
@@ -169,6 +170,8 @@ interface RunInfo {
   /** A mark from an earlier attempt (ADR 0006); a resume never clears it. */
   servingViolation: string | null;
   servingBackoffs: number;
+  /** The answer shape that instrument asks for (issue #66); null = production's. */
+  judgeResponseShape: string | null;
 }
 
 async function executeVlmRun(
@@ -309,10 +312,20 @@ async function executeVlmRun(
  * The instrument a run judges under: its variant, named by the variant id so
  * the Instrument id reads `<variant>@<hash>`; undefined = production's.
  */
-function runInstrument(run: Pick<RunInfo, "judgePromptVariantId" | "judgePromptTemplate">): JudgeInstrument | undefined {
+function runInstrument(
+  run: Pick<RunInfo, "judgePromptVariantId" | "judgePromptTemplate" | "judgeResponseShape">,
+): JudgeInstrument | undefined {
   if (!run.judgePromptTemplate) return undefined;
   if (!run.judgePromptVariantId) {
     throw new Error("Experiment run carries an instrument template without a variant id");
   }
-  return { name: run.judgePromptVariantId, template: run.judgePromptTemplate };
+  const shape = run.judgeResponseShape;
+  if (shape !== null && shape !== "production" && shape !== "inventory") {
+    throw new Error(`Experiment run carries an unknown judge response shape "${shape}"`);
+  }
+  return {
+    name: run.judgePromptVariantId,
+    template: run.judgePromptTemplate,
+    ...(shape ? { responseShape: shape } : {}),
+  };
 }

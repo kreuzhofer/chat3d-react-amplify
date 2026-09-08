@@ -42,8 +42,8 @@ describe("planVlmRuns", () => {
   it("without variants plans one run per model under production's instrument, as before", () => {
     const runs = planVlmRuns(models, undefined);
     expect(runs).toEqual([
-      { modelId: "m-glm", modelLabel: "glm-5.3-flash (thinking off)", runOrder: 1, judgePromptVariantId: null, judgePromptTemplate: null },
-      { modelId: "m-sonnet", modelLabel: "anthropic/claude-sonnet-4-6", runOrder: 2, judgePromptVariantId: null, judgePromptTemplate: null },
+      { modelId: "m-glm", modelLabel: "glm-5.3-flash (thinking off)", runOrder: 1, judgePromptVariantId: null, judgePromptTemplate: null, judgeResponseShape: null },
+      { modelId: "m-sonnet", modelLabel: "anthropic/claude-sonnet-4-6", runOrder: 2, judgePromptVariantId: null, judgePromptTemplate: null, judgeResponseShape: null },
     ]);
   });
 

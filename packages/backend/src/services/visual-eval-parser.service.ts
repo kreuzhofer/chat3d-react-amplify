@@ -22,6 +22,13 @@ export interface ChecklistResult {
    * follow-up that silently fell back is visible in the stored row.
    */
   zoomFollowUp?: ZoomFollowUpOutcome;
+  /**
+   * The high-resolution views the follow-up was shown, in order (issue #67).
+   * Stamped whatever the outcome — including success, where the pick used to
+   * vanish, leaving no stored run able to say which view answered an item
+   * (#61's angles were lost with a container's logs for exactly this reason).
+   */
+  zoomViews?: string[];
 }
 
 export type ZoomFollowUpOutcome = "unreadable" | "failed" | "skipped";

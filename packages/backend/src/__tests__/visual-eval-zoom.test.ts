@@ -85,7 +85,15 @@ const checklist: ChecklistResult[] = [
 // Only the by-angle lookup is read by the follow-up; the raw image list is not.
 const highRes: HighResRenderResult = {
   images: [],
-  byAngle: new Map([["top", "IMG-top"], ["bottom", "IMG-bottom"], ["ortho_45", "IMG-ortho_45"]]),
+  byAngle: new Map([
+    ["top", "IMG-top"], ["bottom", "IMG-bottom"],
+    ["ortho_45", "IMG-ortho_45"], ["ortho_45_bottom", "IMG-ortho_45_bottom"],
+  ]),
+};
+
+/** A render that produced only some of the follow-up's views. */
+const partialHighRes: HighResRenderResult = {
+  images: [], byAngle: new Map([["ortho_45", "IMG-ortho_45"]]),
 };
 
 beforeEach(() => {
@@ -130,6 +138,10 @@ describe("resolveUncertainItems", () => {
     expect(result.resolvedChecklist[2]).toEqual(checklist[2]);
     expect(result.resolvedChecklist[1]).toEqual({
       question: "Is the top hole open?", pass: true, detail: "[2x zoom] resolved at 2x",
+      // The views the follow-up saw are stamped on the resolved item (#67):
+      // on success the pick used to vanish, so no stored run could say which
+      // view answered an item.
+      zoomViews: ["top", "ortho_45", "ortho_45_bottom"],
     });
     expect(result.resolvedChecklist[3].pass).toBe(true);
     expect(result.promptTokens).toBe(22);
@@ -145,13 +157,50 @@ describe("resolveUncertainItems", () => {
     expect(result.resolvedChecklist[3].zoomFollowUp).toBeUndefined();
   });
 
-  it("sends one high-res image per follow-up, picked by the question's wording", async () => {
+  it("sends the same three high-res views for every follow-up, each behind its label (#67)", async () => {
+    // The pick used to read the item's wording and send ONE view. Against the
+    // deciding view of 92 adjudicated items that found it 42% of the time —
+    // below a constant `top` — because one view is usually not enough. These
+    // three cover 91%, and the question is no longer read at all.
     await resolveUncertainItems(checklist, highRes, 3, undefined, cfg());
-    const imagesSent = generateCalls.map(({ options }) => {
-      const msgs = options.messages as Array<{ content: Array<{ type: string; image?: string }> }>;
+    const sent = generateCalls.map(({ options }) => {
+      const msgs = options.messages as Array<{ content: Array<{ type: string; text?: string; image?: string }> }>;
       return msgs[0].content.filter((p) => p.type === "image").map((p) => p.image);
     });
-    expect(imagesSent).toEqual([["IMG-top"], ["IMG-bottom"]]);
+    expect(sent).toEqual([
+      ["IMG-top", "IMG-ortho_45", "IMG-ortho_45_bottom"],
+      ["IMG-top", "IMG-ortho_45", "IMG-ortho_45_bottom"],
+    ]);
+
+    // Each image is preceded by the label the main call uses, so a detail
+    // that says "the top view shows…" can be checked against what was sent.
+    const parts = (generateCalls[0].options.messages as Array<{ content: Array<{ type: string; text?: string }> }>)[0].content;
+    expect(parts.map((p) => (p.type === "text" ? p.text : "<image>"))).toEqual([
+      "Inspect these high-resolution views and answer: Is the top hole open?",
+      "Top view:", "<image>", "45° down view:", "<image>", "45° up view:", "<image>",
+    ]);
+  });
+
+  it("sends whichever of its views the render produced, in order", async () => {
+    await resolveUncertainItems(checklist, partialHighRes, 1, undefined, cfg());
+    const msgs = generateCalls[0].options.messages as Array<{ content: Array<{ type: string; image?: string }> }>;
+    expect(msgs[0].content.filter((p) => p.type === "image").map((p) => p.image)).toEqual(["IMG-ortho_45"]);
+  });
+
+  it("skips the follow-up when the render produced none of its views", async () => {
+    const none: HighResRenderResult = { images: [], byAngle: new Map([["left", "IMG-left"]]) };
+    const result = await resolveUncertainItems(checklist, none, 3, undefined, cfg());
+    expect(generateCalls).toHaveLength(0);
+    expect(result.followUpCount).toBe(0);
+    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "skipped" });
+  });
+
+  it("renders all eight views at high resolution — the 45° up view was never rendered (#67)", async () => {
+    renderCalls.length = 0;
+    await runZoomFollowUp({ checklist, stlBase64: "U1RM", modelFormat: "stl" as const, vlmConfig: cfg() });
+    expect(renderCalls[0].angles).toEqual([
+      "front", "back", "left", "right", "top", "bottom", "ortho_45", "ortho_45_bottom",
+    ]);
   });
 });
 
@@ -235,11 +284,11 @@ describe("follow-up call guards", () => {
     nextAnswer = 'Looking closely, there are no mounting holes on the base plate.\n{ "pass": false, "detail": "no mounting holes visible';
     const result = await resolveUncertainItems(checklist, highRes, 3, undefined, cfg());
     // The item keeps its first-pass answer and detail, and the row says the follow-up could not be read (#61).
-    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "unreadable" });
-    expect(result.resolvedChecklist[3]).toEqual({ ...checklist[3], zoomFollowUp: "unreadable" });
+    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "unreadable", zoomViews: ["top", "ortho_45", "ortho_45_bottom"] });
+    expect(result.resolvedChecklist[3]).toEqual({ ...checklist[3], zoomFollowUp: "unreadable", zoomViews: ["top", "ortho_45", "ortho_45_bottom"] });
     expect(result.followUpCount).toBe(2);
     expect(result.followUpDetails).toHaveLength(2);
-    expect(result.followUpDetails[0]).toMatchObject({ question: checklist[1].question, angle: "top", pass: null });
+    expect(result.followUpDetails[0]).toMatchObject({ question: checklist[1].question, angles: ["top", "ortho_45", "ortho_45_bottom"], pass: null });
     expect(result.followUpDetails[0].detail).toMatch(/could not be read/);
     expect(result.promptTokens).toBe(22);
   });
@@ -247,7 +296,7 @@ describe("follow-up call guards", () => {
   it("marks an item whose follow-up call threw as failed and keeps it uncertain", async () => {
     nextThrow = new Error("connection reset");
     const result = await resolveUncertainItems(checklist, highRes, 3, undefined, cfg());
-    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "failed" });
+    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "failed", zoomViews: ["top", "ortho_45", "ortho_45_bottom"] });
     expect(result.resolvedChecklist[0]).toEqual(checklist[0]);
     // The mock throws once; the next uncertain item is answered as usual.
     expect(result.resolvedChecklist[3].pass).toBe(true);
@@ -272,8 +321,8 @@ describe("follow-up call guards", () => {
       finishReason: "stop",
     });
     const result = await resolveUncertainItems(checklist, highRes, 3, undefined, cfg());
-    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "unreadable" });
-    expect(result.followUpDetails[0]).toMatchObject({ pass: null, angle: "top" });
+    expect(result.resolvedChecklist[1]).toEqual({ ...checklist[1], zoomFollowUp: "unreadable", zoomViews: ["top", "ortho_45", "ortho_45_bottom"] });
+    expect(result.followUpDetails[0]).toMatchObject({ pass: null, angles: ["top", "ortho_45", "ortho_45_bottom"] });
     expect(result.followUpDetails[0].detail).toMatch(/could not be read/);
     expect(result.followUpDetails[0].detail).toContain("bare-word-reply");
     expect(result.followUpCount).toBe(2);
@@ -286,7 +335,8 @@ describe("follow-up call guards", () => {
     const result = await resolveUncertainItems(checklist, highRes, 3, undefined, cfg());
     expect(result.resolvedChecklist[1]).toEqual({
       question: "Is the top hole open?", pass: false, detail: "[2x zoom] no mounting holes on the base",
+      zoomViews: ["top", "ortho_45", "ortho_45_bottom"],
     });
-    expect(result.followUpDetails[0]).toMatchObject({ pass: false, angle: "top" });
+    expect(result.followUpDetails[0]).toMatchObject({ pass: false, angles: ["top", "ortho_45", "ortho_45_bottom"] });
   });
 });

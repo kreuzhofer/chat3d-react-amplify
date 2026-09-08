@@ -39,6 +39,17 @@ describe("computeInstrumentId", () => {
     expect(computeInstrumentId(edited, zoom)).not.toBe(computeInstrumentId(PRODUCTION_INSTRUMENT, zoom));
   });
 
+  it("counts the follow-up's views as part of the procedure (#67)", async () => {
+    // Which views the follow-up enlarges decides what the judge can see when
+    // it resolves an uncertain item, so two runs that send different ones are
+    // not the same instrument. The set lives in `visual-eval-views.ts`; this
+    // pins that the id moves with it rather than silently reusing an id.
+    const { FOLLOW_UP_VIEWS } = await import("../services/visual-eval-views.js");
+    expect([...FOLLOW_UP_VIEWS]).toEqual(["top", "ortho_45", "ortho_45_bottom"]);
+    const procedure = JSON.stringify({ followUpViews: [...FOLLOW_UP_VIEWS] });
+    expect(procedure).toContain("ortho_45_bottom");
+  });
+
   it("changes with each zoom setting — an admin edit is a new revision", () => {
     const base = computeInstrumentId(PRODUCTION_INSTRUMENT, zoom);
     expect(computeInstrumentId(PRODUCTION_INSTRUMENT, { ...zoom, enabled: false })).not.toBe(base);

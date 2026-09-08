@@ -27,6 +27,21 @@ export const VIEW_LABELS: Record<StandardView, string> = {
   ortho_45_bottom: "45° up view",
 };
 
+/**
+ * The views the zoom follow-up enlarges (issue #67).
+ *
+ * The follow-up used to send ONE view picked from the item's wording by
+ * keyword. Measured against the deciding view of 92 adjudicated items, that
+ * pick found it 42% of the time — worse than always sending `top` (59%),
+ * because the deciding view is item-specific and often plural: `top` decides
+ * 54 of the 92 and the 45° down view 49, and they overlap little. No one-view
+ * rule gets past about 60%. These three cover 84 of 92 (91%); adding a fourth
+ * buys four more.
+ *
+ * Order is the order the judge sees them in.
+ */
+export const FOLLOW_UP_VIEWS: readonly StandardView[] = ["top", "ortho_45", "ortho_45_bottom"] as const;
+
 /** The eight standard views were not all supplied; `missing` names the gap. */
 export class MissingViewsError extends Error {
   constructor(public readonly missing: string[], public readonly provided: string[]) {

@@ -4,7 +4,8 @@
  * Every stored evaluation carries the id of the instrument it was answered
  * under: a name plus a content hash of the WHOLE judging procedure — the
  * template, the response schema, the zoom follow-up's template and schema,
- * and the zoom settings. Two evaluations are comparable only under the same
+ * the views the follow-up enlarges, and the zoom settings. Two evaluations
+ * are comparable only under the same
  * id; one whose id is not the current one is Stale. A hash cannot be
  * forgotten the way a version constant can, and an admin edit to a zoom
  * setting is a new revision because the follow-up is part of the procedure.
@@ -21,6 +22,7 @@
 import { createHash } from "node:crypto";
 import type { LlmModelConfig } from "./llm-config.service.js";
 import { getZoomSettings, type ZoomSettings } from "./generation-settings.service.js";
+import { FOLLOW_UP_VIEWS } from "./visual-eval-views.js";
 import {
   PRODUCTION_INSTRUMENT_TEMPLATE,
   FOLLOW_UP_INSTRUMENT_TEMPLATE,
@@ -57,6 +59,10 @@ export function computeInstrumentId(instrument: JudgeInstrument, zoom: ZoomSetti
     evaluationSchema: buildEvaluationResponseSchema(SCHEMA_SENTINEL_CHECKLIST_COUNT),
     followUpTemplate: FOLLOW_UP_INSTRUMENT_TEMPLATE,
     followUpSchema: buildFollowUpResponseSchema(),
+    // Which views the follow-up is shown is part of the procedure, not a
+    // setting beside it (issue #67): two runs that enlarge different views
+    // are not the same instrument, and a hash cannot be forgotten.
+    followUpViews: [...FOLLOW_UP_VIEWS],
     zoom: { enabled: zoom.enabled, resolutionPx: zoom.resolutionPx, maxFollowUps: zoom.maxFollowUps },
   };
   const hash = createHash("sha256").update(JSON.stringify(procedure)).digest("hex").slice(0, HASH_LENGTH);

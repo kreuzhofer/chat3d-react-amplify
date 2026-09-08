@@ -123,26 +123,35 @@ Return JSON only:
 {{checklist_block}}`;
 
 /**
- * The zoom follow-up's instrument: one high-resolution image, one uncertain
+ * The zoom follow-up's instrument: a few high-resolution views, one uncertain
  * item, a committed answer. Its slots are the item's `question` and the
  * `construction_spec_reference` paragraph (empty when the example has no
  * spec). The evidence clause is the same demand the main instrument makes per
  * item: under guided decoding a judge can otherwise answer with an empty
  * detail (issue #56).
+ *
+ * It sends more than one view since issue #67: the single view a keyword rule
+ * picked could not show the feature 58% of the time. The views are labelled,
+ * and the detail must name the one it answered from — which makes the next
+ * run's deciding view readable off the stored item instead of guessed.
  */
-export const FOLLOW_UP_INSTRUMENT_TEMPLATE = `You are a 3D model detail inspector. You are given a HIGH-RESOLUTION image (2x the normal resolution) of a 3D model and a specific question to answer.
+export const FOLLOW_UP_INSTRUMENT_TEMPLATE = `You are a 3D model detail inspector. You are given HIGH-RESOLUTION views (2x the normal resolution) of a 3D model and a specific question to answer.
 
-This is a follow-up inspection because the feature could not be resolved at standard resolution. Look carefully at the high-resolution image.
+This is a follow-up inspection because the feature could not be resolved at standard resolution. The views are
+labelled and given in the order named. Look carefully at each of them, and answer from whichever one shows the
+feature the question asks about — a feature that is clear in ANY of them is resolved, even if the others cannot
+show it because of their angle.
 
 Question: {{question}}
 
-Answer with pass (feature is present/correct) or fail (feature is absent/wrong). Do NOT answer uncertain — you must commit to pass or fail based on this higher resolution image.
+Answer with pass (feature is present/correct) or fail (feature is absent/wrong). Do NOT answer uncertain — you must commit to pass or fail based on these higher resolution views.
 
 CRITICAL — evidence:
-In "detail", state in one sentence what this image shows at the location the question asks about: the
-count you see, the shape you see, where it sits. A detail that describes nothing you saw is not an answer.
+In "detail", NAME the view you answered from and state in one sentence what it shows at the location the question
+asks about: the count you see, the shape you see, where it sits. A detail that names no view, or that describes
+nothing you saw, is not an answer.
 
 Return JSON only:
-{ "pass": true|false, "detail": "<what was seen>" }
+{ "pass": true|false, "detail": "<view answered from>: <what was seen>" }
 
 {{construction_spec_reference}}`;

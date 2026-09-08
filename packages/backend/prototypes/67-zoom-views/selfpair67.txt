@@ -1,0 +1,18 @@
+
+SELF-PAIR on today's two-replica pool — same judge, same 142, same instrument, minutes apart
+  first-pass items paired 557 (of 578; 21 reached a follow-up in one arm or the other)
+  identical 536 (96.2%) · moved 21 (3.8%)
+  whole responses byte-identical: 35/142
+  same visual score: 130/142
+    485cf1ba-1263-4b11-914c-f6e2b44431a7#2 pass→fail
+    485cf1ba-1263-4b11-914c-f6e2b44431a7#3 pass→fail
+    c7185bf2-a863-4a61-a91e-ed91abfd69ca#2 pass→fail
+    b0fbb05d-5b91-4d18-8e69-e2ebd9bdbf24#4 pass→fail
+    7c4e61f5-b3f8-42d2-9925-a036fceb888c#3 fail→pass
+    7c4e61f5-b3f8-42d2-9925-a036fceb888c#4 fail→pass
+    7c4e61f5-b3f8-42d2-9925-a036fceb888c#6 pass→fail
+    ce1d818d-2c9c-49dc-a462-b558351c86fc#2 pass→fail
+    5982f19a-a589-4352-8a47-e5a221cc1516#3 pass→fail
+    931f5865-ab3a-40ee-a18d-7a657f8e4d85#4 fail→pass
+    64e0779f-aaa6-43a2-9a4d-a34b08830ff6#6 pass→fail
+    c7557c3a-def6-4385-98ea-5441fa63a83e#4 pass→uncertain

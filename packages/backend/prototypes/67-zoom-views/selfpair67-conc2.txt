@@ -1,0 +1,6 @@
+
+SELF-PAIR on today's two-replica pool — same judge, same 142, same instrument, minutes apart
+  first-pass items paired 561 (of 578; 17 reached a follow-up in one arm or the other)
+  identical 561 (100.0%) · moved 0 (0.0%)
+  whole responses byte-identical: 141/142
+  same visual score: 142/142

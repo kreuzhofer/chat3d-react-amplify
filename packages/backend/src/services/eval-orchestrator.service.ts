@@ -415,7 +415,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
               tb?.addToolCall({
                 toolName: "zoom_followup",
                 success: detail.pass !== null,
-                inputSummary: `question: ${detail.question.slice(0, 80)}, angle: ${detail.angle}`,
+                inputSummary: `question: ${detail.question.slice(0, 80)}, views: ${detail.angles.join(", ")}`,
                 outputSummary: `pass: ${detail.pass}, detail: ${detail.detail.slice(0, 100)}`,
               }, "eval-vlm");
             }

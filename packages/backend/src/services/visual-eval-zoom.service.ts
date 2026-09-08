@@ -19,6 +19,7 @@ import {
   type LlmModelConfig,
 } from "./llm-config.service.js";
 import { getZoomSettings } from "./generation-settings.service.js";
+import { FOLLOW_UP_VIEWS, STANDARD_VIEWS, VIEW_LABELS, type StandardView } from "./visual-eval-views.js";
 import { buildUncertainFollowUpPrompt } from "./visual-eval-prompt.service.js";
 import {
   resolveFollowUpOutput,
@@ -39,7 +40,8 @@ export interface HighResRenderResult {
 
 export interface ZoomFollowUpDetail {
   question: string;
-  angle: string;
+  /** The views sent, in order. */
+  angles: string[];
   /** The judge's answer; null when its reply could not be read as one (the item stays uncertain). */
   pass: boolean | null;
   /** The judge's evidence, or why the reply could not be read. */
@@ -60,9 +62,14 @@ export interface ZoomFollowUpResult {
 
 // ── High-res rendering ───────────────────────────────────────────────
 
-const DEFAULT_HIGHRES_ANGLES: ViewingAngle[] = [
-  "front", "back", "left", "right", "top", "bottom", "ortho_45",
-];
+/**
+ * All eight, since issue #67. The set was seven — `ortho_45_bottom` (the 45°
+ * up view) was never rendered, so a follow-up could not be shown one of the
+ * eight views the judge is promised, and 13 of 95 adjudicated items name it
+ * as the view that decides them. Every one of these is rendered on every
+ * evaluation already; the pick only decides which are sent.
+ */
+const DEFAULT_HIGHRES_ANGLES: ViewingAngle[] = [...STANDARD_VIEWS] as ViewingAngle[];
 
 /**
  * Render high-resolution screenshots for follow-up inspection.
@@ -171,20 +178,19 @@ export async function resolveUncertainItems(
   const toProcess = uncertainItems.slice(0, maxFollowUps);
 
   for (const { item, index } of toProcess) {
-    // Pick the best available angle — use ortho_45 as default, or top for top-related features
-    const angle = pickBestAngle(item.question, highRes);
-    const imageBase64 = highRes.byAngle.get(angle);
+    const views = followUpViews(highRes);
+    const angles = views.map((v) => v.angle);
 
-    if (!imageBase64) {
-      logger.warn({ question: item.question, angle }, "no high-res image for angle, skipping follow-up");
+    if (views.length === 0) {
+      logger.warn({ question: item.question }, "no high-res image for any follow-up view, skipping follow-up");
       resolvedChecklist[index] = { ...item, zoomFollowUp: "skipped" };
       continue;
     }
 
     try {
-      const result = await runSingleFollowUp(item.question, imageBase64, judge, constructionSpec);
+      const result = await runSingleFollowUp(item.question, views, judge, constructionSpec);
       followUpCount++;
-      followUpDetails.push({ question: item.question, angle, pass: result.pass, detail: result.detail });
+      followUpDetails.push({ question: item.question, angles, pass: result.pass, detail: result.detail });
       totalPromptTokens += result.promptTokens;
       totalCompletionTokens += result.completionTokens;
 
@@ -192,21 +198,25 @@ export async function resolveUncertainItems(
         // Fail loud, never guess: the item stays uncertain (issue #56), and
         // the row says the follow-up was tried and could not be read (#61).
         logger.warn(
-          { question: item.question.slice(0, 60), angle, reason: result.detail },
+          { question: item.question.slice(0, 60), angles, reason: result.detail },
           "zoom follow-up reply could not be read, keeping uncertain",
         );
-        resolvedChecklist[index] = { ...item, zoomFollowUp: "unreadable" };
+        resolvedChecklist[index] = { ...item, zoomFollowUp: "unreadable", zoomViews: angles };
         continue;
       }
+      // The views sent are stamped on the resolved item too (issue #67): the
+      // pick used to vanish on success, so no stored run could say which view
+      // answered an item, and #61's angles were unrecoverable.
       resolvedChecklist[index] = {
         question: item.question,
         pass: result.pass,
         detail: `[2x zoom] ${result.detail}`,
+        zoomViews: angles,
       };
-      logger.info({ question: item.question.slice(0, 60), pass: result.pass, angle }, "uncertain item resolved via zoom");
+      logger.info({ question: item.question.slice(0, 60), pass: result.pass, angles }, "uncertain item resolved via zoom");
     } catch (err) {
       logger.warn({ err: err instanceof Error ? err.message : String(err), question: item.question.slice(0, 60) }, "zoom follow-up failed, keeping uncertain");
-      resolvedChecklist[index] = { ...item, zoomFollowUp: "failed" };
+      resolvedChecklist[index] = { ...item, zoomFollowUp: "failed", zoomViews: angles };
     }
   }
 
@@ -233,7 +243,7 @@ interface FollowUpResult {
 
 async function runSingleFollowUp(
   question: string,
-  imageBase64: string,
+  views: FollowUpView[],
   vlmConfig: LlmModelConfig,
   constructionSpec?: string,
 ): Promise<FollowUpResult> {
@@ -255,8 +265,13 @@ async function runSingleFollowUp(
       messages: [{
         role: "user",
         content: [
-          { type: "text", text: `Inspect this high-resolution image and answer: ${question}` },
-          { type: "image", image: imageBase64 },
+          { type: "text" as const, text: `Inspect these high-resolution views and answer: ${question}` },
+          // Each image is preceded by its label, the same wording the main
+          // call uses, so "the top view shows…" in the detail is checkable.
+          ...views.flatMap((v) => [
+            { type: "text" as const, text: `${VIEW_LABELS[v.angle]}:` },
+            { type: "image" as const, image: v.base64 },
+          ]),
         ],
       }],
       // One JSON object with a one-sentence detail; the cap only stops a runaway
@@ -344,27 +359,26 @@ function snippet(text: string): string {
   return oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine;
 }
 
-// ── Angle selection heuristic ────────────────────────────────────────
+// ── The views the follow-up sends ────────────────────────────────────
 
-function pickBestAngle(question: string, highRes: HighResRenderResult): string {
-  const q = question.toLowerCase();
-  const available = [...highRes.byAngle.keys()];
+interface FollowUpView { angle: StandardView; base64: string }
 
-  // Simple keyword heuristics for angle selection
-  if (q.includes("top") || q.includes("upper") || q.includes("above")) {
-    if (available.includes("top")) return "top";
+/**
+ * The follow-up's views, in `FOLLOW_UP_VIEWS` order, skipping any the render
+ * did not produce.
+ *
+ * This replaces a keyword rule that read the item's wording and sent ONE view
+ * ("face" fired on front; the word "top" was the only way to reach the top
+ * view). Against the deciding view of 92 adjudicated items it was right 42%
+ * of the time — below a constant `top` — because one view is usually not
+ * enough: the deciding view is item-specific and often plural. The fixed set
+ * covers 91% and cannot mis-read a question, having stopped reading it.
+ */
+function followUpViews(highRes: HighResRenderResult): FollowUpView[] {
+  const out: FollowUpView[] = [];
+  for (const angle of FOLLOW_UP_VIEWS) {
+    const base64 = highRes.byAngle.get(angle);
+    if (base64) out.push({ angle, base64 });
   }
-  if (q.includes("bottom") || q.includes("lower") || q.includes("beneath")) {
-    if (available.includes("bottom")) return "bottom";
-  }
-  if (q.includes("front") || q.includes("face")) {
-    if (available.includes("front")) return "front";
-  }
-  if (q.includes("side") || q.includes("lateral")) {
-    if (available.includes("left")) return "left";
-  }
-
-  // Default: ortho_45 gives the best overview
-  if (available.includes("ortho_45")) return "ortho_45";
-  return available[0] ?? "front";
+  return out;
 }

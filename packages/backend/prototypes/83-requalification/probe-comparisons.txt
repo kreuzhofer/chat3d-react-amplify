@@ -1,0 +1,4 @@
+02a vs 02b|136|136|0|136
+ERROR:  cannot extract elements from a scalar
+02a vs 04|136|126|10|5
+ERROR:  cannot extract elements from a scalar

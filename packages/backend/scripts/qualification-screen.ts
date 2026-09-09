@@ -20,8 +20,8 @@
  * Production rows carry no durations, so throughput is not reported.
  */
 import { writeFileSync } from "node:fs";
-import { pairRefusal } from "../src/services/serving-gate.service.js";
 import { prisma } from "../src/db/prisma.js";
+import { loadProductionRun, loadRun, type LoadedRun } from "../src/services/qualification-screen-load.service.js";
 import { getInstrumentStatus } from "../src/services/workbench-instrument.service.js";
 import {
   agreement,
@@ -57,76 +57,6 @@ function parseArgs(argv: string[]): Args {
   if (!args.production && (args.candidates.length < 1 || args.candidates.length > 2)) throw new Error("Give one or two --candidate run ids, or --candidate-production");
   if (!args.reference) throw new Error("--reference is required");
   return args;
-}
-
-interface LoadedRun extends ScreenRun { experimentId: string; wallClockMs: number | null }
-
-async function loadRun(runId: string): Promise<LoadedRun> {
-  const run = await prisma.experimentRun.findUnique({
-    where: { id: runId },
-    select: {
-      id: true, modelLabel: true, experimentId: true, startedAt: true, completedAt: true, status: true,
-      servingViolation: true,
-    },
-  });
-  if (!run) throw new Error(`Run ${runId} not found`);
-  if (run.status !== "completed") throw new Error(`Run ${runId} is ${run.status}, not completed`);
-  // The screen decides qualification, so it is the last place a marked run
-  // may slip into a comparison (ADR 0006).
-  const refusal = pairRefusal(run);
-  if (refusal) throw new Error(`Run ${runId} — ${refusal}`);
-  const results = await prisma.vlmExperimentResult.findMany({
-    where: { runId },
-    select: {
-      exampleId: true, visualScore: true, checklistResults: true, error: true, issues: true,
-      instrumentId: true, thinkingEffort: true, durationMs: true, completionTokens: true,
-    },
-  });
-  const rows: ScreenResultRow[] = results.map((r) => ({
-    exampleId: r.exampleId,
-    visualScore: r.visualScore == null ? null : Number(r.visualScore),
-    checklistResults: Array.isArray(r.checklistResults) ? (r.checklistResults as StoredChecklistItem[]) : null,
-    error: r.error,
-    issues: Array.isArray(r.issues) ? (r.issues as unknown[]).map(String) : [],
-    instrumentId: r.instrumentId,
-    thinkingEffort: r.thinkingEffort,
-    durationMs: r.durationMs,
-    completionTokens: r.completionTokens,
-  }));
-  const wallClockMs = run.startedAt && run.completedAt ? run.completedAt.getTime() - run.startedAt.getTime() : null;
-  return { runId, label: run.modelLabel, rows, experimentId: run.experimentId, wallClockMs };
-}
-
-/**
- * The corpus's own ratings for an experiment's selections (#63): the rows
- * the re-rating batch wrote, read as if they were a run. Labelled by the
- * judge(s) that produced them; identity then checks there was one.
- */
-async function loadProductionRun(experimentId: string): Promise<LoadedRun> {
-  const selected = await prisma.vlmExperimentExampleSelection.findMany({
-    where: { experimentId }, orderBy: { selectionOrder: "asc" }, select: { exampleId: true },
-  });
-  if (selected.length === 0) throw new Error(`Experiment ${experimentId} has no example selections`);
-  const examples = await prisma.workbenchExample.findMany({
-    where: { id: { in: selected.map((s) => s.exampleId) } },
-    select: {
-      id: true, visualScore: true, evalChecklistResults: true, evalIssues: true,
-      vlmModel: true, vlmInstrumentId: true, vlmThinkingEffort: true,
-    },
-  });
-  const judges = [...new Set(examples.map((e) => `${e.vlmModel ?? "?"} (${e.vlmThinkingEffort ?? "?"})`))].sort();
-  const rows: ScreenResultRow[] = examples.map((e) => ({
-    exampleId: e.id,
-    visualScore: e.visualScore == null ? null : Number(e.visualScore),
-    checklistResults: Array.isArray(e.evalChecklistResults) ? (e.evalChecklistResults as StoredChecklistItem[]) : null,
-    error: null,
-    issues: Array.isArray(e.evalIssues) ? (e.evalIssues as unknown[]).map(String) : [],
-    instrumentId: e.vlmInstrumentId,
-    thinkingEffort: e.vlmThinkingEffort,
-    durationMs: null,
-    completionTokens: null,
-  }));
-  return { runId: `production:${experimentId.slice(0, 8)}`, label: `production rating by ${judges.join(" | ")}`, rows, experimentId, wallClockMs: null };
 }
 
 const pct = (x: number) => `${(100 * x).toFixed(1)}%`;

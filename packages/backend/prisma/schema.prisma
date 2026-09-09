@@ -111,6 +111,8 @@ model User {
   waitlistEntriesApproved       WaitlistEntry[]
   llmUsageEvents                LlmUsageEvent[]
   experiments                   Experiment[]
+  adjudicationSittings          AdjudicationSitting[]   @relation("SittingAdjudicator")
+  adjudicationsDecided          Adjudication[]          @relation("AdjudicationDecidedBy")
 
   @@index([role], map: "idx_users_role")
   @@index([status], map: "idx_users_status")
@@ -517,6 +519,7 @@ model WorkbenchExample {
   ragRetrievalEvents     RagRetrievalEvent[]
   vlmExampleSelections   VlmExperimentExampleSelection[]
   vlmExperimentResults   VlmExperimentResult[]
+  adjudications          Adjudication[]
 
   @@index([promptId], map: "idx_wb_examples_prompt")
   @@index([approvalStatus], map: "idx_wb_examples_approval")
@@ -608,6 +611,7 @@ model Experiment {
   runs                 ExperimentRun[]
   promptSelections     ExperimentPromptSelection[]
   vlmExampleSelections VlmExperimentExampleSelection[]
+  sittingsSampled      AdjudicationSitting[]
 
   @@index([status], map: "idx_experiments_status")
   @@map("experiment_experiments")
@@ -645,6 +649,8 @@ model ExperimentRun {
   model      LlmModel               @relation(fields: [modelId], references: [id], onDelete: Restrict, onUpdate: NoAction)
   examples   WorkbenchExample[]
   vlmResults VlmExperimentResult[]
+  sittingsAsCandidate AdjudicationSitting[] @relation("SittingCandidateRun")
+  sittingsAsReference AdjudicationSitting[] @relation("SittingReferenceRun")
 
   @@index([experimentId], map: "idx_exp_runs_experiment")
   @@map("experiment_runs")
@@ -1001,3 +1007,81 @@ model DecompositionDecision {
 //    - curation_candidates.status IN ('pending','reviewing','approved','rejected','dismissed')
 //    - curation_candidate_tags.suggested_by IN ('llm','admin')
 // ═══════════════════════════════════════════════════════════════════════════════
+
+/// One bounded pass of Disagreement inspection (issue #92): the disagreement
+/// set of one candidate against one reference under one Instrument id, worked
+/// by one adjudicator. The set is frozen at creation and never grows.
+model AdjudicationSitting {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title              String    @db.VarChar(255)
+  instrumentId       String    @map("instrument_id") @db.VarChar(80)
+  /// `run`: an experiment run; `production`: the corpus's own ratings for the sample.
+  candidateSource    String    @map("candidate_source") @db.VarChar(20)
+  candidateRunId     String?   @map("candidate_run_id") @db.Uuid
+  candidateLabel     String    @map("candidate_label") @db.VarChar(255)
+  referenceRunId     String?   @map("reference_run_id") @db.Uuid
+  referenceLabel     String    @map("reference_label") @db.VarChar(255)
+  /// The experiment whose example selections are the sample the set was drawn on.
+  sampleExperimentId String?   @map("sample_experiment_id") @db.Uuid
+  adjudicatorId      String?   @map("adjudicator_id") @db.Uuid
+  /// `app`: started in the app; `import`: a sheet adjudicated before the app existed.
+  origin             String    @default("app") @db.VarChar(20)
+  notes              String?   @db.Text
+  itemCount          Int       @map("item_count")
+  exampleCount       Int       @map("example_count")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  completedAt        DateTime? @map("completed_at") @db.Timestamptz()
+
+  // Relations
+  candidateRun     ExperimentRun? @relation("SittingCandidateRun", fields: [candidateRunId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  referenceRun     ExperimentRun? @relation("SittingReferenceRun", fields: [referenceRunId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  sampleExperiment Experiment?    @relation(fields: [sampleExperimentId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  adjudicator      User?          @relation("SittingAdjudicator", fields: [adjudicatorId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  items            Adjudication[]
+
+  @@index([createdAt], map: "idx_adj_sittings_created")
+  @@map("adjudication_sittings")
+}
+
+/// One item of a sitting's disagreement set, with both judges' answers frozen
+/// as they were, the human's decision (R / C / N) and the triage beside it.
+/// Gold for the bar and the fine-tune: an example with adjudications cannot
+/// be deleted underneath them.
+model Adjudication {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sittingId        String    @map("sitting_id") @db.Uuid
+  exampleId        String    @map("example_id") @db.Uuid
+  /// Position of the item in the stored checklist (0-based), the pairing key.
+  itemIndex        Int       @map("item_index")
+  question         String    @db.Text
+  refState         String    @map("ref_state") @db.VarChar(10)
+  refDetail        String    @map("ref_detail") @db.Text
+  candState        String    @map("cand_state") @db.VarChar(10)
+  candDetail       String    @map("cand_detail") @db.Text
+  arm2State        String?   @map("arm2_state") @db.VarChar(10)
+  arm2Detail       String?   @map("arm2_detail") @db.Text
+  /// R the reference was right, C the candidate was right, N neither / unanswerable. NULL = open.
+  decision         String?   @db.Char(1)
+  note             String    @default("") @db.Text
+  agreedWithTriage Boolean   @default(false) @map("agreed_with_triage")
+  decidedById      String?   @map("decided_by") @db.Uuid
+  decidedAt        DateTime? @map("decided_at") @db.Timestamptz()
+  triageVerdict    String?   @map("triage_verdict") @db.Char(1)
+  triageConfidence String?   @map("triage_confidence") @db.VarChar(16)
+  triageWhat       String?   @map("triage_what") @db.Text
+  triageView       String?   @map("triage_view") @db.VarChar(120)
+  triageResolvedBy String?   @map("triage_resolved_by") @db.Text
+  triageModel      String?   @map("triage_model") @db.VarChar(120)
+  triageAt         DateTime? @map("triage_at") @db.Timestamptz()
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  sitting   AdjudicationSitting @relation(fields: [sittingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  example   WorkbenchExample    @relation(fields: [exampleId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  decidedBy User?               @relation("AdjudicationDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@unique([sittingId, exampleId, itemIndex])
+  @@index([exampleId], map: "idx_adjudications_example")
+  @@index([decision], map: "idx_adjudications_decision")
+  @@map("adjudications")
+}

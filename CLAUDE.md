@@ -142,6 +142,11 @@ On first launch with an empty database, the app shows an interactive setup page 
 - `GET /api/admin/tags` — List all tags (admin)
 - `GET /api/admin/workbench/instrument` — The visual judge's current Instrument id and how much of the rated corpus is Stale (admin)
 - `POST /api/admin/workbench/re-rate-stale/batch` — Re-rate a batch of Stale ratings with the `vlm_eval` judge, resumable (admin, optional `limit`/`categoryId`)
+- `GET /api/admin/workbench/adjudication/sittings` — List adjudication sittings with their tally under ADR 0004's terms (admin)
+- `POST /api/admin/workbench/adjudication/sittings` — Start a sitting: `referenceRunId` plus one of `candidateRunId` / `productionExperimentId`; the disagreement set is frozen (admin)
+- `GET /api/admin/workbench/adjudication/sittings/:id` — A sitting's items (both judges' answers, the triage, the decision) and tally (admin)
+- `PATCH /api/admin/workbench/adjudication/sittings/:id/items/:itemId` — Record or clear the decision (`R`/`C`/`N`/null) with a note (admin)
+- `POST /api/admin/workbench/adjudication/sittings/:id/complete` — Close a sitting once every hard flip is decided; `{reopen: true}` reopens (admin)
 
 ## Key Patterns
 
@@ -164,6 +169,8 @@ PostgreSQL tables:
 - `llm_models` — id (UUID), provider (FK→llm_providers.name), model_name, display_name, costs, capabilities, token limits, timestamps
 - `llm_purpose_map` — purpose (PK), model_id (FK→llm_models.id), override settings
 - `generation_settings_overrides` — key (PK, VARCHAR), value (DECIMAL), updated_at — admin overrides for generation pipeline settings
+- `adjudication_sittings` — id (UUID), title, instrument_id, candidate (run or production) and reference run, sample_experiment_id, adjudicator_id, origin (`app`/`import`), counts, completed_at
+- `adjudications` — id (UUID), sitting_id, example_id (RESTRICT on delete), item_index, question, both judges' frozen answers, decision (`R`/`C`/`N`), note, decided_by/at, triage_* (a third model's reading, never counted)
 
 ## File Storage Layout
 

@@ -102,6 +102,14 @@ export interface ReRateStaleOptions {
    * tenancy (ADR 0004), more would co-batch the judge with itself (#63).
    */
   concurrency?: number;
+  /**
+   * Re-rate exactly these rows instead of the Stale selection, whatever
+   * their rating state — the rows a failed run left unrated (issue #87: a
+   * dead gateway voided 179 ratings, and an unrated row is outside the
+   * Stale frame). Still production, rendered, with the eight views and a
+   * judge-derived verdict; still gated.
+   */
+  exampleIds?: string[];
 }
 
 /**
@@ -133,9 +141,12 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
 
   const instrumentId = await currentInstrumentId();
 
+  const byId = opts.exampleIds && opts.exampleIds.length > 0;
   const rows = await prisma.workbenchExample.findMany({
     where: {
-      ...staleRatingWhere(instrumentId),
+      ...(byId
+        ? { id: { in: opts.exampleIds }, renderStatus: "success", experimentRunId: null }
+        : staleRatingWhere(instrumentId)),
       ...HAS_STANDARD_VIEWS,
       approvalStatus: { in: JUDGE_DERIVED_STATUSES },
       ...(opts.categoryId ? { promptRef: { categoryId: opts.categoryId } } : {}),
@@ -145,7 +156,7 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     take: limit,
   });
   if (rows.length === 0) {
-    const err = new Error(`No stale ratings to re-rate under ${instrumentId}`);
+    const err = new Error(byId ? "None of the given rows can be re-rated" : `No stale ratings to re-rate under ${instrumentId}`);
     (err as Error & { statusCode: number }).statusCode = 404;
     throw err;
   }
@@ -155,7 +166,7 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
     jobId,
     type: "batch-re-rate-stale",
     categoryId: opts.categoryId ?? "*",
-    categoryName: opts.categoryId ? "Stale ratings (one category)" : "Stale ratings (all categories)",
+    categoryName: byId ? "Given rows (by id)" : opts.categoryId ? "Stale ratings (one category)" : "Stale ratings (all categories)",
     status: "running",
     total: rows.length,
     completed: 0,
@@ -179,6 +190,6 @@ export async function startBatchReRateStale(opts: ReRateStaleOptions = {}): Prom
 
   void runBatchReEvaluate(job, rows, concurrency, gate);
 
-  logger.info({ jobId, instrumentId, total: rows.length, limit, requested, concurrency, categoryId: opts.categoryId ?? null }, "stale re-rating batch started");
+  logger.info({ jobId, instrumentId, total: rows.length, limit, requested, concurrency, categoryId: opts.categoryId ?? null, byId: byId ? opts.exampleIds!.length : 0 }, "stale re-rating batch started");
   return toSummary(job);
 }

@@ -62,9 +62,18 @@ export interface FullEvalInput {
   evalPlan?: EvalPlan | null;
 }
 
+/**
+ * What became of the judge call (issue #87). A rating exists only for
+ * `rated` and `reused`; the two `skipped_*` outcomes are deliberate and carry
+ * no rating by design; `failed` means the judge was asked and did not answer —
+ * a result that must never overwrite a stored rating.
+ */
+export type JudgeOutcome = "rated" | "reused" | "skipped_no_images" | "skipped_code_review" | "skipped_assertions" | "failed";
+
 export interface FullEvalResult {
   compositeScore: number;
   visualScore: number | null;
+  judgeOutcome: JudgeOutcome;
   codeScore: number | null;
   assertionPassRate: number | null;
   assertionsFailed: boolean;
@@ -103,6 +112,7 @@ export interface FullEvalResult {
 
 function buildResult(opts: {
   visualScore: number | null;
+  judgeOutcome: JudgeOutcome;
   codeScore: number | null;
   assertionPassRate: number | null;
   assertionsFailed: boolean;
@@ -136,6 +146,7 @@ function buildResult(opts: {
   return {
     compositeScore: composite.compositeScore,
     visualScore: opts.visualScore,
+    judgeOutcome: opts.judgeOutcome,
     codeScore: opts.codeScore,
     assertionPassRate: opts.assertionPassRate,
     assertionsFailed: opts.assertionsFailed,
@@ -225,7 +236,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
       tb?.endPhase("completed"); // close eval orchestration
 
       const result = buildResult({
-        visualScore: null, codeScore: null,
+        visualScore: null, codeScore: null, judgeOutcome: "skipped_assertions",
         assertionPassRate: assertionSummary.passRate, assertionsFailed: true,
         codeEvalWeight: resolvedWeight.weight,
         compositeWeightSource: resolvedWeight.source,
@@ -309,7 +320,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
     tb?.endPhase("completed"); // close eval orchestration
 
     const result = buildResult({
-      visualScore: null, codeScore,
+      visualScore: null, codeScore, judgeOutcome: "skipped_code_review",
       assertionPassRate: assertionSummary?.passRate ?? null, assertionsFailed: false,
       codeEvalWeight: resolvedWeight.weight,
       compositeWeightSource: resolvedWeight.source,
@@ -339,9 +350,11 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
   let vlmInstrumentId: string | null = null;
   let vlmThinkingEffort: string | null = null;
   let evalChecklistState: ChecklistState | null = null;
+  let judgeOutcome: JudgeOutcome = "skipped_no_images";
 
   // If agent already provided a VLM score, reuse it instead of calling VLM again
   if (input.agentVlmScore) {
+    judgeOutcome = "reused";
     visualScore = input.agentVlmScore.score;
     vlmIssues = input.agentVlmScore.issues;
     vlmSuggestions = input.agentVlmScore.suggestions;
@@ -455,8 +468,13 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
         { score: vlmResult.score, model: vlmResult.vlmModel, issueCount: vlmResult.issues.length, issues: vlmResult.issues, suggestions: vlmResult.suggestions },
         "phase 3: VLM visual eval result",
       );
+      judgeOutcome = "rated";
     } catch (err) {
       tb?.endPhase("failed", { error: err instanceof Error ? err.message : String(err) });
+      // The judge was asked and did not answer. The result carries no rating
+      // and says so: a caller that stores ratings must not write this one
+      // over a real one (issue #87 — 175 rows were voided that way).
+      judgeOutcome = "failed";
       logger.warn({ err: err instanceof Error ? err.message : String(err) }, "VLM evaluation failed — proceeding with code-only");
     }
   } else {
@@ -470,7 +488,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
   // already applied adaptive adjustment when applicable, so we deliberately
   // skip the per-call adaptive recomputation in computeCompositeScore.
   const result = buildResult({
-    visualScore, codeScore,
+    visualScore, codeScore, judgeOutcome,
     assertionPassRate, assertionsFailed: false,
     codeEvalWeight: resolvedWeight.weight,
     compositeWeightSource: resolvedWeight.source,

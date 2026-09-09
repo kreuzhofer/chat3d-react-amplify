@@ -631,6 +631,10 @@ async function _runPipeline(
     agFullEval = {
       compositeScore: agResult.evalResult.score,
       visualScore: agResult.evalResult.visualScore,
+      // The agent ran the same pipeline; carry its outcome, or read it off the
+      // score for a result produced before the outcome was recorded.
+      judgeOutcome: agResult.evalResult.judgeOutcome
+        ?? (agResult.evalResult.visualScore !== null ? "rated" : "skipped_no_images"),
       codeScore: agResult.evalResult.codeScore,
       assertionPassRate: agResult.evalResult.assertionPassRate,
       assertionsFailed: false, // agent wouldn't have submitted if assertions failed

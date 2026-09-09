@@ -18,7 +18,7 @@ workbenchInstrumentRouter.get("/instrument", async (_req, res) => {
 
 workbenchInstrumentRouter.post("/re-rate-stale/batch", async (req, res) => {
   try {
-    const body = (req.body ?? {}) as { limit?: unknown; categoryId?: unknown; concurrency?: unknown };
+    const body = (req.body ?? {}) as { limit?: unknown; categoryId?: unknown; concurrency?: unknown; exampleIds?: unknown };
     const limit = body.limit === undefined ? undefined : Number(body.limit);
     if (limit !== undefined && !Number.isFinite(limit)) {
       res.status(400).json({ error: "limit must be a number" });
@@ -30,7 +30,12 @@ workbenchInstrumentRouter.post("/re-rate-stale/batch", async (req, res) => {
       return;
     }
     const categoryId = typeof body.categoryId === "string" && body.categoryId ? body.categoryId : undefined;
-    const job = await startBatchReRateStale({ limit, categoryId, concurrency });
+    if (body.exampleIds !== undefined && !(Array.isArray(body.exampleIds) && body.exampleIds.every((x) => typeof x === "string"))) {
+      res.status(400).json({ error: "exampleIds must be an array of ids" });
+      return;
+    }
+    const exampleIds = body.exampleIds as string[] | undefined;
+    const job = await startBatchReRateStale({ limit, categoryId, concurrency, exampleIds });
     res.status(202).json(job);
   } catch (error) {
     const statusCode = (error as { statusCode?: number }).statusCode;

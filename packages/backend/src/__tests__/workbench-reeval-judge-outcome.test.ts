@@ -8,7 +8,7 @@
  * judge's outcome, and the re-evaluation refuses to write a `failed` one.
  * A deliberate skip (code review too low) is still written, as before.
  */
-import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 
 vi.mock("../services/eval-orchestrator.service.js", () => ({ runFullEvaluation: vi.fn() }));
 vi.mock("../services/file-storage.service.js", () => ({
@@ -33,7 +33,9 @@ describe("re-evaluation and the judge's outcome", () => {
   let categoryId: string | undefined;
   let exampleId: string;
 
-  beforeEach(async () => {
+  // One category for both tests, deleted once: a per-test category with a single
+  // afterAll leaked one row per run into the app's database (issue #90).
+  beforeAll(async () => {
     const nextRank = ((await prisma.workbenchCategory.aggregate({ _max: { rank: true } }))._max.rank ?? 0) + 1;
     const cat = await prisma.workbenchCategory.create({
       data: { name: `reeval-judge-${Date.now()}-${nextRank}`, description: "", complexity: 1, rank: nextRank },

@@ -10,12 +10,12 @@
  */
 import { prisma } from "../db/prisma.js";
 import { pairRefusal } from "./serving-gate.service.js";
-import type { ScreenResultRow, ScreenRun, StoredChecklistItem } from "./qualification-screen.service.js";
+import { answeredRows, type ScreenResultRow, type ScreenRun, type StoredChecklistItem } from "./qualification-screen.service.js";
 
 export interface LoadedRun extends ScreenRun {
   experimentId: string;
   wallClockMs: number | null;
-  /** The instrument ids the rows carry; one entry for a run the screen can use. */
+  /** The instrument ids the *answered* rows carry; one entry for a run a sitting can use. A failed evaluation stores no id and pairs with nothing. */
   instrumentIds: string[];
 }
 
@@ -23,8 +23,9 @@ export class RunNotPairableError extends Error {
   readonly statusCode = 409;
 }
 
-function instrumentIds(rows: ScreenResultRow[]): string[] {
-  return [...new Set(rows.map((r) => r.instrumentId ?? "(none)"))].sort();
+/** The instrument ids of the rows that answered (a failed or empty evaluation carries none and is never paired). */
+export function answeredInstrumentIds(run: ScreenRun): string[] {
+  return [...new Set([...answeredRows(run).values()].map((r) => r.instrumentId ?? "(none)"))].sort();
 }
 
 export async function loadRun(runId: string): Promise<LoadedRun> {
@@ -60,7 +61,8 @@ export async function loadRun(runId: string): Promise<LoadedRun> {
     completionTokens: r.completionTokens,
   }));
   const wallClockMs = run.startedAt && run.completedAt ? run.completedAt.getTime() - run.startedAt.getTime() : null;
-  return { runId, label: run.modelLabel, rows, experimentId: run.experimentId, wallClockMs, instrumentIds: instrumentIds(rows) };
+  const loaded = { runId, label: run.modelLabel, rows, experimentId: run.experimentId, wallClockMs };
+  return { ...loaded, instrumentIds: answeredInstrumentIds(loaded) };
 }
 
 /**
@@ -92,8 +94,6 @@ export async function loadProductionRun(experimentId: string): Promise<LoadedRun
     durationMs: null,
     completionTokens: null,
   }));
-  return {
-    runId: `production:${experimentId.slice(0, 8)}`, label: `production rating by ${judges.join(" | ")}`, rows,
-    experimentId, wallClockMs: null, instrumentIds: instrumentIds(rows),
-  };
+  const loaded = { runId: `production:${experimentId.slice(0, 8)}`, label: `production rating by ${judges.join(" | ")}`, rows, experimentId, wallClockMs: null };
+  return { ...loaded, instrumentIds: answeredInstrumentIds(loaded) };
 }

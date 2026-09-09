@@ -106,7 +106,7 @@ function hasChecklist(row: ScreenResultRow): boolean {
 }
 
 /** Rows that answered: not failed, not truncated, with a checklist. */
-function answeredRows(run: ScreenRun): Map<string, ScreenResultRow> {
+export function answeredRows(run: ScreenRun): Map<string, ScreenResultRow> {
   const out = new Map<string, ScreenResultRow>();
   for (const row of run.rows) {
     if (!isFailedEvaluation(row) && !isTruncated(row) && hasChecklist(row)) out.set(row.exampleId, row);

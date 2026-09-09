@@ -33,7 +33,7 @@ vi.mock("../services/qualification-screen-load.service.js", async (importOrigina
 });
 
 import { completeSitting, createSitting, recordAdjudication, SittingError } from "../services/adjudication-sitting.service.js";
-import { RunNotPairableError } from "../services/qualification-screen-load.service.js";
+import { RunNotPairableError, answeredInstrumentIds } from "../services/qualification-screen-load.service.js";
 
 const ID = "production@4892d8d1b160";
 function run(runId: string, label: string, rows: Array<[string, Array<{ pass: boolean | null; detail: string; question: string }>]>, instrumentId = ID) {
@@ -133,5 +133,17 @@ describe("completeSitting", () => {
     db.sittingFindUnique.mockResolvedValue({ id: "sit-1", completedAt: null, adjudicator: null, items: [decided] });
     await completeSitting("sit-1");
     expect(db.sittingUpdate.mock.calls[0][0].data.completedAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("answeredInstrumentIds", () => {
+  it("ignores a failed evaluation's missing id, since a failed row is never paired", () => {
+    const run = {
+      runId: "r", label: "sonnet", rows: [
+        { exampleId: "a", visualScore: 7, checklistResults: [{ question: "q", pass: true, detail: "" }], error: null, issues: [], instrumentId: ID, thinkingEffort: "off", durationMs: null, completionTokens: null },
+        { exampleId: "b", visualScore: 1, checklistResults: null, error: null, issues: ["Evaluation failed: No output generated."], instrumentId: null, thinkingEffort: "off", durationMs: null, completionTokens: null },
+      ],
+    };
+    expect(answeredInstrumentIds(run)).toEqual([ID]);
   });
 });

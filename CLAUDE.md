@@ -147,6 +147,7 @@ On first launch with an empty database, the app shows an interactive setup page 
 - `GET /api/admin/workbench/adjudication/sittings/:id` — A sitting's items (both judges' answers, the triage, the decision) and tally (admin)
 - `PATCH /api/admin/workbench/adjudication/sittings/:id/items/:itemId` — Record or clear the decision (`R`/`C`/`N`/null) with a note (admin)
 - `POST /api/admin/workbench/adjudication/sittings/:id/complete` — Close a sitting once every hard flip is decided; `{reopen: true}` reopens (admin)
+- `POST /api/admin/workbench/adjudication/sittings/:id/triage` — Read every open item with the `adjudication_triage` model (never a party to the sitting); a job, polled via `GET /api/admin/workbench/jobs/:jobId` (admin, optional `redo`)
 
 ## Key Patterns
 

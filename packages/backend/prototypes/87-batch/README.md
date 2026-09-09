@@ -98,3 +98,28 @@ co-tenant off and halts after 60 s, resumable. `gateway-poll.py` (prototypes/59-
   as solid (`6b30228e`, the same example), a T-slot's undercut missed, a castellated nut's slots extended to the base,
   a cutout missed, a floating plate, a D-handle (Sonnet's error), a taper, a pin — plus two items on the same blade
   where a sharp tip was called blunt. Daniel's calibration from #85 (corner rings are posts) applied on `8ef4a5b9`.
+
+## Daniel's verdicts (2026-09-09, `adjudicated87.json`, read from the page's store) — the adjudication that counts
+
+All 31; agrees with the third opinion on 23, overrules it on 8. On the 31 hard flips: **batch false passes 3 vs
+Sonnet 4 — holds; batch false fails 10 vs Sonnet 10, allowance 20 — holds**; 4 N.
+
+The overrules:
+
+- `10a93ee5` #5 → C: "the barrel is there but is vertical — if that is the barrel, qwen would be right; that both parts
+  look merged is not part of the question." (Items #2 and #3 on the same hinge stayed R.)
+- `59cd58c4` #3 → C: **"I hand-counted 25."** The reading's scan of the full-size top view found 24 dark flanks on every
+  row; Daniel's count on the page is the verdict. Recorded as a disagreement between a measurement and the arbiter.
+- `6edac583` #1 → C: "the tip is rounded, it's not sharp — define sharp and the answer will be more accurate." (The
+  sibling blade `8d81a4b9` stayed R.)
+- `bf7400b0` #2 → C: "I see two teeth, if that is what you refer to as the spikes — what is a tooth vs a spike?"
+- `ff87549e` #3 → C.
+- **Three to N**: `1a2cb147` #3 ("misleading or unclear question — top to tip? what is top to tip?"), `8c059166` #2
+  ("three questions in one; I would give it to none of them"), `bf7400b0` #1 ("orientation problem — the part is not
+  oriented the way the question expects in the first place").
+- `aa556764` #1 stays R, with a note for the criteria side: "if you already have the definition of a two-level
+  staircase, was that also specified so it's not guessed by the code generator?"
+
+**Outcome.** The spot check confirms the qualification: on the corpus's own rows the judge holds both adjudicated
+terms of ADR 0004, and the grant in `visual-eval-qualified-judges.ts` is **no longer provisional** — the first time a
+grant has survived its spot check. The export's 2,112 admitted rows are the fine-tuning filter's trusted set.

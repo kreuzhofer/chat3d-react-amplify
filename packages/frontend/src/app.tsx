@@ -87,6 +87,10 @@ const AdminExperimentsPage = lazy(async () => {
   const module = await import("./pages/admin/AdminExperimentsPage");
   return { default: module.AdminExperimentsPage };
 });
+const AdminAdjudicationPage = lazy(async () => {
+  const module = await import("./pages/admin/AdminAdjudicationPage");
+  return { default: module.AdminAdjudicationPage };
+});
 // PROTOTYPE route (wayfinder #92) — throwaway, never merges.
 const AdjudicationPrototypePage = lazy(async () => {
   const module = await import("./components/admin/adjudication-prototype/AdjudicationPrototypePage");
@@ -196,6 +200,8 @@ function AuthenticatedApp() {
             <Route path="render-errors" element={<AdminRenderErrorsPage />} />
             <Route path="experiments" element={<AdminExperimentsPage />} />
             <Route path="experiments/:experimentId" element={<AdminExperimentsPage />} />
+            <Route path="adjudication" element={<AdminAdjudicationPage />} />
+            <Route path="adjudication/:sittingId" element={<AdminAdjudicationPage />} />
             <Route path="adjudication-prototype" element={<AdjudicationPrototypePage />} />
           </Route>
           <Route path="/workbench" element={<AdminRouteGuard><WorkbenchPage /></AdminRouteGuard>} />

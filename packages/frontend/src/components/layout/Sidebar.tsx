@@ -16,6 +16,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plug,
+  Scale,
   Search,
   Settings,
   Shield,
@@ -91,6 +92,7 @@ export function Sidebar() {
     { to: "/admin/data-quality", label: "Data Quality", icon: <ListChecks className="h-3.5 w-3.5" /> },
     { to: "/admin/render-errors", label: "Render Errors", icon: <ListChecks className="h-3.5 w-3.5" /> },
     { to: "/admin/experiments", label: t("admin.experiments"), icon: <TestTube className="h-3.5 w-3.5" /> },
+    { to: "/admin/adjudication", label: "Adjudication", icon: <Scale className="h-3.5 w-3.5" /> },
   ], [t]);
 
   const navLinkClass = (isActive: boolean) =>

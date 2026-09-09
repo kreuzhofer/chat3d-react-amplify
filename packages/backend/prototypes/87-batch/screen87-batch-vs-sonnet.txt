@@ -1,0 +1,43 @@
+QUALIFICATION SCREEN — ADR 0004 mechanical terms
+candidate arm 1: production rating by vllm-dgx-14/qwen3.8-27b-nvfp4 (off) (production:dadf32f4)
+reference:       Claude Sonnet 4.6 (Anthropic API, thinking off) (02c24abc-430a-42f6-8378-8939e60afa71)
+examples selected: 125 | current instrument: production@4892d8d1b160 | corpus for hours-per-pass: 2522 rated rows
+
+## IDENTITY — one Instrument id and one thinking effort per run, the same id across runs
+  PASS  production rating by vllm-dgx-14/qwen3.8-27b-nvfp4 (off): instrument production@4892d8d1b160 | effort off
+  PASS  Claude Sonnet 4.6 (Anthropic API, thinking off): instrument production@4892d8d1b160 | effort off
+  PASS  same instrument id across runs
+
+## COMPLETENESS — zero tolerance (ADR 0004)
+  (unreadable follow-ups are read from the item's zoom outcome marker; rows stored before 2026-09-06 carry none, so for those the count is blind and the log is the record)
+  production rating by vllm-dgx-14/qwen3.8-27b-nvfp4 (off): answered 125/125, items 456, residual uncertain 0 (allowed; they fail at the gate)
+  PASS  unanswered examples: 0 (<= 0)
+  PASS  errors: 0 (<= 0)
+  PASS  truncations: 0 (<= 0)
+  PASS  missing checklists: 0 (<= 0)
+  PASS  item-count mismatches: 0 (<= 0)
+  PASS  unreadable follow-ups: 0 (<= 0)
+  reference Claude Sonnet 4.6 (Anthropic API, thinking off) (recorded): answered 125/125, items 456, residual uncertain 0, all six counts zero
+
+## STABILITY — arm 2 vs arm 1, at or inside the reference's floor
+  NOT RUN — one candidate run given; the term needs the second arm
+
+## THROUGHPUT — recorded, not gating
+  production rating by vllm-dgx-14/qwen3.8-27b-nvfp4 (off): not recorded (production rows carry no durations)
+  Claude Sonnet 4.6 (Anthropic API, thinking off): 16.4 s per example, 526 output tokens | wall clock 11.5 min for 125 | corpus pass 11.5 h sequential, 3.9 h at the run's own rate
+
+## RAW AGREEMENT with the reference — recorded, not gating; produces the disagreement set
+  production rating by vllm-dgx-14/qwen3.8-27b-nvfp4 (off) vs reference, all items: items 456 | identical 93.2% | hard flips 6.8% (31) | either uncertain 0 | pass rate ref 94.7% cand 94.1%
+    ref \ cand      P      F      U
+             P    415     17      0
+             F     14     10      0
+             U      0      0      0
+    raw false passes (cand pass, ref fail) 14 of 24 ref fails (58.3%) | raw false fails (cand fail, ref pass) 17 of 432 ref passes (3.9%)
+  first pass: identical 91.4% | hard flips 5.5% (25) | either uncertain 14
+  item gate (ADR 0001): eligible 125 | verdicts agree 106 (84.8%) | false accepts 10 | false rejects 9 | approves cand 107 ref 106
+  scores (first pass): same 18.4% | mean abs delta 1.224 | mean cand 9.06 ref 8.28 | backstop 7.5 disagreements 24 (cand pass/ref fail 13, cand fail/ref pass 11)
+
+## MECHANICAL SCREEN: INCOMPLETE (stability not run)
+  adjudicated terms are decided from the dump, by a human (ADR 0004).
+
+disagreement dump: 31 items on 23 examples → /tmp/disagreements87.md

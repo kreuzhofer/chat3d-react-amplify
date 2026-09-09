@@ -1,0 +1,6 @@
+instrument production@4892d8d1b160; window 2026-09-09T09:11:25Z → 2026-09-09T13:54:10Z; candidates 1216, excluded 0, frame 1216
+seed 87, sample 125 → /Users/daniel/src/github/kreuzhofer/chat3d-app/packages/backend/prototypes/87-batch/sample87.txt
+frame by category:  {'Missing Examples': 526, 'Boolean Operations': 100, 'Extrusions and Revolutions': 77, 'Arrays and Patterns': 76, 'Surface Modifications': 69, 'Sketch Operations': 52, 'Primitives': 51, 'PCB Cases': 50, 'Generic Enclosures': 47, 'Simple Everyday Objects': 45, 'Electronic Components': 44, 'Mechanical Components': 33, 'bd_warehouse Examples': 28, 'Hinges': 13, 'Gridfinity Storage': 4, 'User Generated Models': 1}
+sample by category: {'Missing Examples': 46, 'Arrays and Patterns': 12, 'Boolean Operations': 10, 'Extrusions and Revolutions': 9, 'Simple Everyday Objects': 8, 'Generic Enclosures': 8, 'PCB Cases': 6, 'Primitives': 6, 'Surface Modifications': 4, 'Sketch Operations': 4, 'Mechanical Components': 3, 'Electronic Components': 3, 'bd_warehouse Examples': 2, 'Hinges': 2, 'User Generated Models': 1, 'Gridfinity Storage': 1}
+frame by status:    {'auto_approved': 965, 'pending': 251} | sample: {'auto_approved': 85, 'pending': 40}
+items in sample:    456 | judges: {'vllm-dgx-14/qwen3.8-27b-nvfp4': 125}

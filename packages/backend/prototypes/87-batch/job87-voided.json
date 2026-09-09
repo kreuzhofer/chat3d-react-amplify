@@ -1,0 +1,1 @@
+{"jobId":"job-1788953848740-1","type":"batch-re-rate-stale","categoryId":"*","categoryName":"Given rows (by id)","status":"running","total":179,"completed":0,"failed":0,"skipped":0,"currentPromptId":null,"currentPromptText":null,"exampleId":null,"error":null,"createdAt":"2026-09-09T11:37:28.740Z","finishedAt":null,"concurrency":3,"servingBackoffs":0,"servingHalt":null}

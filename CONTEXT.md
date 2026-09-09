@@ -114,6 +114,22 @@ _Avoid_: ground truth, gold set, baseline
 A human looking at the checklist items on which two judges disagree, and deciding which is right. Targeted and small; the arbiter when consensus cannot settle an item.
 _Avoid_: rating session, labelling, review
 
+**Sitting**:
+One bounded pass of Disagreement inspection: a Disagreement set drawn from one candidate and one reference under one Instrument id, worked by one adjudicator until every item carries an Adjudication or is left open. A sitting is the unit that is started, resumed and completed.
+_Avoid_: session (auth and chat already own the word), sheet, batch
+
+**Disagreement set**:
+The checklist items on which the candidate and the reference answered differently, paired by example and position, as the Screen finds them. Fixed when the Sitting starts; it never grows.
+_Avoid_: dump, sample (the sample is the examples the runs covered; the set is the items that disagree)
+
+**Adjudication**:
+The human's decision on one item of a Disagreement set: R when the reference was right, C when the candidate was right, N when neither was or the item cannot be answered from renders, with a note. Adjudications are what the bar's adjudicated terms count and what the judge fine-tune learns from.
+_Avoid_: verdict (the Gate's word), label, vote
+
+**Triage**:
+A third model's reading of one disagreement before the human looks: a would-be adjudication with its confidence, what the views show and the deciding view. Stamped with the model that gave it, kept beside the Adjudication, never counted toward the bar, never a judge.
+_Avoid_: third judge, second opinion, verdict
+
 **Coverage signal**:
 An issue a judge raises that matches no Checklist item. Diagnostic, never a gate input; its rate per category is the measure of whether the checklist asked the right questions.
 _Avoid_: unlisted issue, gap

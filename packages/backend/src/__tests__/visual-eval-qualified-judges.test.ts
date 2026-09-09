@@ -17,6 +17,15 @@ describe("QUALIFIED_JUDGES", () => {
     }));
   });
 
+  it("records qwen3.8-27b-nvfp4 (thinking off) under production@4892d8d1b160 — re-qualified on the 125 (#83's screen, #85's adjudication), provisional until #87's spot check", () => {
+    expect(QUALIFIED_JUDGES).toContainEqual(expect.objectContaining({
+      model: "vllm-dgx-14/qwen3.8-27b-nvfp4",
+      thinkingEffort: "off",
+      instrumentId: "production@4892d8d1b160",
+      qualifiedOn: "2026-09-09",
+    }));
+  });
+
   it("names every judge as stamped, under a well-formed instrument id, with its qualification run and adjudication sheet linked", () => {
     for (const judge of QUALIFIED_JUDGES) {
       expect(judge.model).toMatch(/^[^\s/]+\/\S+$/);

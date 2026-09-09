@@ -60,3 +60,30 @@ What the reading found, in the judges' words rather than the tally's:
 - **The four PCB-case standoff items** (`485cf1ba`, `4e3686ec`, `7ec78504`, `eb61185b`, `f49ccea5`, `b6caba81`) read the
   same way: the top view's corner rings are floor features, one post stands in 45° down. If Daniel reads the rings as
   posts, five R become C at once — the single largest swing in the set.
+
+## Daniel's verdicts (2026-09-09, `adjudicated85.json`, read from the page's store) — the adjudication that counts
+
+All 70; agrees with the third opinion on 55, overrules it on 15. On the 70 hard flips: **candidate false passes 6 vs
+Sonnet 18 — holds; candidate false fails 17 vs Sonnet 20, allowance 40 — holds**; 9 N.
+
+The overrules, all but three toward the candidate:
+
+- **The six PCB-case standoff items → C.** The top view's corner rings are posts, not floor features; six R became C
+  at once — the swing the reading flagged, and it went the candidate's way. With `c41e28b4`, `9e794b0a` and `f2f988f5`
+  (the Gridfinity profile items, below) that is nine candidate false passes that became Sonnet false fails.
+- **Gridfinity "raised/chamfered/stepped" profile items → C** (`9e794b0a`, `c41e28b4`, `f2f988f5`): "qwen is right
+  and the question leads to this — if Gridfinity requires a stepped profile you cannot ask for chamfered/stepped in the
+  question, because you're weakening the requirement with that option." A criteria-wording defect that hands the
+  lenient reading the item.
+- `59a6c7e3` #1 → C: "the leaves are each three disconnected stripes" — not two flat leaves.
+- `b0fbb05d` #2 → C.
+- **Four to N**: `92977023` #5; `b04a8444` #4 ("both candidates talk about holes — I see raised, extruded circles, not
+  holes; both are wrong in that way"); `b86a0f72` #2 ("misleading visual of the lid leads the viewer into the problem
+  what is lid, what is body — undecidable unless you know exactly what is what"); `d3d877e7` #2 ("the desired
+  orientation of the spike is unclear from the spec, so both could be right or wrong").
+
+**Outcome.** With #83's mechanical screen (identity, completeness, stability 2.7% against 2.9%) the judge clears every
+term of ADR 0004 under `production@4892d8d1b160`: **qwen3.8-27b-nvfp4 (thinking off) is qualified on the 125**, and
+the grant is in code (`visual-eval-qualified-judges.ts`), **provisional until #87's re-rating batch and its spot
+check** — the step that revoked the previous grant (#63). Until the batch runs every rating is Stale, so the export
+still admits 0.

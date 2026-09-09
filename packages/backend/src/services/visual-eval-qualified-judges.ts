@@ -30,7 +30,26 @@ export interface QualifiedJudge {
 }
 
 export const QUALIFIED_JUDGES: readonly QualifiedJudge[] = [
-  // No judge is qualified under production@22e0f10b0505.
+  {
+    // Re-qualified under the three-view revision (issue #83's screen: identity,
+    // completeness and stability at 2.7% against the 2.9% floor; issue #85's
+    // adjudication of the 70 disagreements with the reference on the 125,
+    // Daniel's verdicts: false passes 6 vs the reference's 18, false fails 17
+    // vs 20 against an allowance of 40, 9 N). Provisional until the re-rating
+    // batch's spot check (issue #87) confirms it, as ADR 0004 requires; the
+    // spot check revoked the previous grant (issue #63), and may again.
+    model: "vllm-dgx-14/qwen3.8-27b-nvfp4",
+    thinkingEffort: "off",
+    instrumentId: "production@4892d8d1b160",
+    qualifiedOn: "2026-09-09",
+    evidence: [
+      "https://github.com/kreuzhofer/chat3d-app/issues/85",
+      "https://github.com/kreuzhofer/chat3d-app/issues/83",
+      "packages/backend/prototypes/85-adjudication/",
+      "https://claude.ai/code/artifact/e265b10f-06a3-4e37-86eb-4778acff385c",
+    ],
+  },
+  // No judge is qualified under production@22e0f10b0505 (superseded).
   //
   // qwen3.8-27b-nvfp4 (thinking off; model row 98d284fe, the pooled
   // served name) qualified on the 125 on 2026-09-06 (issue #57: false

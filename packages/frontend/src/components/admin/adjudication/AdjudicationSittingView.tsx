@@ -9,9 +9,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { InlineAlert } from "../../layout/InlineAlert";
 import { Button } from "../../ui/button";
 import {
-  carefulLookRank, completeSitting, getSitting, recordDecision, VIEW_ORDER,
+  carefulLookRank, completeSitting, getSitting, recordDecision, startTriage, VIEW_ORDER,
   type AdjudicationTally, type DecisionInput, type Sitting, type SittingItem, type ViewName,
 } from "../../../api/adjudication.api";
+import { getJobStatus } from "../../../api/workbench.api";
 import { DecisionButtons, DirectionChip, JudgeColumns, Lightbox, stepView, TallyMeters, ViewsGrid } from "./AdjudicationParts";
 
 interface Props { token: string; sittingId: string; onBack: () => void }
@@ -23,6 +24,7 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
   const [pos, setPos] = useState(0);
   const [lightbox, setLightbox] = useState<ViewName | null>(null);
   const [saving, setSaving] = useState(false);
+  const [triageJob, setTriageJob] = useState<{ jobId: string; completed: number; total: number; failed: number } | null>(null);
 
   const load = useCallback(async () => {
     try { setSitting(await getSitting(token, sittingId)); setError(null); }
@@ -79,6 +81,31 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
     window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h);
   }, [item, readOnly, decide, ordered.length, lightbox]);
 
+  // The triage job runs on the server; poll it and reload the sitting when it ends.
+  useEffect(() => {
+    if (!triageJob) return;
+    const timer = setInterval(async () => {
+      try {
+        const j = await getJobStatus(token, triageJob.jobId);
+        setTriageJob({ jobId: j.jobId, completed: j.completed, total: j.total, failed: j.failed });
+        if (j.status !== "running") {
+          clearInterval(timer);
+          setTriageJob(null);
+          if (j.failed > 0) setError(`Triage finished with ${j.failed} of ${j.total} reads failed${j.error ? `: ${j.error}` : ""}`);
+          await load();
+        }
+      } catch (e) { clearInterval(timer); setTriageJob(null); setError(e instanceof Error ? e.message : String(e)); }
+    }, 3000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triageJob?.jobId]);
+
+  const runTriage = async (redo = false) => {
+    if (!sitting) return;
+    try { const j = await startTriage(token, sitting.id, redo); setTriageJob({ jobId: j.jobId, completed: j.completed, total: j.total, failed: j.failed }); setError(null); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  };
+
   const toggleComplete = async () => {
     if (!sitting) return;
     try { setSitting(await completeSitting(token, sitting.id, !!sitting.completedAt)); setError(null); }
@@ -106,6 +133,12 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
             <option value="careful">Careful look first</option>
             <option value="sheet">Sheet order</option>
           </select>
+          {!sitting.completedAt ? (
+            <Button size="sm" variant="outline" disabled={!!triageJob} onClick={() => runTriage(sitting.items.every((it) => it.triage))}
+              title="A third model reads each item before you do: R / C / N with a confidence and the deciding view. Triage, never a decision.">
+              {triageJob ? `Triage ${triageJob.completed + triageJob.failed} / ${triageJob.total}…` : sitting.items.every((it) => it.triage) ? "Re-run triage" : sitting.items.some((it) => it.triage) ? "Triage the rest" : "Run triage"}
+            </Button>
+          ) : null}
           <Button size="sm" variant={sitting.completedAt ? "outline" : "default"} disabled={!sitting.completedAt && !t.complete} onClick={toggleComplete}>
             {sitting.completedAt ? "Reopen" : t.complete ? "Complete the sitting" : `${t.open} still open`}
           </Button>

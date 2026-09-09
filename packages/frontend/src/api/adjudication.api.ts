@@ -130,6 +130,11 @@ export async function completeSitting(token: string, id: string, reopen = false)
   return request(token, `/sittings/${id}/complete`, { method: "POST", body: JSON.stringify({ reopen }) });
 }
 
+/** Read every open item with the triage model (issue #93); returns the job to poll via the workbench jobs route. */
+export async function startTriage(token: string, id: string, redo = false): Promise<{ jobId: string; status: string; total: number; completed: number; failed: number }> {
+  return request(token, `/sittings/${id}/triage`, { method: "POST", body: JSON.stringify({ redo }) });
+}
+
 // ── Display helpers ─────────────────────────────────────────────────
 
 export type Direction = "cand-fails" | "cand-passes" | "one-uncertain";

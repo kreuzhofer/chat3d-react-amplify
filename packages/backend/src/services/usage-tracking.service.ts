@@ -71,7 +71,8 @@ export type LlmPurpose =
   | "knowledge_embedding"
   | "gap_prompt_generation"
   | "gap_decomposition"
-  | "decomposition_decision";
+  | "decomposition_decision"
+  | "adjudication_triage";
 
 // ── Event recording ────────────────────────────────────────────────
 

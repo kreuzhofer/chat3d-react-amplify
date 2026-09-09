@@ -9,6 +9,7 @@ import {
   type CandidateSpec,
 } from "../services/adjudication-sitting.service.js";
 import { RunNotPairableError } from "../services/qualification-screen-load.service.js";
+import { startTriageJob } from "../services/adjudication-triage.service.js";
 
 export const workbenchAdjudicationRouter = Router();
 
@@ -82,5 +83,15 @@ workbenchAdjudicationRouter.post("/adjudication/sittings/:id/complete", async (r
     res.json(await completeSitting(req.params.id, reopen));
   } catch (error) {
     fail(res, error, "Completing the sitting failed");
+  }
+});
+
+/** Read every open item with the triage model (issue #93); progress via GET /jobs/:jobId. */
+workbenchAdjudicationRouter.post("/adjudication/sittings/:id/triage", async (req, res) => {
+  try {
+    const redo = (req.body as { redo?: unknown } | undefined)?.redo === true;
+    res.status(202).json(await startTriageJob(req.params.id, { redo }));
+  } catch (error) {
+    fail(res, error, "Starting the triage failed");
   }
 });

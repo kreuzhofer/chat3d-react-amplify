@@ -24,7 +24,7 @@ const logger = createLogger("workbench-batch");
 
 // ── Types ────────────────────────────────────────────────────────────
 
-export type JobType = "batch" | "batch-re-render" | "batch-re-evaluate" | "batch-re-rate-stale" | "batch-cleanup" | "batch-backfill-specs" | "generate" | "retry" | "re-render" | "re-evaluate";
+export type JobType = "batch" | "batch-re-render" | "batch-re-evaluate" | "batch-re-rate-stale" | "batch-cleanup" | "batch-backfill-specs" | "batch-triage" | "generate" | "retry" | "re-render" | "re-evaluate";
 
 export interface BatchJob {
   jobId: string;

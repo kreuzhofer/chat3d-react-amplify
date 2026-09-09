@@ -134,6 +134,7 @@ export const LLM_PURPOSES = [
   "spec_enrichment",
   "code_review",
   "decomposition_decision",
+  "adjudication_triage",
 ] as const;
 
 export type LlmPurpose = (typeof LLM_PURPOSES)[number];

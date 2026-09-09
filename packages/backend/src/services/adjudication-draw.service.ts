@@ -138,6 +138,13 @@ async function awaitReferenceThenOpen(job: BatchJob, experimentId: string, title
       if (!run) throw new Error("the reference experiment has no run");
       job.completed = run.completedExamples;
       if (run.status === "completed") {
+        // A reference that answered nothing (an exhausted API key stores every row as a failed evaluation) is not a pair.
+        const failed = await prisma.vlmExperimentResult.findMany({ where: { runId: run.runId, instrumentId: null }, select: { issues: true } });
+        if (run.completedExamples > 0 && failed.length >= run.completedExamples) {
+          const reason = String((failed[0]?.issues as unknown[] | null)?.[0] ?? "evaluation failed");
+          throw new Error(`the reference answered none of the ${run.completedExamples} drawn rows: ${reason}`);
+        }
+        if (failed.length > 0) logger.warn({ jobId: job.jobId, failed: failed.length, of: run.completedExamples }, "the reference failed on some drawn rows; they stay outside the sitting");
         const sitting = await createSitting({
           candidate: { productionExperimentId: experimentId }, referenceRunId: run.runId, title,
           notes: `Drawn in the app: seed ${input.seed}, ${input.size} of the corpus's current rows outside the held-out set and earlier samples; reference run ${run.runId}.`,

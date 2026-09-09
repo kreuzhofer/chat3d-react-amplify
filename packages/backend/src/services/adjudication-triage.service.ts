@@ -12,7 +12,7 @@
 import { prisma } from "../db/prisma.js";
 import { createLogger } from "../utils/logger.js";
 import { getLlmSemaphore } from "../utils/resource-limits.js";
-import { createProviderModel, getModelForPurpose, type LlmModelConfig } from "./llm-config.service.js";
+import { createProviderModel, getModelForPurpose, maxOutputWithThinking, type LlmModelConfig } from "./llm-config.service.js";
 import { trackedGenerateText } from "./tracked-llm.service.js";
 import { resolveGuidedJsonOutput } from "./visual-eval-schema.service.js";
 import type { JSONSchema7 } from "ai";
@@ -142,6 +142,11 @@ async function loadViews(exampleId: string): Promise<Array<{ view: StandardView;
   return out;
 }
 
+export function triageOutputBudget(cfg: Pick<LlmModelConfig, "supportsThinking" | "thinkingEffort" | "maxOutputTokens">): number {
+  if (cfg.supportsThinking && cfg.thinkingEffort) return Math.max(cfg.maxOutputTokens ?? 0, maxOutputWithThinking(2048, cfg), 16384);
+  return maxOutputWithThinking(2048, cfg);
+}
+
 async function readOne(cfg: LlmModelConfig, input: TriageItemInput, views: Array<{ view: StandardView; base64: string }>): Promise<TriageReading> {
   const model = createProviderModel(cfg);
   const content: Array<{ type: "text"; text: string } | { type: "image"; image: string; mediaType: "image/png" }> = [
@@ -157,7 +162,11 @@ async function readOne(cfg: LlmModelConfig, input: TriageItemInput, views: Array
     model,
     system: buildTriageSystemPrompt(),
     messages: [{ role: "user", content }],
-    maxOutputTokens: 1024,
+    // A thinking model's reasoning counts against the cap and is not bounded
+    // by the effort budget on an OpenAI-compatible provider (Kimi K3 hit
+    // "length" with an empty answer at 1024 and, on 5 of 70 items, at 8192),
+    // so a thinking model gets its own output ceiling.
+    maxOutputTokens: triageOutputBudget(cfg),
     temperature: 0,
     ...(output ? { output } : {}),
   }, {
@@ -174,7 +183,12 @@ async function readOne(cfg: LlmModelConfig, input: TriageItemInput, views: Array
     try { structured = (result as unknown as { output?: Partial<TriageReading> }).output; }
     catch (error) { logger.debug({ err: error }, "structured triage output unreadable; parsing the text"); }
   }
-  return structured ? normaliseReading(structured) : parseTriageText(result.text);
+  if (structured) return normaliseReading(structured);
+  try { return parseTriageText(result.text); }
+  catch (error) {
+    logger.warn({ finishReason: result.finishReason, head: result.text.slice(0, 300) }, "triage reply could not be read");
+    throw error;
+  }
 }
 
 export interface TriageJobOptions {

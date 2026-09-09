@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../db/prisma.js", () => ({ prisma: {} }));
 
-import { assertNotAParty, buildTriageSystemPrompt, buildTriageUserText, normaliseReading, parseTriageText } from "../services/adjudication-triage.service.js";
+import { assertNotAParty, buildTriageSystemPrompt, buildTriageUserText, normaliseReading, parseTriageText, triageOutputBudget } from "../services/adjudication-triage.service.js";
 import { SittingError } from "../services/adjudication-sitting.service.js";
 
 describe("triage reading", () => {
@@ -45,5 +45,16 @@ describe("assertNotAParty", () => {
   it("lets a third model through, the same model name on another provider included", () => {
     expect(() => assertNotAParty({ provider: "anthropic", modelName: "claude-fable-5-1" }, parties)).not.toThrow();
     expect(() => assertNotAParty({ provider: "bedrock", modelName: "claude-sonnet-4-6" }, parties)).not.toThrow();
+  });
+});
+
+describe("triageOutputBudget", () => {
+  it("gives a thinking model its own output ceiling, since its reasoning counts against the cap", () => {
+    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: "medium", maxOutputTokens: 32768 })).toBe(32768);
+    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: "low", maxOutputTokens: null })).toBeGreaterThanOrEqual(16384);
+  });
+  it("keeps a non-thinking model at the answer's own budget", () => {
+    expect(triageOutputBudget({ supportsThinking: false, thinkingEffort: null, maxOutputTokens: 32768 })).toBe(2048);
+    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: null, maxOutputTokens: 32768 })).toBe(2048);
   });
 });

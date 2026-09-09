@@ -58,10 +58,7 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
       const r = await recordDecision(token, sitting.id, item.id, input);
       applyResult(item.id, { decision: r.item.decision, note: r.item.note, agreedWithTriage: r.item.agreedWithTriage, decidedAt: r.item.decidedAt }, r.tally);
       setError(null);
-      if (input.decision) {
-        const next = ordered.findIndex((it, i) => i > pos && !it.decision && it.id !== item.id);
-        if (next >= 0) setPos(next);
-      }
+      // The card stays: moving on is the adjudicator's own click (Previous / Next), never a side effect of deciding.
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setSaving(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,7 +155,7 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
               ))}
             </div>
           </div>
-          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">← → move · a agree with the triage · r / c / n decide and advance · 1–8 open a view</p>
+          <p className="text-[11px] text-[hsl(var(--muted-foreground))]">← → move · a agree with the triage · r / c / n decide (the card stays) · 1–8 open a view</p>
         </aside>
 
         {item ? (
@@ -175,9 +172,10 @@ export function AdjudicationSittingView({ token, sittingId, onBack }: Props) {
             <div className="mt-3 rounded border border-[hsl(var(--border))] bg-[hsl(var(--muted)_/_0.3)] p-2">
               <DecisionButtons item={item} disabled={readOnly || saving} onDecide={decide} />
             </div>
-            <div className="mt-2 flex justify-between text-xs">
-              <button type="button" className="underline" onClick={() => setPos((p) => Math.max(0, p - 1))}>← previous</button>
-              <button type="button" className="underline" onClick={() => setPos((p) => Math.min(ordered.length - 1, p + 1))}>next →</button>
+            <div className="mt-3 flex items-center justify-between">
+              <Button variant="outline" size="sm" disabled={pos === 0} onClick={() => setPos((p) => Math.max(0, p - 1))}>← Previous</Button>
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">{pos + 1} of {ordered.length}{(() => { const n = ordered.findIndex((it, i) => i > pos && !it.decision); return n >= 0 ? ` · next open: ${n + 1}` : ""; })()}</span>
+              <Button variant="outline" size="sm" disabled={pos >= ordered.length - 1} onClick={() => setPos((p) => Math.min(ordered.length - 1, p + 1))}>Next →</Button>
             </div>
           </section>
         ) : <p className="text-sm text-[hsl(var(--muted-foreground))]">This sitting has no items.</p>}

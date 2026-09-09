@@ -121,11 +121,12 @@ export function DecisionButtons({ item, disabled, onDecide }: { item: SittingIte
       {btn("N · neither", pressed("N"), () => decide(pressed("N") ? null : "N"))}
       <input
         className="min-w-[14rem] flex-1 rounded border border-[hsl(var(--border))] bg-transparent px-2 py-1 text-xs"
-        placeholder="Note (optional): what you saw, or why the triage is wrong"
+        placeholder={item.decision ? "Note (optional): what you saw, or why the triage is wrong — saved when you leave the field" : "Note (optional): saved with your decision"}
         value={note}
         disabled={disabled}
         onChange={(e) => setNote(e.target.value)}
         onBlur={() => { if (note !== item.note && item.decision) onDecide({ decision: item.decision, note, agreedWithTriage: item.agreedWithTriage }); }}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       />
     </div>
   );

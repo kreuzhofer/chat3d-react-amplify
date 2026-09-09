@@ -99,6 +99,25 @@ describe("startBatchReRateStale", () => {
     expect(runBatchReEvaluate).toHaveBeenCalledWith(expect.objectContaining({ jobId: "batch-re-rate-stale-1" }), [row], 1, expect.anything());
   });
 
+  it("re-rates the given rows by id whatever their rating state — the rows a dead gateway voided (#87)", async () => {
+    findMany.mockResolvedValue([row]);
+    const summary = await startBatchReRateStale({ exampleIds: ["a", "b"], concurrency: 3 });
+    const args = findMany.mock.calls[0][0];
+    expect(args.where.id).toEqual({ in: ["a", "b"] });
+    expect(args.where.OR).toBeUndefined();          // not the Stale frame: an unrated row has no id to be stale under
+    expect(args.where.visualScore).toBeUndefined();
+    expect(args.where.renderStatus).toBe("success");
+    expect(args.where.experimentRunId).toBeNull();
+    expect(args.where.screenshotOrtho45Bottom).toEqual({ not: null });
+    expect(args.where.approvalStatus).toEqual({ in: ["auto_approved", "pending"] });
+    expect(summary).toMatchObject({ total: 1, status: "running", concurrency: 3 });
+  });
+
+  it("refuses when none of the given rows can be re-rated", async () => {
+    findMany.mockResolvedValue([]);
+    await expect(startBatchReRateStale({ exampleIds: ["nope"] })).rejects.toThrow(/none of the given rows/i);
+  });
+
   it("runs one row at a time unless told otherwise, and clamps the concurrency to the pool's range", async () => {
     findMany.mockResolvedValue([row]);
     const summary = await startBatchReRateStale({ concurrency: 3 });

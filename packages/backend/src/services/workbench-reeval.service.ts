@@ -123,6 +123,16 @@ export async function reEvaluateExample(exampleId: string): Promise<ReEvalResult
     throw err;
   }
 
+  // A judge that was asked and did not answer produces no rating, and a
+  // re-evaluation that wrote it would replace the row's stored rating with
+  // nothing and demote the row — which is what an unreachable gateway did to
+  // 175 rows on 2026-09-09 while the batch counted them as completed
+  // (issue #87). The row keeps what it has; the caller counts a failure.
+  if (evalResult.judgeOutcome === "failed") {
+    logger.error({ exampleId }, "judge call failed — the stored rating is kept, nothing is written");
+    throw new Error(`Judge call failed for example ${exampleId}; the stored rating is kept`);
+  }
+
   const score = evalResult.compositeScore;
   const mergedIssues = [...evalResult.vlmIssues, ...evalResult.codeIssues];
   const approved = evalResult.assertionsFailed

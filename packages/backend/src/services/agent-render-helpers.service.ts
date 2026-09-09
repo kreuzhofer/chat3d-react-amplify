@@ -30,6 +30,8 @@ export interface AgentEvalResult {
   vlmRawResponse?: string;
   vlmReasoning?: string;
   vlmSystemPrompt?: string;
+  /** What became of the judge call (issue #87); absent on paths that predate it. */
+  judgeOutcome?: import("./eval-orchestrator.service.js").JudgeOutcome;
   /** The Instrument id the visual judge answered under (ADR 0003). */
   vlmInstrumentId?: string | null;
   /** The visual judge's effective thinking effort (ADR 0004). */
@@ -167,6 +169,7 @@ export async function runVlmEval(deps: VlmEvalDeps): Promise<string> {
       codeReviewModel: null,
       issues: evalResult.issues, suggestions: evalResult.suggestions,
       screenshots: ssResult.images,
+      judgeOutcome: "rated",
       vlmInstrumentId: evalResult.instrumentId,
       vlmThinkingEffort: evalResult.thinkingEffort,
     });

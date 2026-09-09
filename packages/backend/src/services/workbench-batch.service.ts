@@ -24,7 +24,7 @@ const logger = createLogger("workbench-batch");
 
 // ── Types ────────────────────────────────────────────────────────────
 
-export type JobType = "batch" | "batch-re-render" | "batch-re-evaluate" | "batch-re-rate-stale" | "batch-cleanup" | "batch-backfill-specs" | "batch-triage" | "generate" | "retry" | "re-render" | "re-evaluate";
+export type JobType = "batch" | "batch-re-render" | "batch-re-evaluate" | "batch-re-rate-stale" | "batch-cleanup" | "batch-backfill-specs" | "batch-triage" | "batch-sitting-draw" | "generate" | "retry" | "re-render" | "re-evaluate";
 
 export interface BatchJob {
   jobId: string;
@@ -59,6 +59,8 @@ export interface BatchJob {
   userId: string | null;
   /** Abort controller for cancelling in-flight pipeline work. */
   abortController: AbortController;
+  /** The sitting a draw job opened (issue #91); null until the reference run completes. */
+  sittingId?: string | null;
 }
 
 export interface BatchPromptResult {
@@ -94,6 +96,8 @@ export interface BatchJobSummary {
   servingBackoffs?: number;
   /** Why the serving gate stopped the batch, or null if it never did. */
   servingHalt?: string | null;
+  /** The sitting a draw job opened (issue #91). */
+  sittingId?: string | null;
 }
 
 // ── In-memory job store ──────────────────────────────────────────────
@@ -625,6 +629,7 @@ export function toSummary(job: BatchJob): BatchJobSummary {
     concurrency: job.concurrency,
     servingBackoffs: job.servingBackoffs,
     servingHalt: job.servingHalt ?? null,
+    sittingId: job.sittingId ?? null,
   };
 }
 

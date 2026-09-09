@@ -19,6 +19,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   code_review: "Code Review",
   decomposition_decision: "Decomposition Decision (Routing)",
   adjudication_triage: "Adjudication Triage (third opinion)",
+  adjudication_reference: "Adjudication Reference (the bar's reference judge)",
 };
 
 const PURPOSE_FALLBACKS: Record<string, string> = {
@@ -28,6 +29,7 @@ const PURPOSE_FALLBACKS: Record<string, string> = {
   code_review: "Falls back to: spec_generation → conversation",
   decomposition_decision: "Unassigned → router falls back to single-agent",
   adjudication_triage: "Unassigned → a sitting cannot run triage; never the reference or the candidate",
+  adjudication_reference: "Unassigned → a sitting cannot be drawn from the corpus (standing decision: Sonnet 4.6, thinking off)",
 };
 
 /** Sentinel for "no override" in the select, since an <option> value cannot be null. */

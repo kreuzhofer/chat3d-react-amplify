@@ -120,6 +120,8 @@ export interface ExportStats {
 export type JobType = "batch" | "batch-re-render" | "batch-re-evaluate" | "batch-cleanup" | "batch-backfill-specs" | "generate" | "retry" | "re-render" | "re-evaluate";
 
 export interface BatchJobSummary {
+  /** The sitting a draw job opened (issue #91). */
+  sittingId?: string | null;
   jobId: string;
   type: JobType;
   categoryId: string;

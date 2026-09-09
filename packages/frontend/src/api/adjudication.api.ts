@@ -130,6 +130,11 @@ export async function completeSitting(token: string, id: string, reopen = false)
   return request(token, `/sittings/${id}/complete`, { method: "POST", body: JSON.stringify({ reopen }) });
 }
 
+/** Draw a sitting from the corpus (issue #91): the reference judges the draw, then the sitting opens; a job whose `sittingId` is set at the end. */
+export async function startSittingDraw(token: string, input: { size: number; seed?: number; title?: string; triage?: boolean }): Promise<{ jobId: string; status: string; total: number; completed: number; categoryId: string; sittingId: string | null }> {
+  return request(token, `/sittings/draw`, { method: "POST", body: JSON.stringify(input) });
+}
+
 /** Read every open item with the triage model (issue #93); returns the job to poll via the workbench jobs route. */
 export async function startTriage(token: string, id: string, redo = false): Promise<{ jobId: string; status: string; total: number; completed: number; failed: number }> {
   return request(token, `/sittings/${id}/triage`, { method: "POST", body: JSON.stringify({ redo }) });

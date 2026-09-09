@@ -1,0 +1,6 @@
+instrument production@4892d8d1b160; candidates outside the held-out 125: 1216, excluded 232, frame 984
+seed 91, sample 125 → /Users/daniel/src/github/kreuzhofer/chat3d-app/packages/backend/prototypes/91-gold/sample91-91.txt
+frame by category:  {'Missing Examples': 437, 'Boolean Operations': 80, 'Extrusions and Revolutions': 63, 'Arrays and Patterns': 60, 'Surface Modifications': 56, 'Sketch Operations': 41, 'PCB Cases': 39, 'Generic Enclosures': 37, 'Primitives': 37, 'Electronic Components': 34, 'Simple Everyday Objects': 33, 'Mechanical Components': 28, 'bd_warehouse Examples': 25, 'Hinges': 11, 'Gridfinity Storage': 3}
+sample by category: {'Missing Examples': 58, 'Extrusions and Revolutions': 13, 'Boolean Operations': 9, 'Simple Everyday Objects': 6, 'Generic Enclosures': 6, 'Electronic Components': 5, 'Arrays and Patterns': 5, 'Sketch Operations': 5, 'Surface Modifications': 4, 'Primitives': 3, 'bd_warehouse Examples': 3, 'PCB Cases': 3, 'Hinges': 3, 'Gridfinity Storage': 1, 'Mechanical Components': 1}
+frame by status:    {'auto_approved': 789, 'pending': 195} | sample: {'auto_approved': 95, 'pending': 30}
+items in sample:    438 | judges: {'vllm-dgx-14/qwen3.8-27b-nvfp4': 125}

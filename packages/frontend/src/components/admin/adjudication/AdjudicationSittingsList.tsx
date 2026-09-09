@@ -9,7 +9,8 @@ import { SectionCard } from "../../layout/SectionCard";
 import { InlineAlert } from "../../layout/InlineAlert";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
-import { createSitting, listSittings, type SittingSummary } from "../../../api/adjudication.api";
+import { createSitting, listSittings, startSittingDraw, type SittingSummary } from "../../../api/adjudication.api";
+import { getJobStatus } from "../../../api/workbench.api";
 import { listVlmExperiments, type VlmExperimentListItem } from "../../../api/vlm-experiment.api";
 
 interface Props { token: string; onOpen: (id: string) => void }
@@ -70,7 +71,11 @@ export function AdjudicationSittingsList({ token, onOpen }: Props) {
 
 function StartSittingForm({ token, onCreated }: { token: string; onCreated: (id: string) => void }) {
   const [experiments, setExperiments] = useState<VlmExperimentListItem[]>([]);
-  const [candidateMode, setCandidateMode] = useState<"run" | "production">("run");
+  const [candidateMode, setCandidateMode] = useState<"corpus" | "run" | "production">("corpus");
+  const [size, setSize] = useState(50);
+  const [seed, setSeed] = useState<string>(String(Math.floor(Math.random() * 1000000)));
+  const [triage, setTriage] = useState(true);
+  const [draw, setDraw] = useState<{ jobId: string; completed: number; total: number; text: string } | null>(null);
   const [candidateRunId, setCandidateRunId] = useState("");
   const [productionExperimentId, setProductionExperimentId] = useState("");
   const [referenceRunId, setReferenceRunId] = useState("");
@@ -87,9 +92,32 @@ function StartSittingForm({ token, onCreated }: { token: string; onCreated: (id:
     id: r.id, label: `${e.name} — ${r.modelLabel}${r.judgePromptVariantId ? ` · ${r.judgePromptVariantId}` : ""} (${r.id.slice(0, 8)})`,
   }))), [experiments]);
 
+  // The draw is a job: the reference judges the sample first, then the sitting opens.
+  useEffect(() => {
+    if (!draw) return;
+    const timer = setInterval(async () => {
+      try {
+        const j = await getJobStatus(token, draw.jobId);
+        setDraw({ jobId: j.jobId, completed: j.completed, total: j.total, text: j.currentPromptText ?? "" });
+        if (j.status !== "running") {
+          clearInterval(timer); setDraw(null);
+          if (j.status === "completed" && j.sittingId) onCreated(j.sittingId);
+          else setError(j.error ?? `The draw ended ${j.status}`);
+        }
+      } catch (e) { clearInterval(timer); setDraw(null); setError(e instanceof Error ? e.message : String(e)); }
+    }, 5000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draw?.jobId]);
+
   const submit = async () => {
     setBusy(true); setError(null);
     try {
+      if (candidateMode === "corpus") {
+        const j = await startSittingDraw(token, { size, seed: seed === "" ? undefined : Number(seed), title: title || undefined, triage });
+        setDraw({ jobId: j.jobId, completed: j.completed, total: j.total, text: "" });
+        return;
+      }
       const s = await createSitting(token, {
         referenceRunId,
         ...(candidateMode === "run" ? { candidateRunId } : { productionExperimentId }),
@@ -99,7 +127,7 @@ function StartSittingForm({ token, onCreated }: { token: string; onCreated: (id:
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
-  const ready = referenceRunId && (candidateMode === "run" ? candidateRunId && candidateRunId !== referenceRunId : productionExperimentId);
+  const ready = candidateMode === "corpus" ? size >= 1 : referenceRunId && (candidateMode === "run" ? candidateRunId && candidateRunId !== referenceRunId : productionExperimentId);
 
   return (
     <div className="mb-4 space-y-3 rounded border border-[hsl(var(--border))] p-3 text-sm">
@@ -107,11 +135,18 @@ function StartSittingForm({ token, onCreated }: { token: string; onCreated: (id:
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1">
           <span className="text-xs text-[hsl(var(--muted-foreground))]">Candidate</span>
-          <div className="flex gap-3 text-xs">
+          <div className="flex flex-wrap gap-3 text-xs">
+            <label className="flex items-center gap-1"><input type="radio" checked={candidateMode === "corpus"} onChange={() => setCandidateMode("corpus")} /> draw from the corpus</label>
             <label className="flex items-center gap-1"><input type="radio" checked={candidateMode === "run"} onChange={() => setCandidateMode("run")} /> an experiment run</label>
             <label className="flex items-center gap-1"><input type="radio" checked={candidateMode === "production"} onChange={() => setCandidateMode("production")} /> the corpus's own ratings for a sample</label>
           </div>
-          {candidateMode === "run" ? (
+          {candidateMode === "corpus" ? (
+            <div className="flex flex-wrap items-end gap-3 text-xs">
+              <label className="space-y-1"><span className="block text-[hsl(var(--muted-foreground))]">Rows</span><Input type="number" min={1} max={500} value={size} onChange={(e) => setSize(Number(e.target.value))} className="w-24" /></label>
+              <label className="space-y-1"><span className="block text-[hsl(var(--muted-foreground))]">Seed</span><Input type="number" min={0} value={seed} onChange={(e) => setSeed(e.target.value)} className="w-32" /></label>
+              <label className="flex items-center gap-1 pb-2"><input type="checkbox" checked={triage} onChange={(e) => setTriage(e.target.checked)} /> run triage when the sitting opens</label>
+            </div>
+          ) : candidateMode === "run" ? (
             <select className={selectClass} value={candidateRunId} onChange={(e) => setCandidateRunId(e.target.value)}>
               <option value="">Choose the candidate run…</option>
               {runOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
@@ -125,16 +160,23 @@ function StartSittingForm({ token, onCreated }: { token: string; onCreated: (id:
         </label>
         <label className="space-y-1">
           <span className="text-xs text-[hsl(var(--muted-foreground))]">Reference run</span>
+          {candidateMode === "corpus" ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">The reference judge (the <i>Adjudication Reference</i> purpose) runs on the drawn rows first; the sitting opens when it completes, about ten to fifteen minutes for 125 rows.</p>
+          ) : (
           <select className={selectClass} value={referenceRunId} onChange={(e) => setReferenceRunId(e.target.value)}>
             <option value="">Choose the reference run…</option>
             {runOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
+          )}
         </label>
         <label className="space-y-1"><span className="text-xs text-[hsl(var(--muted-foreground))]">Title (optional)</span><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="candidate vs reference" /></label>
         <label className="space-y-1"><span className="text-xs text-[hsl(var(--muted-foreground))]">Notes (optional)</span><Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="the ticket, the seed, the window" /></label>
       </div>
-      <p className="text-xs text-[hsl(var(--muted-foreground))]">Both sides must be completed, unmarked by the serving gate, and under the same Instrument id. The disagreement set is drawn once and frozen.</p>
-      <Button size="sm" disabled={!ready || busy} onClick={submit}>{busy ? "Drawing the disagreement set…" : "Start"}</Button>
+      <p className="text-xs text-[hsl(var(--muted-foreground))]">{candidateMode === "corpus"
+        ? "The draw takes current rows outside the held-out 125 and outside every earlier sitting's sample, so a row is adjudicated at most once; the seed makes it reproducible."
+        : "Both sides must be completed, unmarked by the serving gate, and under the same Instrument id. The disagreement set is drawn once and frozen."}</p>
+      {draw ? <p className="text-xs">Reference judging the draw: <span className="font-mono">{draw.completed} / {draw.total}</span> {draw.text ? `· ${draw.text}` : ""}</p> : null}
+      <Button size="sm" disabled={!ready || busy || !!draw} onClick={submit}>{draw ? "Drawing…" : busy ? "Starting…" : candidateMode === "corpus" ? "Draw and start" : "Start"}</Button>
     </div>
   );
 }

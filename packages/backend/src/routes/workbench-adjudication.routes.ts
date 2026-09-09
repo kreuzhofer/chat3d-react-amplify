@@ -10,6 +10,7 @@ import {
 } from "../services/adjudication-sitting.service.js";
 import { RunNotPairableError } from "../services/qualification-screen-load.service.js";
 import { startTriageJob } from "../services/adjudication-triage.service.js";
+import { startSittingDraw } from "../services/adjudication-draw.service.js";
 
 export const workbenchAdjudicationRouter = Router();
 
@@ -93,5 +94,21 @@ workbenchAdjudicationRouter.post("/adjudication/sittings/:id/triage", async (req
     res.status(202).json(await startTriageJob(req.params.id, { redo }));
   } catch (error) {
     fail(res, error, "Starting the triage failed");
+  }
+});
+
+/** Draw a sitting from the corpus (issue #91): size and seed; the reference judges the draw, then the sitting opens. A job. */
+workbenchAdjudicationRouter.post("/adjudication/sittings/draw", async (req, res) => {
+  try {
+    const body = (req.body ?? {}) as { size?: unknown; seed?: unknown; title?: unknown; triage?: unknown };
+    const size = Number(body.size);
+    const seed = body.seed === undefined || body.seed === null || body.seed === "" ? Math.floor(Math.random() * 1_000_000) : Number(body.seed);
+    if (!Number.isFinite(size) || !Number.isFinite(seed)) { res.status(400).json({ error: "size and seed must be numbers" }); return; }
+    const title = typeof body.title === "string" && body.title.trim() ? body.title.trim() : undefined;
+    const uid = userId(req);
+    if (!uid) { res.status(401).json({ error: "An adjudicator is required to draw a sitting" }); return; }
+    res.status(202).json(await startSittingDraw({ size, seed, title, triage: body.triage !== false }, uid));
+  } catch (error) {
+    fail(res, error, "Drawing the sitting failed");
   }
 });

@@ -405,9 +405,15 @@ export function sdkType(cfg: LlmModelConfig): string {
  */
 export function resolveThinkingKwargs(
   cfg: Pick<LlmModelConfig, "supportsThinking" | "thinkingEffort">,
-): { enable_thinking: boolean } | undefined {
+): { enable_thinking: boolean; thinking: boolean } | undefined {
   if (!cfg.supportsThinking || !cfg.thinkingEffort) return undefined;
-  return { enable_thinking: cfg.thinkingEffort !== "off" };
+  const on = cfg.thinkingEffort !== "off";
+  // Model families name the switch differently: Qwen and GLM read
+  // `enable_thinking`, Kimi reads `thinking` and ignores the former (measured
+  // on Nebius, issue #99 — a judge stamped "off" kept reasoning, and #100 is
+  // what that costs). A Jinja template ignores kwargs it does not name, so
+  // sending both is safe and turns either family off.
+  return { enable_thinking: on, thinking: on };
 }
 
 /**

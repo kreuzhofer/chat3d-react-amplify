@@ -46,6 +46,7 @@ describe("resolveThinkingKwargs", () => {
     for (const effort of ["low", "medium", "high", "max"]) {
       expect(resolveThinkingKwargs(cfg({ thinkingEffort: effort }))).toEqual({
         enable_thinking: true,
+        thinking: true,
       });
     }
   });
@@ -55,7 +56,20 @@ describe("resolveThinkingKwargs", () => {
     // enable_thinking:true — the admin's "off" made the model think MORE.
     expect(resolveThinkingKwargs(cfg({ thinkingEffort: "off" }))).toEqual({
       enable_thinking: false,
+      thinking: false,
     });
+  });
+
+  it("sends both template keys, because families name the switch differently", () => {
+    // Measured on Nebius 2026-09-10 (issue #99): Kimi-K3 keys its chat
+    // template on `thinking` and ignores `enable_thinking` outright — a judge
+    // row stamped "off" went on emitting ~2k reasoning tokens per call, and
+    // one call spent its whole budget reasoning and answered nothing (#100).
+    // Qwen and GLM key on `enable_thinking`. A Jinja template ignores kwargs
+    // it does not name, so sending both is safe and disables either family.
+    const off = resolveThinkingKwargs(cfg({ thinkingEffort: "off" }))!;
+    expect(off.enable_thinking).toBe(false);
+    expect(off.thinking).toBe(false);
   });
 });
 
@@ -65,7 +79,7 @@ describe("withThinkingOff", () => {
     const result = withThinkingOff(original);
     expect(result.thinkingEffort).toBe("off");
     expect(original.thinkingEffort).toBe("high");
-    expect(resolveThinkingKwargs(result)).toEqual({ enable_thinking: false });
+    expect(resolveThinkingKwargs(result)).toEqual({ enable_thinking: false, thinking: false });
   });
 
   it("returns non-thinking configs unchanged", () => {

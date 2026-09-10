@@ -53,8 +53,11 @@ describe("triageOutputBudget", () => {
     expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: "medium", maxOutputTokens: 32768 })).toBe(32768);
     expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: "low", maxOutputTokens: null })).toBeGreaterThanOrEqual(16384);
   });
-  it("keeps a non-thinking model at the answer's own budget", () => {
+  it("keeps a model that cannot think at the answer's own budget", () => {
     expect(triageOutputBudget({ supportsThinking: false, thinkingEffort: null, maxOutputTokens: 32768 })).toBe(2048);
-    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: null, maxOutputTokens: 32768 })).toBe(2048);
+  });
+  it("keeps the ceiling for a thinking model set to off, since a provider may ignore the switch", () => {
+    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: "off", maxOutputTokens: 32768 })).toBe(32768);
+    expect(triageOutputBudget({ supportsThinking: true, thinkingEffort: null, maxOutputTokens: 32768 })).toBe(32768);
   });
 });

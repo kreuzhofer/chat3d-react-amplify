@@ -142,8 +142,14 @@ async function loadViews(exampleId: string): Promise<Array<{ view: StandardView;
   return out;
 }
 
+/**
+ * A model that can think gets its own output ceiling whatever the effort
+ * setting says: a provider may accept the off switch and ignore it (Nebius
+ * ignores `enable_thinking:false` for Kimi K3, measured 2026-09-10), and a
+ * budget sized for no reasoning then stores an empty answer as a read.
+ */
 export function triageOutputBudget(cfg: Pick<LlmModelConfig, "supportsThinking" | "thinkingEffort" | "maxOutputTokens">): number {
-  if (cfg.supportsThinking && cfg.thinkingEffort) return Math.max(cfg.maxOutputTokens ?? 0, maxOutputWithThinking(2048, cfg), 16384);
+  if (cfg.supportsThinking) return Math.max(cfg.maxOutputTokens ?? 0, maxOutputWithThinking(2048, cfg), 16384);
   return maxOutputWithThinking(2048, cfg);
 }
 

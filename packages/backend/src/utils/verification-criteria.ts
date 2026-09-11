@@ -36,6 +36,22 @@ const DEFAULT_VISIBILITY: ChecklistVisibility = "both";
  */
 const DIMENSION_PATTERN = /\b\d+(\.\d+)?\s*(mm|cm|m\b|°|degrees?|radius|diameter)\b/i;
 
+/** True when the criterion names a specific measurement the visual judge may not be asked. */
+export function namesAMeasurement(text: string): boolean {
+  return DIMENSION_PATTERN.test(text);
+}
+
+/**
+ * The routing rule, decided once (issue #38): a criterion naming a measurement
+ * is the code reviewer's whatever its annotation says — "visual" or "both"
+ * included, since the visual judge is never asked a question it cannot answer
+ * from a render, and withholding a check from one judge must hand it to the
+ * other, not drop it. An explicit "code" stays "code".
+ */
+export function routeVisibility(text: string, visibility: ChecklistVisibility): ChecklistVisibility {
+  return namesAMeasurement(text) ? "code" : visibility;
+}
+
 function usableText(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -54,7 +70,7 @@ export function toAnnotatedCriteria(value: unknown): AnnotatedCriterion[] {
   for (const entry of value) {
     const asString = usableText(entry);
     if (asString) {
-      out.push({ text: asString, visibility: DEFAULT_VISIBILITY });
+      out.push({ text: asString, visibility: routeVisibility(asString, DEFAULT_VISIBILITY) });
       continue;
     }
     if (typeof entry === "object" && entry !== null) {
@@ -63,7 +79,7 @@ export function toAnnotatedCriteria(value: unknown): AnnotatedCriterion[] {
       const parsedVisibility = ChecklistVisibilityEnum.safeParse(
         (entry as { visibility?: unknown }).visibility,
       );
-      out.push({ text, visibility: parsedVisibility.success ? parsedVisibility.data : DEFAULT_VISIBILITY });
+      out.push({ text, visibility: routeVisibility(text, parsedVisibility.success ? parsedVisibility.data : DEFAULT_VISIBILITY) });
       continue;
     }
     dropped++;
@@ -86,8 +102,10 @@ export function deriveVisualChecklist(
   criteria: unknown,
   fallbackChecklist: string[] | undefined,
 ): string[] {
+  // Measurements were routed to "code" by the normaliser; the filter here is
+  // the one field both judges read.
   const derived = toAnnotatedCriteria(criteria)
-    .filter(c => c.visibility !== "code" && !DIMENSION_PATTERN.test(c.text))
+    .filter(c => c.visibility !== "code")
     .map(c => c.text);
 
   if (derived.length > 0) return derived;
@@ -105,4 +123,14 @@ export function deriveVisualChecklist(
     );
   }
   return fallback;
+}
+
+/**
+ * The criteria only the code reviewer verifies: annotated "code", or naming a
+ * measurement the visual judge may not be asked (routed there by the
+ * normaliser). The complement of what deriveVisualChecklist() puts in front of
+ * the judge, so between them nothing is lost.
+ */
+export function codeOnlyCriteria(criteria: unknown): AnnotatedCriterion[] {
+  return toAnnotatedCriteria(criteria).filter(c => c.visibility === "code");
 }

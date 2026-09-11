@@ -7,6 +7,7 @@
  * Re-exports from split modules for backward compatibility.
  */
 
+import { codeOnlyCriteria } from "../utils/verification-criteria.js";
 import { trackedStreamText } from "./tracked-llm.service.js";
 import { isQuotaExhaustion, asQuotaError, isRateLimitError } from "../utils/llm-errors.js";
 import { getLlmSemaphore } from "../utils/resource-limits.js";
@@ -139,9 +140,10 @@ NOT issues (analysis — omit these):
 
 Do NOT write analysis before the JSON. Output the JSON object directly.`;
 
-  // Highlight code-only criteria that the VLM cannot verify
-  const codeOnlyItems = annotatedCriteria?.filter(c => c.visibility === "code");
-  if (codeOnlyItems && codeOnlyItems.length > 0) {
+  // The criteria the visual judge is not asked — annotated "code", or naming a
+  // measurement — are the reviewer's alone (issue #38); one rule decides both.
+  const codeOnlyItems = codeOnlyCriteria(annotatedCriteria);
+  if (codeOnlyItems.length > 0) {
     prompt += `\n\n## Code-Only Verification (VLM cannot check these — YOU are the sole verifier)
 Pay special attention to these features which are too small or internal to verify visually:
 ${codeOnlyItems.map(c => `- ${c.text}`).join("\n")}`;

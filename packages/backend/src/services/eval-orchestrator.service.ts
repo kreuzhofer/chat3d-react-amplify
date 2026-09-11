@@ -18,7 +18,7 @@ import { isUncertain } from "./visual-eval-parser.service.js";
 import type { CodeAssertion } from "./spec-generation.service.js";
 import type { ModelFormat } from "./stl-rendering-client.service.js";
 import { createLogger } from "../utils/logger.js";
-import { deriveVisualChecklist } from "../utils/verification-criteria.js";
+import { deriveVisualChecklist, toAnnotatedCriteria } from "../utils/verification-criteria.js";
 import { classifyChecklist, type ChecklistState } from "../utils/checklist-state.js";
 import { getTraceBuilder } from "./trace-builder.service.js";
 import { getModelForPurposeWithFallback, calculateCostUsd } from "./llm-config.service.js";
@@ -184,12 +184,15 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
   // Resolve the effective code-eval weight once, up front. The orchestrator's
   // caller passes the global default via `codeEvalWeight`; per-prompt evalPlan
   // and visibility-annotated criteria can override or adapt it.
+  // Normalised once (issue #38): the weight, the code reviewer and the visual
+  // judge all read the same routing — a measurement is the reviewer's.
+  const annotatedCriteria = input.annotatedCriteria ? toAnnotatedCriteria(input.annotatedCriteria) : undefined;
   const adaptiveEnabled = await isAdaptiveWeightEnabled();
   const adaptiveRange = adaptiveEnabled ? await getAdaptiveWeightRange() : 0;
   const resolvedWeight: ResolvedWeight = resolveCodeEvalWeight({
     globalDefault: input.codeEvalWeight,
     evalPlan: input.evalPlan ?? null,
-    annotatedCriteria: input.annotatedCriteria ?? null,
+    annotatedCriteria: annotatedCriteria ?? null,
     adaptiveWeightRange: adaptiveRange,
   });
 
@@ -272,7 +275,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
       codeAssertions: undefined, // already ran assertions above
       codegenSystemPrompt: input.codegenSystemPrompt,
       constructionSpec: input.constructionSpec,
-      annotatedCriteria: input.annotatedCriteria,
+      annotatedCriteria,
     };
 
     logger.info("phase 2: running code review LLM");
@@ -374,7 +377,7 @@ export async function runFullEvaluation(input: FullEvalInput): Promise<FullEvalR
       // falls back to the plain checklist rather than replacing it with an
       // empty list, which is what silently discarded good questions (issue #33).
       const effectiveChecklist = deriveVisualChecklist(
-        input.annotatedCriteria,
+        annotatedCriteria,
         input.verificationChecklist,
       );
       // Recorded next to the score: a row scored against a placeholder

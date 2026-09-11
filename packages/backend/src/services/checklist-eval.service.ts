@@ -1,3 +1,4 @@
+import { routeVisibility } from "../utils/verification-criteria.js";
 import type { RenderedFile } from "./rendering.service.js";
 import type { EvalPlan } from "../utils/eval-plan.js";
 import type {
@@ -111,8 +112,10 @@ export async function runChecklistEval(
       // Use the caller-provided original index when available; fall back to positional index
       const index = originalIndices?.[i] ?? i;
       try {
-        const wantVisual = entry.visibility === "visual" || entry.visibility === "both";
-        const wantCode = entry.visibility === "code" || entry.visibility === "both";
+        // One routing rule for every judge input (issue #38): a measurement is the code path's.
+        const visibility = routeVisibility(entry.item, entry.visibility);
+        const wantVisual = visibility === "visual" || visibility === "both";
+        const wantCode = visibility === "code" || visibility === "both";
 
         const [v, c] = await Promise.all([
           wantVisual
@@ -128,7 +131,7 @@ export async function runChecklistEval(
         return {
           index,
           item: entry.item,
-          visibility: entry.visibility,
+          visibility,
           verdict: combined.verdict,
           reasoning: combined.reasoning,
         };

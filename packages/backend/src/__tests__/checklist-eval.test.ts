@@ -9,6 +9,21 @@ const FAKE_IMG: RenderedFile = {
 };
 
 describe("runChecklistEval", () => {
+  it("sends an item naming a measurement to the code path only, whatever it is annotated (issue #38)", async () => {
+    const visualVerify = vi.fn();
+    const codeVerify = vi.fn().mockResolvedValue({ verdict: "PASS", reasoning: "2mm in the code" });
+    const items: ComponentChecklistItem[] = [
+      { item: "Wall thickness is 2mm", visibility: "visual" },
+    ];
+    const result = await runChecklistEval({
+      checklist: items, code: "x = 1", renderedFiles: [FAKE_IMG], evalPlan: null, visualVerify, codeVerify,
+    });
+    expect(visualVerify).not.toHaveBeenCalled();
+    expect(codeVerify).toHaveBeenCalledTimes(1);
+    expect(result.results[0].visibility).toBe("code");
+    expect(result.results[0].verdict).toBe("PASS");
+  });
+
   it("dispatches visual-only items to the VLM and skips code path", async () => {
     const visualVerify = vi.fn().mockResolvedValue({
       verdict: "PASS",

@@ -10,7 +10,7 @@
  * that was already there. 58% of stored judge prompts read "1. undefined".
  */
 import { describe, it, expect } from "vitest";
-import { toAnnotatedCriteria, deriveVisualChecklist } from "../utils/verification-criteria.js";
+import { toAnnotatedCriteria, deriveVisualChecklist, codeOnlyCriteria } from "../utils/verification-criteria.js";
 
 const ANNOTATED = [
   { text: "Model has two arms meeting at a single elbow", visibility: "visual" as const },
@@ -115,5 +115,75 @@ describe("visual eval prompt never renders a placeholder checklist", () => {
     expect(prompt).toContain("1. Is the base flat?");
     expect(prompt).toContain("2. Does the lip protrude?");
     expect(prompt).not.toContain("undefined");
+  });
+});
+
+/**
+ * Routing is decided once (issue #38): a criterion the visual judge may not
+ * answer because it names a measurement is handed to the code reviewer, not
+ * dropped. The rule lives in the normaliser, so both consumers read one field.
+ */
+describe("routing a criterion that names a measurement", () => {
+  it("reclassifies a dimension-bearing criterion to code, whatever its annotation says", () => {
+    expect(toAnnotatedCriteria([
+      { text: "Hole diameter is 5mm", visibility: "visual" },
+      { text: "Wall is 2mm thick", visibility: "both" },
+      "Chamfer of 1.5 mm on the top edges",
+      { text: "Lid opens to 90 degrees", visibility: "visual" },
+    ])).toEqual([
+      { text: "Hole diameter is 5mm", visibility: "code" },
+      { text: "Wall is 2mm thick", visibility: "code" },
+      { text: "Chamfer of 1.5 mm on the top edges", visibility: "code" },
+      { text: "Lid opens to 90 degrees", visibility: "code" },
+    ]);
+  });
+
+  it("leaves an explicit code annotation and a measurement-free visual one alone", () => {
+    expect(toAnnotatedCriteria([
+      { text: "Fillet radius matches the spec", visibility: "code" },
+      { text: "Four standoff posts inside the box", visibility: "visual" },
+      { text: "Model has two arms", visibility: "both" },
+    ])).toEqual([
+      { text: "Fillet radius matches the spec", visibility: "code" },
+      { text: "Four standoff posts inside the box", visibility: "visual" },
+      { text: "Model has two arms", visibility: "both" },
+    ]);
+  });
+
+  it("offers the code reviewer exactly the criteria the visual judge does not get", () => {
+    const criteria = [
+      { text: "Hole diameter is 5mm", visibility: "visual" },
+      { text: "Wall is 2mm thick", visibility: "both" },
+      { text: "Fillet applied to the base", visibility: "code" },
+      { text: "Four standoff posts inside the box", visibility: "visual" },
+      { text: "Model has two arms", visibility: "both" },
+      "Pin is 4 mm in diameter",
+    ];
+    expect(codeOnlyCriteria(criteria).map(c => c.text)).toEqual([
+      "Hole diameter is 5mm", "Wall is 2mm thick", "Fillet applied to the base", "Pin is 4 mm in diameter",
+    ]);
+    expect(deriveVisualChecklist(criteria, [])).toEqual(["Four standoff posts inside the box", "Model has two arms"]);
+  });
+
+  it("partitions the criteria between the two judges without overlap or loss", () => {
+    const criteria = [
+      { text: "Hole diameter is 5mm", visibility: "visual" },
+      { text: "Wall is 2mm thick", visibility: "both" },
+      { text: "Fillet applied to the base", visibility: "code" },
+      { text: "Four standoff posts inside the box", visibility: "visual" },
+      { text: "Model has two arms", visibility: "both" },
+      "Lip protrudes outward",
+      "Pin is 4 mm in diameter",
+    ];
+    const all = toAnnotatedCriteria(criteria).map(c => c.text);
+    const visual = deriveVisualChecklist(criteria, []);
+    const code = codeOnlyCriteria(criteria).map(c => c.text);
+    // every criterion reaches a judge
+    for (const text of all) expect(visual.includes(text) || code.includes(text)).toBe(true);
+    // none reaches both as a sole-verifier item
+    for (const text of code) expect(visual).not.toContain(text);
+    // and the visual judge is never asked a measurement
+    for (const q of visual) expect(q).not.toMatch(/\b\d+(\.\d+)?\s*(mm|cm|degrees?)\b/i);
+    expect(visual.length + code.length).toBe(all.length);
   });
 });
